@@ -1,3 +1,4 @@
+DIR_CONTAINER = "/scratch/lhashimoto"
 DIR_INPUTS = "/scratch/lhashimoto/nemo_database/imaging_data"
 DIR_FREESURFER = "/scratch/lhashimoto/freesurfer"
 FREESURFER_STDOUT = DIR_FREESURFER + "/stdout"
@@ -9,6 +10,7 @@ def print_paths():
     Print paths to have access to them in a shell script
     """
     paths = {
+        "DIR_CONTAINER": DIR_CONTAINER,
         "DIR_INPUTS": DIR_INPUTS,
         "DIR_FREESURFER": DIR_FREESURFER,
         "FREESURFER_STDOUT": FREESURFER_STDOUT,

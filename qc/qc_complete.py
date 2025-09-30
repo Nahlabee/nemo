@@ -139,7 +139,7 @@ def calculate_outliers(subjects, subjects_dir, outlier_outdir, outlier_params):
 
 if __name__ == "__main__":
     fsqc_results_path = os.path.join(FREESURFER_FSQC, "fsqc-results.csv")
-    check_log_path = os.path.join(DIR_FREESURFER, "check_log.csv")
+    check_log_path = os.path.join(FREESURFER_FSQC, "check_log.csv")
     group_statistics_path = os.path.join(FREESURFER_FSQC, "group_stats.csv")
     fsqc_complete_path = os.path.join(FREESURFER_FSQC, "fsqc-results-complete.csv")
     subjects_dir = FREESURFER_OUTPUTS
