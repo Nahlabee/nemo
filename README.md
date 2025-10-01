@@ -1,9 +1,11 @@
 # nemo
+
 MR data analyses for bipolar disorder
 
 Please make sure to adapt the paths in the config.py file to your own disk configuration before using one of these scripts !
 
 ## Segmentation
+
 Requirements to run the shell scripts:
 - Singularity container of FreeSurfer 7.4.0
 - Python 3.6+ (used to get config.py file paths)
@@ -61,6 +63,7 @@ EXAMPLE:
     done
 
 ## Quality Control
+
 Requirements:
 - fsqc toolbox (https://github.com/Deep-MI/fsqc)
 This package provides quality assurance / quality control scripts for FastSurfer- or FreeSurfer-processed structural MRI data. It will check outputs of these two software packages by means of quantitative and visual summaries. Prior processing of data using either FastSurfer or FreeSurfer is required, i.e. the software cannot be used on raw images.
@@ -105,4 +108,7 @@ The number of outliers is updated and all QC statistics are merged and saved in 
 
 ## Statistics
 
+This folder is intended to contain notebooks for statistical analyses on the NEMO dataset.
+
+To date, analyses have only been achieved on morphometry measurements (cortical volumes and thickness from Freesurfer segmentation) and their correlation with clinical observations.
 
