@@ -84,11 +84,11 @@ This script will check the log files of the freesurfer segmentation and generate
 
 2) `python3 -m qc/qc_fsqc.py`
 
-This script will generate a report for each subject and a csv file for group statistics name 'fsqc-results.csv'.
+This script will generate a report for each subject and a csv file for group statistics named 'fsqc-results.csv'.
 
 Three configurations are available. Choose the one you want to use by uncommenting the corresponding lines in the qc_fsqc.py file.
-- Run FSQC on a single subject
-- Run FSQC on a group of subjects
+- Run FSQC on a subject or a list of subjects
+- Run FSQC for group-level statistics
 - Run FSQC only on hippocampus and amygdala segmentations
 
 If QC has already been performed on one or several subjects, you can run FSQC on the remaining subjects by providing a subject list. After that, the group-level analysis can be run on the subjects who have successfully completed FSQC.
@@ -104,7 +104,6 @@ A new aseg_stats_norm.csv is saved for each subject.
 
 The number of outliers is updated and all QC statistics are merged and saved in the fsqc-results-complete.csv file.
 
-> To run in batch mode, use `qc_complete.slurm`
 
 ## Statistics
 

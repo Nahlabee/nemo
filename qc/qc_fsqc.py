@@ -4,7 +4,7 @@
 import fsqc
 from config import FREESURFER_OUTPUTS, FREESURFER_FSQC
 
-## Run FSQC on a single subject
+## Run FSQC on a list of subjects
 # fsqc.run_fsqc(subjects_dir=FREESURFER_OUTPUTS,
 #               output_dir=FREESURFER_FSQC,
 #               subjects=['sub-1054001'],
@@ -20,7 +20,7 @@ from config import FREESURFER_OUTPUTS, FREESURFER_FSQC
 #               skip_existing=True
 # )
 
-## Run FSQC on all subjects
+## Run FSQC group-level statistics only
 fsqc.run_fsqc(subjects_dir=FREESURFER_OUTPUTS,
               output_dir=FREESURFER_FSQC,
               group_only=True,
