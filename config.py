@@ -1,5 +1,5 @@
 DATA_BIDS_DIR = "/scratch/lhashimoto/nemo_database/imaging_data"
-DERIVATIVES_BIDS_DIR = "/scratch/lhashimoto/nemo_database/derivatives"
+DERIVATIVES_BIDS_DIR = "/scratch/lhashimoto/nemo_database_derivatives"
 
 FREESURFER_CONTAINER = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE = "/scratch/lhashimoto/freesurfer/license"
