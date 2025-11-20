@@ -1,23 +1,27 @@
-DIR_CONTAINER = "/scratch/lhashimoto"
-DIR_INPUTS = "/scratch/lhashimoto/nemo_database/imaging_data"
-DIR_FREESURFER = "/scratch/lhashimoto/freesurfer"
-FREESURFER_STDOUT = DIR_FREESURFER + "/stdout"
-FREESURFER_OUTPUTS = DIR_FREESURFER + "/outputs"
-FREESURFER_FSQC = DIR_FREESURFER + "/fsqc"
+DATA_BIDS_DIR = "/scratch/lhashimoto/nemo_database/imaging_data"
+DERIVATIVES_BIDS_DIR = "/scratch/lhashimoto/nemo_database/derivatives"
 
-def print_paths():
-    """
-    Print paths to have access to them in a shell script
-    """
-    paths = {
-        "DIR_CONTAINER": DIR_CONTAINER,
-        "DIR_INPUTS": DIR_INPUTS,
-        "DIR_FREESURFER": DIR_FREESURFER,
-        "FREESURFER_STDOUT": FREESURFER_STDOUT,
-        "FREESURFER_OUTPUTS": FREESURFER_OUTPUTS
-    }
-    for key, value in paths.items():
-        print(f"{key}={value}")
+FREESURFER_CONTAINER = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
+FREESURFER_LICENSE = "/scratch/lhashimoto/freesurfer/license"
+FREESURFER_DIR = DERIVATIVES_BIDS_DIR + "/freesurfer"
+FREESURFER_STDOUT = FREESURFER_DIR + "/stdout"
+FREESURFER_OUTPUTS = FREESURFER_DIR + "/outputs"
+FREESURFER_QC = FREESURFER_DIR + "/qc"
 
-if __name__ == "__main__":
-    print_paths()
+
+# def print_paths():
+#     """
+#     Print paths to have access to them in a shell script
+#     """
+#     paths = {
+#         "DIR_CONTAINER": DIR_CONTAINER,
+#         "DIR_INPUTS": DIR_INPUTS,
+#         "DIR_FREESURFER": DIR_FREESURFER,
+#         "FREESURFER_STDOUT": FREESURFER_STDOUT,
+#         "FREESURFER_OUTPUTS": FREESURFER_OUTPUTS
+#     }
+#     for key, value in paths.items():
+#         print(f"{key}={value}")
+#
+# if __name__ == "__main__":
+#     print_paths()
