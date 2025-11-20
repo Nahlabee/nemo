@@ -28,7 +28,7 @@ def segmentation(args):
 
         # Define subjects list
         if not args.subjects:
-            subjects = filter(os.path.isdir, glob.glob(os.path.join(args.input_dir, 'sub-*')))  # ignore hidden files
+            subjects = list(filter(os.path.isdir, glob.glob(os.path.join(args.input_dir, 'sub-*'))))  # ignore hidden files
         else:
             subjects = args.subjects
         print(subjects)
