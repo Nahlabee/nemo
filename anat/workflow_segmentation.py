@@ -155,13 +155,13 @@ def main(raw_args=None):
 
     p = argparse.ArgumentParser("Launch anatomical segmentation on a dataset")
 
-    p.add_argument("input_dir", default=DATA_BIDS_DIR,
+    p.add_argument("--input_dir", default=DATA_BIDS_DIR,
                    help="Input directory containing dataset images in BIDS format.")
-    p.add_argument("output_dir", default=FREESURFER_OUTPUTS,
+    p.add_argument("--output_dir", default=FREESURFER_OUTPUTS,
                    help="Output directory for FreeSurfer.")
-    p.add_argument("freesurfer_container", default=FREESURFER_CONTAINER,
+    p.add_argument("--freesurfer_container", default=FREESURFER_CONTAINER,
                    help="Path to FreeSurfer container.")
-    p.add_argument("freesurfer_license", default=FREESURFER_LICENSE,
+    p.add_argument("--freesurfer_license", default=FREESURFER_LICENSE,
                    help="Path to FreeSurfer license folder.")
     p.add_argument("--subjects", "-s", default=[],
                    help="List of subjects to process. If None, all subjects in the root directory will be processed.")
