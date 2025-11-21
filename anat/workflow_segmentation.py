@@ -28,7 +28,7 @@ def segmentation(args):
 
         # Define subjects list
         if not args.subjects:
-            subjects = list(filter(os.path.isdir, glob.glob(os.path.join(args.input_dir, 'sub-*'))))  # ignore hidden files
+            subjects = [d for d in os.listdir(args.input_dir) if d.startswith("sub-") and os.path.isdir(d)]
         else:
             subjects = args.subjects
         print(subjects)
@@ -38,7 +38,8 @@ def segmentation(args):
 
         for subject in subjects[:1]:
             path_to_input = os.path.join(args.input_dir, subject)
-            sessions = filter(os.path.isdir, glob.glob(os.path.join(path_to_input, 'ses-*')))  # ignore hidden files
+            sessions = [d for d in os.listdir(path_to_input) if d.startswith("ses-") and os.path.isdir(d)]
+            print(sessions)
             session = 'ses-01'
             # todo: check if T2 exists + adapt singularity cmd
 
@@ -188,4 +189,5 @@ def main(raw_args=None):
 
 if __name__ == '__main__':
     main()
+    print(os.getcwd())
 
