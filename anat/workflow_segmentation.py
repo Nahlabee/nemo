@@ -28,6 +28,7 @@ def segmentation(args):
 
         # Define subjects list
         if not args.subjects:
+            print("Looking for subjects sub-*")
             subjects = [d for d in os.listdir(args.input_dir) if d.startswith("sub-") and os.path.isdir(d)]
         else:
             subjects = args.subjects
