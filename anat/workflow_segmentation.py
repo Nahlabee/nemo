@@ -87,7 +87,7 @@ module load userspace/all
 module load singularity
 
 # export FreeSurfer environment variables
-export SUBJECTS_DIR=${}
+export SUBJECTS_DIR={}
 '''.format(args.input_dir)
             # todo: test if FREESURFER_HOME is necessary or not
 
@@ -109,7 +109,7 @@ singularity exec -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/li
 
             ownership_sharing = \
 '''
-chmod -Rf 771 ${0}
+chmod -Rf 771 {0}
 
 echo "ANATOMICAL SEGMENTATION DONE"
 '''.format(args.output_dir)
