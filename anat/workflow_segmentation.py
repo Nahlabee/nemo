@@ -39,7 +39,7 @@ def segmentation(args):
 
         for subject in subjects[:1]:
             path_to_input = os.path.join(args.input_dir, subject)
-            sessions = [d for d in os.listdir(path_to_input) if d.startswith("ses-") and os.path.isdir(d)]
+            sessions = [d for d in os.listdir(path_to_input) if d.startswith("ses-") and os.path.isdir(os.path.join(path_to_input, d))]
             print(sessions)
             session = 'ses-01'
             # todo: check if T2 exists + adapt singularity cmd
