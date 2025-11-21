@@ -58,61 +58,61 @@ def segmentation(args):
 
             # write and launch slurm commands
             header = \
-                '''#!/bin/bash
-                #SBATCH -J freesurfer_{0}
-                #SBATCH -p skylake
-                #SBATCH --nodes=1
-                #SBATCH --mem={1}gb
-                #SBATCH --cpus-per-task=32
-                #SBATCH -t {2}:00:00
-                #SBATCH -e {3}/%x_%j.err
-                #SBATCH -o {3}/%x_%j.out
-                '''.format(subject, args.requested_mem, args.requested_time, args.stdout)
+'''#!/bin/bash
+#SBATCH -J freesurfer_{0}
+#SBATCH -p skylake
+#SBATCH --nodes=1
+#SBATCH --mem={1}gb
+#SBATCH --cpus-per-task=32
+#SBATCH -t {2}:00:00
+#SBATCH -e {3}/%x_%j.err
+#SBATCH -o {3}/%x_%j.out
+'''.format(subject, args.requested_mem, args.requested_time, args.stdout)
 
             if args.email:
                 header += \
-                '''#SBATCH --mail-type=BEGIN,END
-                #SBATCH --mail-user={}
-                '''.format(args.email)
+'''#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-user={}
+'''.format(args.email)
 
             if args.account:
                 header += \
-                '''#SBATCH --account={}
-                '''.format(args.account)
+'''#SBATCH --account={}
+'''.format(args.account)
 
             module_export = \
-                '''
-                module purge
-                module load userspace/all
-                module load singularity
-        
-                # export FreeSurfer environment variables
-                export SUBJECTS_DIR=${}
-                '''.format(args.input_dir)
+'''
+module purge
+module load userspace/all
+module load singularity
+
+# export FreeSurfer environment variables
+export SUBJECTS_DIR=${}
+'''.format(args.input_dir)
             # todo: test if FREESURFER_HOME is necessary or not
 
             singularity_command = \
-                '''
-                # singularity command
-                singularity exec -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\
-                    {3} bash -c \\
-                    source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\
-                    recon-all \\
-                        -all \\
-                        -s {4} \\
-                        -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\
-                        -T2 /data/{4}/{5}/anat/{4}_{5}_T2w.nii.gz \\
-                        -T2pial \\
-                        -sd /out
-                '''.format(args.input_dir, args.output_dir, args.freesurfer_license, args.freesurfer_container,
+'''
+# singularity command
+singularity exec -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\
+    {3} bash -c \\
+        source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\
+        recon-all \\
+            -all \\
+            -s {4} \\
+            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\
+            -T2 /data/{4}/{5}/anat/{4}_{5}_T2w.nii.gz \\
+            -T2pial \\
+            -sd /out
+'''.format(args.input_dir, args.output_dir, args.freesurfer_license, args.freesurfer_container,
                            subject, session)
 
             ownership_sharing = \
-                '''
-                chmod -Rf 771 ${0}
-        
-                echo "ANATOMICAL SEGMENTATION DONE"
-                '''.format(args.output_dir)
+'''
+chmod -Rf 771 ${0}
+
+echo "ANATOMICAL SEGMENTATION DONE"
+'''.format(args.output_dir)
             # todo: chgrp -Rf 347 ${0}
 
             file_content = header + module_export + singularity_command + ownership_sharing
