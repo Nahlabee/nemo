@@ -53,12 +53,13 @@ def run_singularity(fmriprep_sif, bids_dir, out_dir, fs_license, subject, versio
         "--fd-spike-threshold",str(0.5),
         "--dvars-spike-threshold", str(2.0),
         "--cifti-output", "91k",
-        
+        "--subject-anatomical-reference", "sessionwise",
+        "--project-goodvoxels",
         "--fs-license-file", "/license.txt",
-        "--output-spaces", "fsLR", "T1w", "fsaverage",
+        "--output-spaces", "fsLR:den-32k", "T1w", "fsaverage:den-164k", "MNI152NLin6Asym",
         "--ignore", "slicetiming",
         "--mem-mb", str(50000),
-        "--nthreads", str(32),
+        "--nthreads", str(8),
         "--skip-bids-validation",
         "--clean-workdir"
     ]
@@ -84,18 +85,18 @@ def load_any_image(path: Path) -> np.ndarray:
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
 
-    img = nib.load(str(path))
+    img = nib.load(str(path)) # type: ignore
 
     if isinstance(img, nib.gifti.gifti.GiftiImage):
         logger.info(f"Detected GIFTI surface file: {path.name}")
         data = np.column_stack([d.data for d in img.darrays])
-    elif isinstance(img, (nib.Nifti1Image, nib.Nifti2Image)):
+    elif isinstance(img, (nib.Nifti1Image, nib.Nifti2Image)): # type: ignore
         logger.info(f"Detected NIfTI volumetric file: {path.name}")
         data = img.get_fdata()
     else:
         raise TypeError(f"Unsupported file type: {type(img)}")
 
-    return data, data.affine if hasattr(img, 'affine') else None
+    return data, img.affine  # type: ignore
 
 
 def summarize_data(data: np.ndarray, path: Path):
@@ -147,8 +148,8 @@ def compare_gifti_surfaces(file1: Path, file2: Path, output_file: Path):
     summarize_data(img2, file2)
     
     data_diff = img1 - img2
-    diff_img = nib.GiftiImage(data_diff, img1_aff)
-    nib.save(diff_img, output_file)
+    diff_img = nib.GiftiImage(data_diff, img1_aff) # type: ignore
+    nib.save(diff_img, output_file) # type: ignore
     print(f"GIfTI diff saved to {output_file}")
 
 def compare_nifti(file1: Path, file2: Path, output_file: Path):
@@ -166,8 +167,8 @@ def compare_nifti(file1: Path, file2: Path, output_file: Path):
     img2, img2_aff = load_any_image(file2)
     summarize_data(img2, file2)
     data_diff = img1.get_fdata() - img2.get_fdata()
-    diff_img = nib.Nifti1Image(data_diff, img1_aff)
-    nib.save(diff_img, output_file)
+    diff_img = nib.Nifti1Image(data_diff, img1_aff) # type: ignore
+    nib.save(diff_img, output_file) # type: ignore
     print(f"NIfTI diff saved to {output_file}")
 
 def compare_confounds(csv1, csv2, output_file):
@@ -216,21 +217,21 @@ def main():
     sif_dir.mkdir(parents=True, exist_ok=True)
      
     out_23 = out_dir / "fmriprep23"
-    out_25 = out_dir / "fmriprep25"
+    out_25 = out_dir / "fmriprep25.2.0"
     out_23.mkdir(parents=True, exist_ok=True)
     out_25.mkdir(parents=True, exist_ok=True)
 
     # Paths to Singularity images
     sif_23 = sif_dir / "fmriprep_23.2.0.sif"
-    sif_25 = sif_dir / "fmriprep_25.0.0.sif"
+    sif_25 = sif_dir / "fmriprep_25.2.0.sif"
 
     # Run 23.2.0
     # run_singularity(sif_23, bids_dir, out_23, fs_license, subject, "23.2.0",
     #                 extra_flags=["--bold2t1w-dof", str(6), "--bold2t1w-init", "register"])
     # Run 25.2.0
-    # run_singularity(sif_25, bids_dir, out_25, fs_license, subject, "25.0.0",
-    #                 extra_flags=["--bold2anat-dof", str(6), "--bold2anat-init", "auto"])
-    #                 #              "--write-graph", "--skip-bids-validation"])
+    run_singularity(sif_25, bids_dir, out_25, fs_license, subject, "25.2.0",
+                    extra_flags=["--bold2anat-dof", str(6), "--bold2anat-init", "auto"])
+                    #              "--write-graph", "--skip-bids-validation"])
 
     # QA directory
     qa_dir = out_dir / "diff_logs"

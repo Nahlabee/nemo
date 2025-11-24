@@ -173,3 +173,5 @@ cython_debug/
 # fmriprep container files
 /fmriprep/containers/
 /fmriprep/work/
+/fmriprep/work_xcpd/
+
