@@ -18,7 +18,8 @@ def print_paths():
     paths = {
         "QSIPREP_CONTAINER": QSIPREP_CONTAINER,
         "DATA_BIDS_DIR": DATA_BIDS_DIR,
-        "DERIVATIVES_BIDS_DIR": DERIVATIVES_BIDS_DIR
+        "DERIVATIVES_BIDS_DIR": DERIVATIVES_BIDS_DIR,
+        "FREESURFER_LICENSE": FREESURFER_LICENSE
     }
     for key, value in paths.items():
         print(f"{key}={value}")
