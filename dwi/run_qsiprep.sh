@@ -8,7 +8,8 @@ module load singularity
 CONFIG_FILE="../config.py"
 
 # Read paths from config.py and export them as environment variables
-eval $(PYTHONPATH=$CONFIG_DIR python3 -c 'import config; config.print_paths()')
+eval $(python3 -c 'import config; config.print_paths()')
+echo $QSIPREP_CONTAINER
 
 # Execute Singularity container
 apptainer run -B $DATA_BIDS_DIR:/data,$DERIVATIVES_BIDS_DIR:/out,$FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \\
