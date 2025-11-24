@@ -1,4 +1,10 @@
 #!/bin/bash
+#SBATCH -J qsiprep
+#SBATCH -p kepler
+#SBATCH -n 1
+#SBATCH -t 9:00:00
+#SBATCH -o %x_%j.out
+#SBATCH -e %x_%j.err
 
 module purge
 module load userspace/all
