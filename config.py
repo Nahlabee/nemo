@@ -8,20 +8,21 @@ FREESURFER_STDOUT = FREESURFER_DIR + "/stdout"
 FREESURFER_OUTPUTS = FREESURFER_DIR + "/outputs"
 FREESURFER_QC = FREESURFER_DIR + "/qc"
 
+QSIPREP_CONTAINER = "/scratch/lhashimoto/qsiprep-1.0.2.sif"
 
-# def print_paths():
-#     """
-#     Print paths to have access to them in a shell script
-#     """
-#     paths = {
-#         "DIR_CONTAINER": DIR_CONTAINER,
-#         "DIR_INPUTS": DIR_INPUTS,
-#         "DIR_FREESURFER": DIR_FREESURFER,
-#         "FREESURFER_STDOUT": FREESURFER_STDOUT,
-#         "FREESURFER_OUTPUTS": FREESURFER_OUTPUTS
-#     }
-#     for key, value in paths.items():
-#         print(f"{key}={value}")
-#
-# if __name__ == "__main__":
-#     print_paths()
+
+def print_paths():
+    """
+    Print paths to have access to them in a shell script
+    """
+    paths = {
+        "QSIPREP_CONTAINER": QSIPREP_CONTAINER,
+        "DATA_BIDS_DIR": DATA_BIDS_DIR,
+        "DERIVATIVES_BIDS_DIR": DERIVATIVES_BIDS_DIR
+    }
+    for key, value in paths.items():
+        print(f"{key}={value}")
+
+
+if __name__ == "__main__":
+    print_paths()
