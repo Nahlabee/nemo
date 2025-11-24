@@ -1,0 +1,19 @@
+#!/bin/bash
+
+module purge
+module load userspace/all
+module load singularity
+
+# Set the path to config.py
+CONFIG_FILE="./config.py"
+
+# Read paths from config.py and export them as environment variables
+eval $(PYTHONPATH=$CONFIG_DIR python3 -c 'import config; config.print_paths()')
+
+# Execute Singularity container
+apptainer run -B $DATA_BIDS_DIR:/data,$DERIVATIVES_BIDS_DIR:/out,$FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \\
+   --nv qsiprep-1.0.2.sif /data /out \\
+        participant --participant-label sub-1054001 \\
+        --session-id ses-01 \\
+        -w /out/temp_wf_qsiprep \\
+        --fs-license-file /opt/freesurfer/license.txt
