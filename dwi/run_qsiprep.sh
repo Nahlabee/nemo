@@ -9,12 +9,6 @@ CONFIG_FILE="../config.py"
 
 # Read paths from config.py and export them as environment variables
 eval $(python3 -c 'import config; config.print_paths()')
-echo $QSIPREP_CONTAINER
 
 # Execute Singularity container
-apptainer run -B $DATA_BIDS_DIR:/data,$DERIVATIVES_BIDS_DIR:/out,$FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \\
-   --nv $QSIPREP_CONTAINER /data /out \\
-        participant --participant-label sub-1054001 \\
-        --session-id ses-01 \\
-        -w /out/temp_wf_qsiprep \\
-        --fs-license-file /opt/freesurfer/license.txt
+apptainer run -B $DATA_BIDS_DIR:/data,$DERIVATIVES_BIDS_DIR:/out,$FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt --nv $QSIPREP_CONTAINER /data /out participant --participant-label sub-1054001 --session-id ses-01 -w /out/temp_wf_qsiprep --fs-license-file /opt/freesurfer/license.txt
