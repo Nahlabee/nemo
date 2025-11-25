@@ -22,7 +22,7 @@ apptainer run \
   --nv --cleanenv \
   -B $DATA_BIDS_DIR:/data \
   -B $DERIVATIVES_BIDS_DIR:/out \
-  -B /scratch/lhashimoto/freesurfer-7.4.1:/opt/freesurfer:ro \
+  -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   -B $CODE_DIR:/code \
   --env FREESURFER_HOME=/opt/freesurfer \
