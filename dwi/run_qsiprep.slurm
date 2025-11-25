@@ -25,7 +25,6 @@ apptainer run \
   -B /scratch/lhashimoto/freesurfer-7.4.1:/opt/freesurfer:ro \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   -B $CODE_DIR:/code \
-  -e FREESURFER_HOME=/opt/freesurfer \
   $QSIPREP_CONTAINER /data /out participant \
   --participant-label sub-1054001 --session-id ses-01 \
   --skip-bids-validation -v -w /out/temp_wf_qsiprep \
