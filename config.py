@@ -1,14 +1,16 @@
-DATA_BIDS_DIR = "/scratch/lhashimoto/nemo_database/imaging_data"
-DERIVATIVES_BIDS_DIR = "/scratch/lhashimoto/nemo_database_derivatives"
+
+DATA_BIDS_DIR="/scratch/lhashimoto/nemo_database/imaging_data"
+DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives"
+CODE_DIR="/scratch/lhashimoto/code/nemo"
 
 FREESURFER_CONTAINER = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
-FREESURFER_LICENSE = "/scratch/lhashimoto/freesurfer/license"
+FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
 FREESURFER_DIR = DERIVATIVES_BIDS_DIR + "/freesurfer"
 FREESURFER_STDOUT = FREESURFER_DIR + "/stdout"
 FREESURFER_OUTPUTS = FREESURFER_DIR + "/outputs"
 FREESURFER_QC = FREESURFER_DIR + "/qc"
 
-QSIPREP_CONTAINER = "/scratch/lhashimoto/qsiprep-1.0.2.sif"
+QSIPREP_CONTAINER="/scratch/lhashimoto/qsiprep-1.0.1.sif"
 
 
 def print_paths():
@@ -19,7 +21,8 @@ def print_paths():
         "QSIPREP_CONTAINER": QSIPREP_CONTAINER,
         "DATA_BIDS_DIR": DATA_BIDS_DIR,
         "DERIVATIVES_BIDS_DIR": DERIVATIVES_BIDS_DIR,
-        "FREESURFER_LICENSE": FREESURFER_LICENSE
+        "FREESURFER_LICENSE": FREESURFER_LICENSE,
+        "CODE_DIR": CODE_DIR
     }
     for key, value in paths.items():
         print(f"{key}={value}")
