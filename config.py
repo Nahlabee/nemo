@@ -10,7 +10,7 @@ FREESURFER_STDOUT = FREESURFER_DIR + "/stdout"
 FREESURFER_OUTPUTS = FREESURFER_DIR + "/outputs"
 FREESURFER_QC = FREESURFER_DIR + "/qc"
 
-QSIPREP_CONTAINER="/scratch/lhashimoto/qsiprep-1.0.1.sif"
+QSIPREP_CONTAINER="/scratch/lhashimoto/qsiprep-1.0.2.sif"
 
 
 def print_paths():
