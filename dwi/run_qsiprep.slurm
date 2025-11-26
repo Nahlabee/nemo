@@ -4,7 +4,7 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --mem=70gb
 #SBATCH -n 1
-#SBATCH -t 48:00:00
+#SBATCH -t 24:00:00
 #SBATCH -o %x_%j.out
 #SBATCH -e %x_%j.err
 
@@ -28,8 +28,10 @@ apptainer run \
   -B $CODE_DIR:/code \
   --env FREESURFER_HOME=/opt/freesurfer \
   $QSIPREP_CONTAINER /data /out participant \
-  --participant-label sub-1054001 --session-id ses-01 \
+  --participant-label sub-1054002 --session-id ses-01 \
   --skip-bids-validation -v -w /out/temp_wf_qsiprep \
   --fs-license-file /opt/freesurfer/license.txt \
   --output-resolution 1.8 \
-  --eddy-config /code/eddy_params.json --distortion-group-merge average
+  --eddy-config /code/eddy_params.json \
+  --distortion-group-merge average \
+  --anat-modality T1w
