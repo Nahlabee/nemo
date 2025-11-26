@@ -25,7 +25,7 @@ apptainer run \
   -B $DERIVATIVES_BIDS_DIR:/out \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
-  $QSIRECON_CONTAINER /data /data participant \
+  $QSIRECON_CONTAINER /data /out participant \
   --participant-label sub-1054001 --session-id ses-01 \
   -v -w /out/temp_wf_qsirecon \
   --fs-license-file /opt/freesurfer/license.txt \
