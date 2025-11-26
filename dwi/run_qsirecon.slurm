@@ -21,8 +21,8 @@ eval $(python3 -c 'import config; config.print_paths()')
 # Execute Singularity container
 apptainer run \
   --nv --cleanenv \
-  -B $DERIVATIVES_BIDS_DIR:/data \
-  -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
+  -B $DERIVATIVES_BIDS_DIR/qsiprep:/data \
+  -B $DERIVATIVES_BIDS_DIR:/out \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   $QSIRECON_CONTAINER /data /data participant \
