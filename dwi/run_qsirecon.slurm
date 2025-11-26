@@ -31,4 +31,5 @@ apptainer run \
   --fs-license-file /opt/freesurfer/license.txt \
   --fs-subjects-dir /freesurfer \
   --output-resolution 1.8 \
-  --recon-spec mrtrix_multishell_msmt_ACT-hsvs
+  --recon-spec mrtrix_multishell_msmt_ACT-hsvs \
+  --atlases AAL116
