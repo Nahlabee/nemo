@@ -2,9 +2,9 @@
 #SBATCH -J qsiprep
 #SBATCH -p volta
 #SBATCH --gpus-per-node=4
-#SBATCH --mem=60gb
+#SBATCH --mem=70gb
 #SBATCH -n 1
-#SBATCH -t 20:00:00
+#SBATCH -t 48:00:00
 #SBATCH -o %x_%j.out
 #SBATCH -e %x_%j.err
 
