@@ -22,11 +22,12 @@ eval $(python3 -c 'import config; config.print_paths()')
 apptainer run \
   --nv --cleanenv \
   -B $DERIVATIVES_BIDS_DIR:/data \
+  -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   $QSIRECON_CONTAINER /data /data participant \
   --participant-label sub-1054001 --session-id ses-01 \
   --skip-bids-validation -v -w /out/temp_wf_qsirecon \
   --fs-license-file /opt/freesurfer/license.txt \
-  --fs-subjects-dir $FREESURFER_DIR \
+  --fs-subjects-dir /freesurfer \
   --output-resolution 1.8 \
   --recon-spec mrtrix_multishell_msmt_ACT-hsvs
