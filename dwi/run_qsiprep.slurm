@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J qsiprep
-#SBATCH -p volta
-#SBATCH --gpus-per-node=4
+#SBATCH -p kepler
+#SBATCH --gpus-per-node=2
 #SBATCH --mem=70gb
 #SBATCH -n 1
 #SBATCH -t 24:00:00
