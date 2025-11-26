@@ -26,7 +26,7 @@ apptainer run \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   $QSIRECON_CONTAINER /data /data participant \
   --participant-label sub-1054001 --session-id ses-01 \
-  --skip-bids-validation -v -w /out/temp_wf_qsirecon \
+  -v -w /out/temp_wf_qsirecon \
   --fs-license-file /opt/freesurfer/license.txt \
   --fs-subjects-dir /freesurfer \
   --output-resolution 1.8 \
