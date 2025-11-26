@@ -5,13 +5,14 @@ CODE_DIR="/scratch/lhashimoto/code/nemo"
 
 FREESURFER_CONTAINER = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
-FREESURFER_DIR = DERIVATIVES_BIDS_DIR + "/freesurfer"
+FREESURFER_DIR="/scratch/lhashimoto/freesurfer/outputs"
+# FREESURFER_DIR = DERIVATIVES_BIDS_DIR + "/freesurfer"
 FREESURFER_STDOUT = FREESURFER_DIR + "/stdout"
 FREESURFER_OUTPUTS = FREESURFER_DIR + "/outputs"
 FREESURFER_QC = FREESURFER_DIR + "/qc"
 
 QSIPREP_CONTAINER="/scratch/lhashimoto/qsiprep-1.0.2.sif"
-
+QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
 
 def print_paths():
     """
@@ -19,9 +20,11 @@ def print_paths():
     """
     paths = {
         "QSIPREP_CONTAINER": QSIPREP_CONTAINER,
+        "QSIRECON_CONTAINER": QSIRECON_CONTAINER,
         "DATA_BIDS_DIR": DATA_BIDS_DIR,
         "DERIVATIVES_BIDS_DIR": DERIVATIVES_BIDS_DIR,
         "FREESURFER_LICENSE": FREESURFER_LICENSE,
+        "FREESURFER_DIR": FREESURFER_DIR,
         "CODE_DIR": CODE_DIR
     }
     for key, value in paths.items():
