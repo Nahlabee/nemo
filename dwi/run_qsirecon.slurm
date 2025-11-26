@@ -22,7 +22,7 @@ eval $(python3 -c 'import config; config.print_paths()')
 apptainer run \
   --nv --cleanenv \
   -B $DERIVATIVES_BIDS_DIR/qsiprep:/data \
-  -B $DERIVATIVES_BIDS_DIR:/out \
+  -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   $QSIRECON_CONTAINER /data /out participant \
