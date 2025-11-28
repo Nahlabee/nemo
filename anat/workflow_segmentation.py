@@ -150,11 +150,11 @@ def segmentation(args):
                 if args.interactive:
                     file_content = module_export + singularity_command + ownership_sharing
                     path_to_script = f'./{subject}_{session}_freesurfer.sh'
-                    cmd = ("sbatch %s" % path_to_script)
+                    cmd = ("sh %s" % path_to_script)
                 else:
                     file_content = header + module_export + singularity_command + ownership_sharing
                     path_to_script = f'./{subject}_{session}_freesurfer.slurm'
-                    cmd = ("sh %s" % path_to_script)
+                    cmd = ("sbatch %s" % path_to_script)
 
                 with open(path_to_script, 'w') as f:
                     f.write(file_content)
