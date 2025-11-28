@@ -70,58 +70,61 @@ def segmentation(args):
 
                 # write and launch slurm commands
                 header = \
-    '''#!/bin/bash
-    #SBATCH -J freesurfer_{0}
-    #SBATCH -p skylake
-    #SBATCH --nodes=1
-    #SBATCH --mem={1}gb
-    #SBATCH --cpus-per-task=32
-    #SBATCH -t {2}:00:00
-    #SBATCH -e {3}/%x_job-%j.err
-    #SBATCH -o {3}/%x_job-%j.out
-    '''.format(subject, args.requested_mem, args.requested_time, args.stdout)
+'''#!/bin/bash
+#SBATCH -J freesurfer_{0}
+#SBATCH -p skylake
+#SBATCH --nodes=1
+#SBATCH --mem={1}gb
+#SBATCH --cpus-per-task=32
+#SBATCH -t {2}:00:00
+#SBATCH -e {3}/%x_job-%j.err
+#SBATCH -o {3}/%x_job-%j.out
+'''.format(subject, args.requested_mem, args.requested_time, args.stdout)
 
                 if args.email:
                     header += \
-    '''#SBATCH --mail-type=BEGIN,END
-    #SBATCH --mail-user={}
-    '''.format(args.email)
+'''#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-user={}
+'''.format(args.email)
 
                 if args.account:
                     header += \
-    '''#SBATCH --account={}
-    '''.format(args.account)
+'''#SBATCH --account={}
+'''.format(args.account)
 
                 module_export = \
-    '''
-    module purge
-    module load userspace/all
-    module load singularity
-    
-    # export FreeSurfer environment variables
-    export SUBJECTS_DIR={}
-    '''.format(args.input_dir)
+'''
+module purge
+module load userspace/all
+module load singularity
+
+# export FreeSurfer environment variables
+export SUBJECTS_DIR={}
+'''.format(args.input_dir)
                 # todo: test if FREESURFER_HOME is necessary or not
 
                 singularity_command = \
-    '''
-    # singularity command
-    singularity exec -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\
-        {3} bash -c \\
-            source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\
-            recon-all \\
-                -all \\
-                -s {4} \\
-                -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\
-                -sd /out \\
-    '''.format(args.input_dir, args.output_dir, args.freesurfer_license, args.freesurfer_container,
-                               subject, session)
+'''
+# singularity command
+singularity exec -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\
+    {3} bash -c \\
+        source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\
+        recon-all \\
+            -all \\
+            -s {4} \\
+            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\
+            -sd /out \\
+'''.format(args.input_dir, args.output_dir, args.freesurfer_license, args.freesurfer_container,
+                           subject, session)
 
                 if args.useT2:
                     singularity_command += \
-                        ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
-                         '                -T2pial \n'
-                         ''.format(subject, session))
+'''            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\
+            -T2pial
+'''.format(subject, session)
+                        # ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
+                        #  '                -T2pial \n'
+                        #  ''.format(subject, session))
 
                 # todo: vérifier l'option -s = sub-01 ou sub-01_ses-01
                 # todo: voir comment intégrer les autres args** de la commande FS via la config
