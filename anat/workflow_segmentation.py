@@ -1,6 +1,7 @@
 import os
 import shutil
 import sys
+
 sys.path.extend([os.getcwd()])
 from config import (DATA_BIDS_DIR, DERIVATIVES_BIDS_DIR,
                     FREESURFER_CONTAINER, FREESURFER_LICENSE, FREESURFER_STDOUT, FREESURFER_OUTPUTS, FREESURFER_QC,
@@ -29,7 +30,8 @@ def segmentation(args):
         # Define subjects list
         if not args.subjects:
             print(f"Looking for subjects sub-* in {args.input_dir}")
-            subjects = [d for d in os.listdir(args.input_dir) if d.startswith("sub-") and os.path.isdir(os.path.join(args.input_dir, d))]
+            subjects = [d for d in os.listdir(args.input_dir) if
+                        d.startswith("sub-") and os.path.isdir(os.path.join(args.input_dir, d))]
         else:
             subjects = args.subjects
 
@@ -104,37 +106,35 @@ export SUBJECTS_DIR={}
                 # todo: test if FREESURFER_HOME is necessary or not
 
                 singularity_command = \
-'''
-# singularity command
-singularity exec -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\
-    {3} bash -c \\
-        source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\
-        recon-all \\
-            -all \\
-            -s {4} \\
-            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\
-            -sd /out \\
-'''.format(args.input_dir, args.output_dir, args.freesurfer_license, args.freesurfer_container,
-                           subject, session)
+                    ('\n'
+                     '# singularity command\n'
+                     'singularity exec -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\\n'
+                     '    {3} bash -c \\\n'
+                     '        source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
+                     '        recon-all \\\n'
+                     '            -all \\\n'
+                     '            -s {4} \\\n'
+                     '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
+                     '            -sd /out \\\n').format(args.input_dir, args.output_dir, args.freesurfer_license, args.freesurfer_container,
+                                                         subject, session)
 
                 if args.useT2:
                     singularity_command += \
-'''            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\
-            -T2pial
-'''.format(subject, session)
-                        # ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
-                        #  '                -T2pial \n'
-                        #  ''.format(subject, session))
+                        ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
+                         '            -T2pial\n').format(subject, session)
+                    # ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
+                    #  '                -T2pial \n'
+                    #  ''.format(subject, session))
 
                 # todo: vérifier l'option -s = sub-01 ou sub-01_ses-01
                 # todo: voir comment intégrer les autres args** de la commande FS via la config
 
                 ownership_sharing = \
-    '''
-    chmod -Rf 771 {0}
-    
-    echo "ANATOMICAL SEGMENTATION DONE"
-    '''.format(args.output_dir)
+'''
+chmod -Rf 771 {0}
+
+echo "ANATOMICAL SEGMENTATION DONE"
+'''.format(args.output_dir)
                 # todo: chgrp -Rf 347 ${0}
 
                 if args.interactive:
@@ -231,4 +231,3 @@ def main(raw_args=None):
 if __name__ == '__main__':
     main()
     print(os.getcwd())
-
