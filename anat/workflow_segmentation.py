@@ -63,15 +63,17 @@ def segmentation(args):
                 print(subject, ' - ', session)
                 path_to_output = os.path.join(args.output_dir, f"{subject}_{session}")
 
-                # Manage subject folder if already processed
+                # Manage subject folder if already processed and finished successfully
                 if os.path.exists(path_to_output):
-                    if args.skip_processed:
-                        # Skip subject
-                        print(f"Skip already processed subject {subject}_{session}")
-                        continue
-                    else:
-                        # Remove existing subject folder
-                        shutil.rmtree(path_to_output)
+                    logs = os.path.join(path_to_output, 'scripts/recon-all-status.log')
+                    with open(logs, 'r') as f:
+                        lines = f.readlines()
+                    for l in lines:
+                        if 'finished without error' in l and args.skip_processed:
+                            print(f"Skip already processed subject {subject}_{session}")
+                            continue
+                    # Remove existing subject folder
+                    shutil.rmtree(path_to_output)
 
                 # write and launch slurm commands
                 header = \
@@ -210,7 +212,7 @@ def main(raw_args=None):
     p.add_argument("--sessions", "-ses", default=[],
                    help="List of sessions to process (the ses- prefix can be removed). If None, all sessions "
                         "in the subject directory will be processed.")
-    p.add_argument("--skip_processed", "-skip", type=bool, default=False,
+    p.add_argument("--skip_processed", "-skip", type=bool, default=True,
                    help="If True, subjects with existing output files will be skipped. Overwrite if False.")
 
     p.add_argument("--freesurfer_container", default=FREESURFER_CONTAINER,
@@ -240,7 +242,7 @@ def main(raw_args=None):
     with open(os.path.join(args.output_dir, 'config.json'), "w") as f:
         json.dump(config, f, indent=4)
 
-    # segmentation(args)
+    segmentation(args)
 
 
 if __name__ == '__main__':
