@@ -1,11 +1,12 @@
+import json
 import os
 import shutil
 import sys
 
 sys.path.extend([os.getcwd()])
 from config import (DATA_BIDS_DIR,
-                    FREESURFER_CONTAINER, FREESURFER_LICENSE, FREESURFER_STDOUT, FREESURFER_QC,
-                    FREESURFER_DIR, CODE_DIR)
+                    FREESURFER_CONTAINER, FREESURFER_LICENSE, FREESURFER_QC,
+                    FREESURFER_DIR)
 
 
 def segmentation(args):
@@ -23,9 +24,11 @@ def segmentation(args):
     if not os.path.exists(args.input_dir):
         print("Dataset directory does not exist.")
     else:
-        # Create output (derivatives) directory
+        # Create output (derivatives) directories
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)
+            os.makedirs(args.output_dir + '/stdout')
+            os.makedirs(args.output_dir + '/scripts')
 
         # Define subjects list
         if not args.subjects:
@@ -57,8 +60,6 @@ def segmentation(args):
                 if not 'ses-' in session:
                     session = 'ses-' + session
 
-                # todo: check if T2 exists + adapt singularity cmd with 'useT2' option
-
                 print(subject, ' - ', session)
                 path_to_output = os.path.join(args.output_dir, f"{subject}_{session}")
 
@@ -75,14 +76,16 @@ def segmentation(args):
                 # write and launch slurm commands
                 header = \
                     ('#!/bin/bash\n'
-                     '#SBATCH -J freesurfer_{0}\n'
+                     '#SBATCH -J freesurfer_{0}_{1}\n'
                      '#SBATCH -p skylake\n'
                      '#SBATCH --nodes=1\n'
-                     '#SBATCH --mem={1}gb\n'
-                     '#SBATCH -t {2}:00:00\n'
-                     '#SBATCH -e {3}/%x_job-%j.err\n'
-                     '#SBATCH -o {3}/%x_job-%j.out\n').format(subject, args.requested_mem, args.requested_time,
-                                                              args.stdout)
+                     '#SBATCH --mem={2}gb\n'
+                     '#SBATCH -t {3}:00:00\n'
+                     '#SBATCH -e {4}/stdout/%x_job-%j.err\n'
+                     '#SBATCH -o {4}/stdout/%x_job-%j.out\n').format(subject, session,
+                                                                     args.requested_mem,
+                                                                     args.requested_time,
+                                                                     args.output_dir)
 
                 if args.email:
                     header += \
@@ -101,7 +104,6 @@ def segmentation(args):
                      '\n'
                      '# export FreeSurfer environment variables\n'
                      'export SUBJECTS_DIR={}\n').format(args.input_dir)
-                # todo: test if FREESURFER_HOME is necessary or not
 
                 if args.useT2:
                     singularity_command = \
@@ -139,7 +141,6 @@ def segmentation(args):
                                                            args.freesurfer_container,
                                                            subject, session)
 
-                # todo: vérifier l'option -s = sub-01 ou sub-01_ses-01
                 # todo: voir comment intégrer les autres args** de la commande FS via la config
 
                 ownership_sharing = \
@@ -147,15 +148,14 @@ def segmentation(args):
                      'chmod -Rf 771 {0}\n'
                      '\n'
                      'echo "ANATOMICAL SEGMENTATION DONE"\n').format(args.output_dir)
-                # todo: chgrp -Rf 347 ${0}
 
                 if args.interactive:
                     file_content = module_export + singularity_command + ownership_sharing
-                    path_to_script = f'./{subject}_{session}_freesurfer.sh'
+                    path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_freesurfer.sh'
                     cmd = ("sh %s" % path_to_script)
                 else:
                     file_content = header + module_export + singularity_command + ownership_sharing
-                    path_to_script = f'./{subject}_{session}_freesurfer.slurm'
+                    path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_freesurfer.slurm'
                     cmd = ("sbatch %s" % path_to_script)
 
                 with open(path_to_script, 'w') as f:
@@ -165,9 +165,6 @@ def segmentation(args):
                 print(cmd)
                 a = os.system(cmd)
                 print(a)
-
-                # Delete script
-                # todo
 
 
 def segmentation_qc():
@@ -206,22 +203,23 @@ def main(raw_args=None):
                    help="Input directory containing dataset images in BIDS format.")
     p.add_argument("--output_dir", default=FREESURFER_DIR,
                    help="Output directory for FreeSurfer.")
+
     p.add_argument("--subjects", "-sub", default=['1054001'],
                    help="List of subjects to process (the sub- prefix can be removed). If None, all subjects "
                         "in the dataset directory will be processed.")
     p.add_argument("--sessions", "-ses", default=[],
                    help="List of sessions to process (the ses- prefix can be removed). If None, all sessions "
                         "in the subject directory will be processed.")
+    p.add_argument("--skip_processed", "-skip", type=bool, default=False,
+                   help="If True, subjects with existing output files will be skipped. Overwrite if False.")
+
     p.add_argument("--freesurfer_container", default=FREESURFER_CONTAINER,
                    help="Path to FreeSurfer container.")
     p.add_argument("--freesurfer_license", default=FREESURFER_LICENSE,
                    help="Path to FreeSurfer license folder.")
     p.add_argument("--useT2", "-t2", default=True,
                    help="Use T2 if available to improve Pial surface reconstruction.")
-    p.add_argument("--skip_processed", "-skip", type=bool, default=False,
-                   help="If True, subjects with existing output files will be skipped. Overwrite if False.")
-    p.add_argument("--stdout", "-std", type=str, default=CODE_DIR,
-                   help="Standard output directory.")
+
     p.add_argument("--interactive", default=False,
                    help="Use interactive mode to perform segmentation. Default is batch mode.")
     p.add_argument("--requested_mem", "-mem", type=int, default=16,
@@ -235,9 +233,14 @@ def main(raw_args=None):
 
     args = p.parse_args(raw_args)
 
-    # todo : charger un jason avec le jeu de parametres pré-configuré
+    # todo : charger un json avec le jeu de parametres pré-configuré
 
-    segmentation(args)
+    # Save config in json
+    config = vars(args)
+    with open(os.path.join(args.output_dir, 'config.json'), "w") as f:
+        json.dump(config, f, indent=4)
+
+    # segmentation(args)
 
 
 if __name__ == '__main__':
