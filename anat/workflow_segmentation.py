@@ -119,8 +119,8 @@ def segmentation(args):
 
                 if args.useT2:
                     singularity_command += \
-                        ('            -T2 /data/{4}/{5}/anat/{4}_{5}_T2w.nii.gz \\\n'
-                         '            -T2pial \\')
+                        ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
+                         '              -T2pial \\'.format(subject, session))
 
                 # todo: vérifier l'option -s = sub-01 ou sub-01_ses-01
                 # todo: voir comment intégrer les autres args** de la commande FS via la config
