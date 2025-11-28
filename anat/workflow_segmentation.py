@@ -104,7 +104,7 @@ def segmentation(args):
                 singularity_command = \
                     ('\n'
                      '# singularity command\n'
-                     'singularity exec -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\\n'
+                     'apptainer run -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\\n'
                      '    {3} bash -c \\\n'
                      '        source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
                      '        recon-all \\\n'
@@ -132,11 +132,11 @@ def segmentation(args):
 
                 if args.interactive:
                     file_content = module_export + singularity_command + ownership_sharing
-                    path_to_script = './{}_freesurfer.sh'.format(subject)
+                    path_to_script = f'./{subject}_{session}_freesurfer.sh'
                     cmd = ("sbatch %s" % path_to_script)
                 else:
                     file_content = header + module_export + singularity_command + ownership_sharing
-                    path_to_script = './{}_freesurfer.slurm'.format(subject)
+                    path_to_script = f'./{subject}_{session}_freesurfer.slurm'
                     cmd = ("sh %s" % path_to_script)
 
                 with open(path_to_script, 'w') as f:
