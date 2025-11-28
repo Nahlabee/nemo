@@ -36,7 +36,7 @@ logger = logging.getLogger("xcpd_postproc")
 
 THREADS = 8
 
-def run_fmriprep_subject(config_file, fmriprep_sif, bids_dir, out_dir, fs_license, subject, version, extra_flags=[]):
+def run_fmriprep_subject(fmriprep_sif, bids_dir, out_dir, fs_license, subject, config_file=None):
     """Run fMRIPrep using Singularity/Apptainer.
     
      Args:
@@ -75,7 +75,7 @@ def run_fmriprep_subject(config_file, fmriprep_sif, bids_dir, out_dir, fs_licens
     print("Running command:", " ".join(cmd))
     subprocess.run(cmd, check=True)
 
-def run_xcpd_subject(config_file, xcpd_sif, work_dir, fmriprep_dir, output_dir, subject):
+def run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject, config_file=None):
     """Run XCP-D using Apptainer.
     
      Args:
@@ -120,7 +120,7 @@ def run_xcpd_subject(config_file, xcpd_sif, work_dir, fmriprep_dir, output_dir, 
     console.print(f"[green]✔ Completed XCP-D for {subject} using {xcpd_sif.name}[/]")
 
 
-def run_rsfmri_wf_subject(config_file, bids_dir, container_dir, output_dir, subject):
+def main() :
     """Run RS-fMRI workflow using Apptainer.
     
      Args:
@@ -130,23 +130,35 @@ def run_rsfmri_wf_subject(config_file, bids_dir, container_dir, output_dir, subj
         version (str): RS-fMRI version string for logging.
         extra_flags (list): Additional command-line flags for RS-fMRI."""
     
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--bids_dir", required=True)
+    parser.add_argument("--output_dir", required=True)
+    parser.add_argument("--subject", required=True)
+    parser.add_argument("--container_dir", required=True)
+    args = parser.parse_args()
+    
+    bids_dir = Path(args.bids_dir)
+    output_dir = Path(args.output_dir)
+    subject = args.subject
+    container_dir = Path(args.container_dir)
+
     fmriprep_sif = Path( container_dir / "fmriprep_25.2.0.sif")
     xcpd_sif = Path(container_dir / "xcp_d_0.12.0.sif")
     fs_license = Path(container_dir / "license.txt")
     work_dir = Path("/work") / subject
 
 
-    output_dir_fmriprep = output_dir / "fmriprep"
+    output_dir_fmriprep = output_dir / "fmriprep_25.2.0"
     output_dir_fmriprep.mkdir(parents=True, exist_ok=True)     
 
-    output_dir_xcpd = output_dir / "xcpd"
+    output_dir_xcpd = output_dir / "xcpd_0.12.0"
     output_dir_xcpd.mkdir(parents=True, exist_ok=True)
      
     fmriprep_dir = output_dir_fmriprep / subject
 
     console.rule(f"[bold blue]Running RS-fMRI workflow for {subject})[/]")
 
-    run_fmriprep_subject(config_file, fmriprep_sif, bids_dir, output_dir_fmriprep, fs_license, subject)
-    run_xcpd_subject(config_file, xcpd_sif, work_dir, fmriprep_dir, output_dir, subject)
+    run_fmriprep_subject(fmriprep_sif, bids_dir, output_dir_fmriprep, fs_license, subject)
+    run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject)
     
     console.print(f"[green]✔ Completed RS-fMRI workflow for {subject}[/]")
