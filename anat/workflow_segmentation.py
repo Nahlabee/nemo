@@ -72,37 +72,34 @@ def segmentation(args):
 
                 # write and launch slurm commands
                 header = \
-'''#!/bin/bash
-#SBATCH -J freesurfer_{0}
-#SBATCH -p skylake
-#SBATCH --nodes=1
-#SBATCH --mem={1}gb
-#SBATCH --cpus-per-task=32
-#SBATCH -t {2}:00:00
-#SBATCH -e {3}/%x_job-%j.err
-#SBATCH -o {3}/%x_job-%j.out
-'''.format(subject, args.requested_mem, args.requested_time, args.stdout)
+                    ('#!/bin/bash\n'
+                     '#SBATCH -J freesurfer_{0}\n'
+                     '#SBATCH -p skylake\n'
+                     '#SBATCH --nodes=1\n'
+                     '#SBATCH --mem={1}gb\n'
+                     '#SBATCH --cpus-per-task=32\n'
+                     '#SBATCH -t {2}:00:00\n'
+                     '#SBATCH -e {3}/%x_job-%j.err\n'
+                     '#SBATCH -o {3}/%x_job-%j.out\n').format(subject, args.requested_mem, args.requested_time,
+                                                              args.stdout)
 
                 if args.email:
                     header += \
-'''#SBATCH --mail-type=BEGIN,END
-#SBATCH --mail-user={}
-'''.format(args.email)
+                        ('#SBATCH --mail-type=BEGIN,END\n'
+                         '#SBATCH --mail-user={}\n').format(args.email)
 
                 if args.account:
                     header += \
-'''#SBATCH --account={}
-'''.format(args.account)
+                        '#SBATCH --account={}\n'.format(args.account)
 
                 module_export = \
-'''
-module purge
-module load userspace/all
-module load singularity
-
-# export FreeSurfer environment variables
-export SUBJECTS_DIR={}
-'''.format(args.input_dir)
+                    ('\n'
+                     'module purge\n'
+                     'module load userspace/all\n'
+                     'module load singularity\n'
+                     '\n'
+                     '# export FreeSurfer environment variables\n'
+                     'export SUBJECTS_DIR={}\n').format(args.input_dir)
                 # todo: test if FREESURFER_HOME is necessary or not
 
                 singularity_command = \
@@ -115,26 +112,23 @@ export SUBJECTS_DIR={}
                      '            -all \\\n'
                      '            -s {4} \\\n'
                      '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
-                     '            -sd /out \\\n').format(args.input_dir, args.output_dir, args.freesurfer_license, args.freesurfer_container,
+                     '            -sd /out \\\n').format(args.input_dir, args.output_dir, args.freesurfer_license,
+                                                         args.freesurfer_container,
                                                          subject, session)
 
                 if args.useT2:
                     singularity_command += \
                         ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
                          '            -T2pial\n').format(subject, session)
-                    # ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
-                    #  '                -T2pial \n'
-                    #  ''.format(subject, session))
 
                 # todo: vérifier l'option -s = sub-01 ou sub-01_ses-01
                 # todo: voir comment intégrer les autres args** de la commande FS via la config
 
                 ownership_sharing = \
-'''
-chmod -Rf 771 {0}
-
-echo "ANATOMICAL SEGMENTATION DONE"
-'''.format(args.output_dir)
+                    ('\n'
+                     'chmod -Rf 771 {0}\n'
+                     '\n'
+                     'echo "ANATOMICAL SEGMENTATION DONE"\n').format(args.output_dir)
                 # todo: chgrp -Rf 347 ${0}
 
                 if args.interactive:
