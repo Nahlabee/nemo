@@ -22,16 +22,16 @@ eval $(python3 -c 'import config; config.print_paths()')
 apptainer run \
   --nv --cleanenv \
   -B $DATA_BIDS_DIR:/data \
-  -B $DERIVATIVES_BIDS_DIR:/out \
+  -B $DERIVATIVES_BIDS_DIR/qsiprep:/out \
   -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   -B $CODE_DIR:/code \
   --env FREESURFER_HOME=/opt/freesurfer \
   $QSIPREP_CONTAINER /data /out participant \
   --participant-label sub-1054002 --session-id ses-01 \
-  --skip-bids-validation -v -w /out/temp_wf_qsiprep \
+  --skip-bids-validation -v -w /out/temp_qsiprep \
   --fs-license-file /opt/freesurfer/license.txt \
   --output-resolution 1.8 \
-  --eddy-config /code/eddy_params.json \
+  --eddy-config /code/dwi/eddy_params.json \
   --distortion-group-merge average \
   --anat-modality T1w

@@ -21,13 +21,13 @@ eval $(python3 -c 'import config; config.print_paths()')
 # Execute Singularity container
 apptainer run \
   --nv --cleanenv \
-  -B $DERIVATIVES_BIDS_DIR/qsiprep:/data \
+  -B $DERIVATIVES_BIDS_DIR/qsiprep:/in \
   -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
-  $QSIRECON_CONTAINER /data /out participant \
+  $QSIRECON_CONTAINER /in /out participant \
   --participant-label sub-1054001 --session-id ses-01 \
-  -v -w /out/temp_wf_qsirecon \
+  -v -w /out/temp_qsirecon \
   --fs-license-file /opt/freesurfer/license.txt \
   --fs-subjects-dir /freesurfer \
   --output-resolution 1.8 \
