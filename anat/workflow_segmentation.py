@@ -5,7 +5,7 @@ import sys
 sys.path.extend([os.getcwd()])
 from config import (DATA_BIDS_DIR,
                     FREESURFER_CONTAINER, FREESURFER_LICENSE, FREESURFER_STDOUT, FREESURFER_QC,
-                    FREESURFER_DIR)
+                    FREESURFER_DIR, CODE_DIR)
 
 
 def segmentation(args):
@@ -29,9 +29,10 @@ def segmentation(args):
 
         # Define subjects list
         if not args.subjects:
-            print(f"Looking for subjects sub-* in {args.input_dir}")
             subjects = [d for d in os.listdir(args.input_dir) if
                         d.startswith("sub-") and os.path.isdir(os.path.join(args.input_dir, d))]
+            print(f"Subjects found in {args.input_dir}:\n"
+                  f"{subjects}")
         else:
             subjects = args.subjects
 
@@ -44,9 +45,10 @@ def segmentation(args):
             # Define sessions list
             path_to_subject = os.path.join(args.input_dir, subject)
             if not args.sessions:
-                print(f"Looking for sessions ses-* in {path_to_subject}")
                 sessions = [d for d in os.listdir(path_to_subject) if
                             d.startswith("ses-") and os.path.isdir(os.path.join(path_to_subject, d))]
+                print(f"Sessions found in {path_to_subject}:\n"
+                      f"{sessions}")
             else:
                 sessions = args.sessions
 
@@ -64,7 +66,7 @@ def segmentation(args):
                 if os.path.exists(path_to_output):
                     if args.skip_processed:
                         # Skip subject
-                        print(f"Skip already processed subject {subject}")
+                        print(f"Skip already processed subject {subject}_{session}")
                         continue
                     else:
                         # Remove existing subject folder
@@ -218,7 +220,7 @@ def main(raw_args=None):
                    help="Use T2 if available to improve Pial surface reconstruction.")
     p.add_argument("--skip_processed", "-skip", type=bool, default=False,
                    help="If True, subjects with existing output files will be skipped. Overwrite if False.")
-    p.add_argument("--stdout", "-std", type=str, default=FREESURFER_STDOUT,
+    p.add_argument("--stdout", "-std", type=str, default=CODE_DIR,
                    help="Standard output directory.")
     p.add_argument("--interactive", default=False,
                    help="Use interactive mode to perform segmentation. Default is batch mode.")
