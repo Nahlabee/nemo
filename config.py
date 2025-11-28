@@ -5,8 +5,8 @@ CODE_DIR="/scratch/lhashimoto/code/nemo"
 
 FREESURFER_CONTAINER = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
-FREESURFER_DIR="/scratch/lhashimoto/freesurfer/outputs"
-# FREESURFER_DIR = DERIVATIVES_BIDS_DIR + "/freesurfer"
+# FREESURFER_DIR="/scratch/lhashimoto/freesurfer/outputs"
+FREESURFER_DIR = DERIVATIVES_BIDS_DIR + "/freesurfer"
 FREESURFER_STDOUT = FREESURFER_DIR + "/stdout"
 FREESURFER_OUTPUTS = FREESURFER_DIR + "/outputs"
 FREESURFER_QC = FREESURFER_DIR + "/qc"
@@ -19,12 +19,14 @@ def print_paths():
     Print paths to have access to them in a shell script
     """
     paths = {
-        "QSIPREP_CONTAINER": QSIPREP_CONTAINER,
-        "QSIRECON_CONTAINER": QSIRECON_CONTAINER,
         "DATA_BIDS_DIR": DATA_BIDS_DIR,
         "DERIVATIVES_BIDS_DIR": DERIVATIVES_BIDS_DIR,
+        "FREESURFER_CONTAINER": FREESURFER_CONTAINER,
         "FREESURFER_LICENSE": FREESURFER_LICENSE,
         "FREESURFER_DIR": FREESURFER_DIR,
+        "FREESURFER_STDOUT": FREESURFER_STDOUT,
+        "QSIPREP_CONTAINER": QSIPREP_CONTAINER,
+        "QSIRECON_CONTAINER": QSIRECON_CONTAINER,
         "CODE_DIR": CODE_DIR
     }
     for key, value in paths.items():
