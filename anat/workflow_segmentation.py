@@ -113,7 +113,7 @@ def segmentation(args):
                          '            -s {4}_{5} \\\n'
                          '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
                          '            -sd /out \\\n'
-                         '            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
+                         '            -T2 /data/{4}/{5}/anat/{4}_{5}_T2w.nii.gz \\\n'
                          '            -T2pial"\n').format(args.input_dir,
                                                           args.output_dir,
                                                           args.freesurfer_license,
