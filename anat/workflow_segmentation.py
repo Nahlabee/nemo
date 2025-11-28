@@ -101,24 +101,41 @@ def segmentation(args):
                      'export SUBJECTS_DIR={}\n').format(args.input_dir)
                 # todo: test if FREESURFER_HOME is necessary or not
 
-                singularity_command = \
-                    ('\n'
-                     '# singularity command\n'
-                     'apptainer run -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\\n'
-                     '    {3} bash -c \\\n'
-                     '        source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
-                     '        recon-all \\\n'
-                     '            -all \\\n'
-                     '            -s {4}_{5} \\\n'
-                     '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
-                     '            -sd /out \\\n').format(args.input_dir, args.output_dir, args.freesurfer_license,
-                                                         args.freesurfer_container,
-                                                         subject, session)
-
                 if args.useT2:
-                    singularity_command += \
-                        ('            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
-                         '            -T2pial\n').format(subject, session)
+                    singularity_command = \
+                        ('\n'
+                         '# singularity command\n'
+                         'apptainer run -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\\n'
+                         '    {3} bash -c \\\n'
+                         '        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
+                         '        recon-all \\\n'
+                         '            -all \\\n'
+                         '            -s {4}_{5} \\\n'
+                         '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
+                         '            -sd /out \\\n'
+                         '            -T2 /data/{0}/{1}/anat/{0}_{1}_T2w.nii.gz \\\n'
+                         '            -T2pial"\n').format(args.input_dir,
+                                                          args.output_dir,
+                                                          args.freesurfer_license,
+                                                          args.freesurfer_container,
+                                                          subject, session)
+
+                else:
+                    singularity_command = \
+                        ('\n'
+                         '# singularity command\n'
+                         'apptainer run -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\\n'
+                         '    {3} bash -c \\\n'
+                         '        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
+                         '        recon-all \\\n'
+                         '            -all \\\n'
+                         '            -s {4}_{5} \\\n'
+                         '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
+                         '            -sd /out"\n').format(args.input_dir,
+                                                           args.output_dir,
+                                                           args.freesurfer_license,
+                                                           args.freesurfer_container,
+                                                           subject, session)
 
                 # todo: vérifier l'option -s = sub-01 ou sub-01_ses-01
                 # todo: voir comment intégrer les autres args** de la commande FS via la config
