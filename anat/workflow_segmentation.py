@@ -3,8 +3,8 @@ import shutil
 import sys
 
 sys.path.extend([os.getcwd()])
-from config import (DATA_BIDS_DIR, DERIVATIVES_BIDS_DIR,
-                    FREESURFER_CONTAINER, FREESURFER_LICENSE, FREESURFER_STDOUT, FREESURFER_OUTPUTS, FREESURFER_QC,
+from config import (DATA_BIDS_DIR,
+                    FREESURFER_CONTAINER, FREESURFER_LICENSE, FREESURFER_STDOUT, FREESURFER_QC,
                     FREESURFER_DIR)
 
 
@@ -35,7 +35,7 @@ def segmentation(args):
         else:
             subjects = args.subjects
 
-        for subject in subjects[:1]:
+        for subject in subjects:
 
             # Add sub prefix if not given by the user
             if not 'sub-' in subject:
@@ -77,7 +77,6 @@ def segmentation(args):
                      '#SBATCH -p skylake\n'
                      '#SBATCH --nodes=1\n'
                      '#SBATCH --mem={1}gb\n'
-                     '#SBATCH --cpus-per-task=32\n'
                      '#SBATCH -t {2}:00:00\n'
                      '#SBATCH -e {3}/%x_job-%j.err\n'
                      '#SBATCH -o {3}/%x_job-%j.out\n').format(subject, args.requested_mem, args.requested_time,
@@ -110,7 +109,7 @@ def segmentation(args):
                      '        source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
                      '        recon-all \\\n'
                      '            -all \\\n'
-                     '            -s {4} \\\n'
+                     '            -s {4}_{5} \\\n'
                      '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
                      '            -sd /out \\\n').format(args.input_dir, args.output_dir, args.freesurfer_license,
                                                          args.freesurfer_container,
@@ -144,9 +143,9 @@ def segmentation(args):
                     f.write(file_content)
 
                 # launch slurm script
-                # print(cmd)
-                # a = os.system(cmd)
-                # print(a)
+                print(cmd)
+                a = os.system(cmd)
+                print(a)
 
                 # Delete script
                 # todo
@@ -188,14 +187,12 @@ def main(raw_args=None):
                    help="Input directory containing dataset images in BIDS format.")
     p.add_argument("--output_dir", default=FREESURFER_DIR,
                    help="Output directory for FreeSurfer.")
-    p.add_argument("--subjects", "-sub", default=[],
+    p.add_argument("--subjects", "-sub", default=['1054001'],
                    help="List of subjects to process (the sub- prefix can be removed). If None, all subjects "
                         "in the dataset directory will be processed.")
     p.add_argument("--sessions", "-ses", default=[],
                    help="List of sessions to process (the ses- prefix can be removed). If None, all sessions "
                         "in the subject directory will be processed.")
-    p.add_argument("--interactive", default=False,
-                   help="Use interactive mode to perform segmentation. Default is batch mode.")
     p.add_argument("--freesurfer_container", default=FREESURFER_CONTAINER,
                    help="Path to FreeSurfer container.")
     p.add_argument("--freesurfer_license", default=FREESURFER_LICENSE,
@@ -206,9 +203,11 @@ def main(raw_args=None):
                    help="If True, subjects with existing output files will be skipped. Overwrite if False.")
     p.add_argument("--stdout", "-std", type=str, default=FREESURFER_STDOUT,
                    help="Standard output directory.")
+    p.add_argument("--interactive", default=False,
+                   help="Use interactive mode to perform segmentation. Default is batch mode.")
     p.add_argument("--requested_mem", "-mem", type=int, default=16,
                    help="Requested RAM on cluster node (in GB). Default is 16GB (minimum recommended for FreeSurfer).")
-    p.add_argument("--requested_time", "-time", type=int, default=9, choices=range(10),
+    p.add_argument("--requested_time", "-time", type=int, default=9,
                    help="Requested time on cluster node (in hours). Default is 9h.")
     p.add_argument("--email", "-em", type=str, default=None,
                    help="To receive begin/end job notifications. No notification by default.")
@@ -223,5 +222,5 @@ def main(raw_args=None):
 
 
 if __name__ == '__main__':
+    print('Current working directory: ', os.getcwd())
     main()
-    print(os.getcwd())
