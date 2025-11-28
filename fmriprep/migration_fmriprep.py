@@ -22,13 +22,20 @@ import pandas as pd # type: ignore
 import nibabel as nib # type: ignore
 import logging
 import numpy as np # type: ignore
+from rich.console import Console
+console = Console()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger("xcpd_postproc")
 
+# ========================
+# CONFIGURATION
+# ========================
 
-def run_singularity(fmriprep_sif, bids_dir, out_dir, fs_license, subject, version, extra_flags=[]):
+THREADS = 8
+
+def run_fmriprep_subject(fmriprep_sif, bids_dir, out_dir, fs_license, subject, version, extra_flags=[]):
     """Run fMRIPrep using Singularity/Apptainer.
     
      Args:
@@ -59,7 +66,7 @@ def run_singularity(fmriprep_sif, bids_dir, out_dir, fs_license, subject, versio
         "--output-spaces", "fsLR:den-32k", "T1w", "fsaverage:den-164k", "MNI152NLin6Asym",
         "--ignore", "slicetiming",
         "--mem-mb", str(50000),
-        "--nthreads", str(8),
+        "--nthreads", str(THREADS),
         "--skip-bids-validation",
         "--clean-workdir"
     ]
@@ -226,10 +233,11 @@ def main():
     sif_25 = sif_dir / "fmriprep_25.2.0.sif"
 
     # Run 23.2.0
-    # run_singularity(sif_23, bids_dir, out_23, fs_license, subject, "23.2.0",
+    # run_fmriprep_subject(sif_23, bids_dir, out_23, fs_license, subject, "23.2.0",
     #                 extra_flags=["--bold2t1w-dof", str(6), "--bold2t1w-init", "register"])
     # Run 25.2.0
-    run_singularity(sif_25, bids_dir, out_25, fs_license, subject, "25.2.0",
+    
+    run_fmriprep_subject(sif_25, bids_dir, out_25, fs_license, subject, "25.2.0",
                     extra_flags=["--bold2anat-dof", str(6), "--bold2anat-init", "auto"])
                     #              "--write-graph", "--skip-bids-validation"])
 

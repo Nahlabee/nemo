@@ -24,8 +24,8 @@ console = Console()
 # ========================
 
 THREADS = 8
-OUTPUT_SPACES = ["MNI152NLin2009cAsym", "fsLR"]
-SMOOTHING_FWHM = 6
+# OUTPUT_SPACES = ["MNI152NLin2009cAsym", "fsLR"]
+# SMOOTHING_FWHM = 6
 
 
 # ========================
