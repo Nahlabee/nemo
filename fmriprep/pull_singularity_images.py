@@ -22,19 +22,21 @@ import sys
 # CONFIGURATION
 # ========================
 
-PROJECT_ROOT = Path("/scratch/hrasoanandrianina/code/nemo/fmriprep")  # absolute path to your project root
-CONTAINER_DIR = Path("/scratch/hrasoanandrianina/containers")  
+PROJECT_ROOT = Path("/home/henit/nemo/fmriprep")  # absolute path to your project root
+CONTAINER_DIR = Path("/home/henit/nemo/fmriprep/containers")  
 
 IMAGES = {
     "fmriprep": ["23.2.0", "25.2.0"],
     "xcp_d": ["0.12.0"],
-    "freesurfer": ["7.4.1"]
+    "freesurfer": ["7.4.1"],
+    "mriqc": ["24.0.2"]
 }
 
 DOCKER_REPOS = {
     "fmriprep": "nipreps/fmriprep",
     "xcp_d": "pennlinc/xcp_d",
     "freesurfer": "freesurfer/freesurfer",
+    "mriqc": "nipreps/mriqc"
 }
 
 
