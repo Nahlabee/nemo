@@ -17,7 +17,7 @@ Usage:
 from curses import version
 import subprocess
 from pathlib import Path
-import argparse
+import argparse, os
 import json
 import pandas as pd # type: ignore
 import nibabel as nib # type: ignore
@@ -34,9 +34,9 @@ logger = logging.getLogger("xcpd_postproc")
 # CONFIGURATION
 # ========================
 
-THREADS = 8
+THREADS = 4
 
-def run_fmriprep_subject(fmriprep_sif, bids_dir, out_dir, fs_license, subject, config_file=None):
+def run_fmriprep_subject(fmriprep_sif, bids_dir, out_dir, fs_license, subject, session_id, config_file=None):
     """Run fMRIPrep using Singularity/Apptainer.
     
      Args:
@@ -58,6 +58,8 @@ def run_fmriprep_subject(fmriprep_sif, bids_dir, out_dir, fs_license, subject, c
         str(fmriprep_sif),
         "/data", "/out", "participant",
         "--participant-label", str(subject),
+        "--session-label", str(session_id),
+        "--bids-filter-file", "/home/hrasoanandrianina/bids_filter_ses-"+str(session_id) +".json",
         "--fd-spike-threshold",str(0.5),
         "--dvars-spike-threshold", str(2.0),
         "--cifti-output", "91k",
@@ -66,16 +68,16 @@ def run_fmriprep_subject(fmriprep_sif, bids_dir, out_dir, fs_license, subject, c
         "--fs-license-file", "/license.txt",
         "--output-spaces", "fsLR:den-32k", "T1w", "fsaverage:den-164k", "MNI152NLin6Asym",
         "--ignore", "slicetiming",
-        "--mem-mb", str(50000),
+        "--mem-mb", str(25000),
         "--nthreads", str(THREADS),
         "--skip-bids-validation",
-        "--clean-workdir"
+        "-w", "/home/hrasoanandrianina/work",  
     ]
     # cmd.extend(extra_flags)
     print("Running command:", " ".join(cmd))
     subprocess.run(cmd, check=True)
 
-def run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject, config_file=None):
+def run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject, session_id, config_file=None):
     """Run XCP-D using Apptainer.
     
      Args:
@@ -99,8 +101,9 @@ def run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject, conf
     "--mode", "abcd",
     "--motion-filter-type", "none",
     "--input-type", "fmriprep",
-    "--participant-label", subject,
-    "--bids-filter-file", "/home/henit/fmriprep_data/bids_dir/bids_filter.json",
+    "--participant-label", str(subject),
+    "--session-id", str(session_id),
+    "--bids-filter-file", "/home/hrasoanandrianina/bids_filter_ses-"+str(session_id) +".json",
     
     "--nuisance-regressors", "36P",
     "--smoothing", "4",
@@ -112,9 +115,9 @@ def run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject, conf
     "--nthreads", str(THREADS),
     "--omp-nthreads", str(THREADS),
 
-    "-w", "/work",                      # must be writable!
+    "-w", "/home/hrasoanandrianina/work",                      # must be writable!
     "--stop-on-first-crash"
-]
+    ]
     console.print(f"[cyan]Executing:[/]\n{' '.join(cmd)}")
     subprocess.run(cmd, check=True)
     console.print(f"[green]✔ Completed XCP-D for {subject} using {xcpd_sif.name}[/]")
@@ -133,20 +136,19 @@ def main() :
     parser = argparse.ArgumentParser()
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--output_dir", required=True)
-    parser.add_argument("--subject", required=True)
+    #parser.add_argument("--subject", required=True)
     parser.add_argument("--container_dir", required=True)
     args = parser.parse_args()
     
     bids_dir = Path(args.bids_dir)
     output_dir = Path(args.output_dir)
-    subject = args.subject
+    #subject = args.subject
     container_dir = Path(args.container_dir)
 
     fmriprep_sif = Path( container_dir / "fmriprep_25.2.0.sif")
     xcpd_sif = Path(container_dir / "xcp_d_0.12.0.sif")
     fs_license = Path(container_dir / "license.txt")
-    work_dir = Path("/work") / subject
-
+    
 
     output_dir_fmriprep = output_dir / "fmriprep_25.2.0"
     output_dir_fmriprep.mkdir(parents=True, exist_ok=True)     
@@ -154,11 +156,21 @@ def main() :
     output_dir_xcpd = output_dir / "xcpd_0.12.0"
     output_dir_xcpd.mkdir(parents=True, exist_ok=True)
      
-    fmriprep_dir = output_dir_fmriprep / subject
-
-    console.rule(f"[bold blue]Running RS-fMRI workflow for {subject})[/]")
-
-    run_fmriprep_subject(fmriprep_sif, bids_dir, output_dir_fmriprep, fs_license, subject)
-    run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject)
+    for subject in os.listdir(bids_dir):
     
-    console.print(f"[green]✔ Completed RS-fMRI workflow for {subject}[/]")
+      fmriprep_dir = output_dir_fmriprep / subject
+      work_dir = Path("/work") / subject
+
+      console.rule(f"[bold blue]Running RS-fMRI workflow for {subject})[/]")
+
+      run_fmriprep_subject(fmriprep_sif, bids_dir, output_dir_fmriprep, fs_license, subject, session_id=str("01"))
+      run_fmriprep_subject(fmriprep_sif, bids_dir, output_dir_fmriprep, fs_license, subject, session_id=str("02"))
+    
+      run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject, session_id=str("01"))
+      run_xcpd_subject(xcpd_sif, work_dir, fmriprep_dir, output_dir, subject, session_id=str("02"))
+      console.print(f"[green]✔ Completed RS-fMRI workflow for {subject}[/]")
+    
+    console.print(f"[green]✔ Completed RS-fMRI workflow for all database [/]")
+    
+if __name__ == "__main__":
+    main()

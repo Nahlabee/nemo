@@ -22,8 +22,8 @@ import sys
 # CONFIGURATION
 # ========================
 
-PROJECT_ROOT = Path("/home/henit/nemo/fmriprep")  # absolute path to your project root
-CONTAINER_DIR = PROJECT_ROOT / "containers"
+PROJECT_ROOT = Path("/scratch/hrasoanandrianina/code/nemo/fmriprep")  # absolute path to your project root
+CONTAINER_DIR = Path("/scratch/hrasoanandrianina/containers")  
 
 IMAGES = {
     "fmriprep": ["23.2.0", "25.2.0"],
