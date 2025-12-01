@@ -1,12 +1,12 @@
 [environment]
 
 [execution]
-bids_database_dir = None
-bids_filter = None
+bids_database_dir = ''
+bids_filter = ''
 boilerplate_only = false
 debug = []
 log_level = 25
-low_mem = None
+#low_mem
 notrack = false
 reports_only = false
 skip_anat_based_spatial_normalization = false
@@ -34,7 +34,7 @@ ignore = []
 infant = false
 intramodal_template_iters = 0
 intramodal_template_transform = "BSplineSyN"
-longitudinal = None
+#longitudinal
 no_b0_harmonization = false
 pepolar_method = "TOPUP"
 separate_all_dwis = false
@@ -44,9 +44,9 @@ unringing_method = "mrdegibbs"
 use_syn_sdc = false
 
 [nipype]
-nprocs = None
-omp_nthreads = None
-plugin = ''
+nprocs = 2
+#omp_nthreads = None
+plugin = 'MultiProc'
 remove_unnecessary_outputs = false
 resource_monitor = false
 stop_on_first_crash = false
