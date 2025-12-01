@@ -15,9 +15,9 @@ import config
 # ------------------------------
 
 BIDS_DIR        = config.BIDS_DIR
-OUT_MRIQC_DIR   = config.MRIQC_OUTPUT
+OUT_MRIQC_DIR   = config.OUT_MRIQC_DIR
 WORK_DIR        = config.WORK_DIR
-SLURM_DIR       = config.SLURM_SCRIPTS
+SLURM_DIR       = config.SLURM_DIR
 MRIQC_SIF       = config.MRIQC_SIF
 
 N_THREADS       = int(config.SLURM_CPUS) // 2
@@ -64,12 +64,12 @@ def mriqc_is_done(sub, ses):
 
 def make_slurm_mriqc_script(subject, session_id):
     """Create a SLURM job script to run MRIQC for a given subject/session."""
-    job_file = Path(SLURM_DIR) / f"mriqc_sub-{subject}_ses-{session_id}.slurm"
+    job_file = Path(SLURM_DIR) / f"mriqc_{subject}_{session_id}.slurm"
     
     content = f"""#!/bin/bash
-#SBATCH --job-name=mriqc_sub-{subject}_ses-{session_id}
-#SBATCH --output={SLURM_DIR}/mriqc_sub-{subject}_ses-{session_id}.out
-#SBATCH --error={SLURM_DIR}/mriqc_sub-{subject}_ses-{session_id}.err
+#SBATCH --job-name=mriqc_{subject}_{session_id}
+#SBATCH --output={SLURM_DIR}/mriqc_{subject}_{session_id}.out
+#SBATCH --error={SLURM_DIR}/mriqc_{subject}_{session_id}.err
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={N_THREADS}
 #SBATCH --mem={MEM_GB}
@@ -96,7 +96,7 @@ apptainer run
     /data /out participant \
     --participant_label {subject} \
     --session-id {session_id} \
-    --bids-filter-file /home/hrasoanandrianina/bids_filter_ses-{session_id}.json \
+    --bids-filter-file /home/hrasoanandrianina/bids_filter_{session_id}.json \
     --nprocs {N_THREADS} \
     --omp-nthreads {OMP_THREADS} \
     --mem {MEM_GB} \
