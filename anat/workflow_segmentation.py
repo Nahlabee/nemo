@@ -234,7 +234,7 @@ def main(raw_args=None):
 
     args = p.parse_args(raw_args)
 
-    general_config_file = f"{os.path.dirname(__file__)}/config.json"
+    general_config_file = f"{Path(__file__).parent.parent}/config.json"
     config = load_config(general_config_file)
     sub_keys = ['common', 'slurm', 'freesurfer']
     for sub_key in sub_keys:
