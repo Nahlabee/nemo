@@ -28,7 +28,6 @@
   "separate_all_dwis": false,
   "distortion_group_merge": "average",
   "anatomical_template": "MNI152NLin2009cAsym",
-  "output_resolution": 1.8,
   "b0_to_t1w_transform": "Rigid",
   "intramodal_template_iters": 0,
   "intramodal_template_transform": "BSplineSyN",

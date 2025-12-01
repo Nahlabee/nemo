@@ -180,6 +180,8 @@ def main(raw_args=None):
                    help="Configuration file containing all the workflow settings.")
     p.add_argument("--config_qsiprep", type=str,
                    help="Configuration file containing all the workflow settings.")
+    p.add_argument("--output_resolution",
+                   help="The isotropic voxel size in mm the data will be resampled to after preprocessing.")  # Mandatory
 
     # SLURM
     p.add_argument("--interactive",
