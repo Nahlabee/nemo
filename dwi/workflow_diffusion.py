@@ -122,7 +122,7 @@ def preprocessing(args):
                     ('\n'
                      'chmod -Rf 771 {0}\n'
                      '\n'
-                     'echo "ANATOMICAL SEGMENTATION DONE"\n').format(args.output_dir)
+                     'echo "DWI PREPROCESSING DONE"\n').format(args.output_dir)
 
                 if args.interactive:
                     file_content = module_export + singularity_command + ownership_sharing
