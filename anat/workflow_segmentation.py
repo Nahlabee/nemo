@@ -245,6 +245,7 @@ def main(raw_args=None):
 
     # Save config in json
     config = vars(args)
+    print(args.output_dir)
     with open(os.path.join(args.output_dir, 'config.json'), "w") as f:
         json.dump(config, f, indent=4)
 
