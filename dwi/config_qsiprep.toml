@@ -1,4 +1,3 @@
-skip_bids_validation = true
 #bids_filter_file = ""
 #bids_database_dir = ""
 #nprocs = None
