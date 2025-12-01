@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-sys.path.extend(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent.parent))
 from utils import load_config
 
 
