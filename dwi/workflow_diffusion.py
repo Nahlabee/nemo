@@ -106,13 +106,15 @@ def preprocessing(args):
                      '    -B {1}:/out \\\n'
                      '    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
                      '    -B {2}/license.txt:/opt/freesurfer/license.txt \\\n'
+                     '    -B {6}:/config/eddy-config.json \\\n'
+                     '    -B {7}:/config/config-file.json \\\n'
                      '    --env FREESURFER_HOME=/opt/freesurfer \\\n'
                      '    {3} /data /out participant \\\n'
                      '    --participant-label {4} --session-id {5} \\\n'
                      '    -w /out/temp_qsiprep \\\n'
                      '    --fs-license-file /opt/freesurfer/license.txt \\\n'
-                     '    --eddy-config {6} \\\n'
-                     '    --config-file {7} \\\n'
+                     '    --eddy-config /config/eddy-config.json \\\n'
+                     '    --config-file /config/config-file.json \\\n'
                      '    --output-resolution {8}\n').format(args.input_dir,
                                                              args.output_dir,
                                                              args.freesurfer_license,
