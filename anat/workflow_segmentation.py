@@ -1,8 +1,9 @@
 import json
 import os
 import shutil
+import sys
+sys.path.extend([os.path.dirname(__file__).parent])
 from utils import load_config
-# sys.path.extend([os.getcwd()])
 
 
 def segmentation(args):
