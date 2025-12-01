@@ -85,7 +85,7 @@ module load python3/3.12.0
 
 echo " --------------- Starting MRIQC for subject: {subject}, session: {session_id} ---------------"
 
-apptainer run 
+apptainer run \
     --cleanenv \
     -B {BIDS_DIR}:/data:ro \
     -B {OUT_MRIQC_DIR}:/out \
