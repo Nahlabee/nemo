@@ -1,6 +1,6 @@
 {
   "skip_bids_validation": true,
-  "bids_filter_file FILE": null,
+  "bids_filter_file": null,
   "bids_database_dir": null,
   "nprocs": null,
   "omp_nthreads": null,
