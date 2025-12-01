@@ -145,9 +145,7 @@ def segmentation(args):
 
                 ownership_sharing = \
                     ('\n'
-                     'chmod -Rf 771 {0}\n'
-                     '\n'
-                     'echo "ANATOMICAL SEGMENTATION DONE"\n').format(args.output_dir)
+                     'chmod -Rf 771 {0}\n').format(args.output_dir)
 
                 if args.interactive:
                     file_content = module_export + singularity_command + ownership_sharing

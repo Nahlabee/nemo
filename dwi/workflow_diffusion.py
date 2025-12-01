@@ -1,7 +1,9 @@
 import os
 import json
 import sys
+
 from pathlib import Path
+
 sys.path.append(str(Path(__file__).parent.parent))
 from utils import load_config
 
@@ -110,19 +112,19 @@ def preprocessing(args):
                      '    -w /out/temp_qsiprep \\\n'
                      '    --fs-license-file /opt/freesurfer/license.txt \\\n'
                      '    --eddy-config {6} \\\n'
-                     '    --config-file {7}\n').format(args.input_dir,
-                                                       args.output_dir,
-                                                       args.freesurfer_license,
-                                                       args.qsiprep_container,
-                                                       subject, session,
-                                                       args.config_eddy,
-                                                       args.config_qsiprep)
+                     '    --config-file {7} \\\n'
+                     '    --output-resolution {8}\n').format(args.input_dir,
+                                                             args.output_dir,
+                                                             args.freesurfer_license,
+                                                             args.qsiprep_container,
+                                                             subject, session,
+                                                             args.config_eddy,
+                                                             args.config_qsiprep,
+                                                             args.output_resolution)
 
                 ownership_sharing = \
                     ('\n'
-                     'chmod -Rf 771 {0}\n'
-                     '\n'
-                     'echo "DWI PREPROCESSING DONE"\n').format(args.output_dir)
+                     'chmod -Rf 771 {0}\n').format(args.output_dir)
 
                 if args.interactive:
                     file_content = module_export + singularity_command + ownership_sharing
