@@ -44,7 +44,7 @@ unringing_method = "mrdegibbs"
 use_syn_sdc = false
 
 [nipype]
-nprocs = 2
+#nprocs = 2
 #omp_nthreads = None
 plugin = 'MultiProc'
 remove_unnecessary_outputs = false
