@@ -1,14 +1,8 @@
 import json
 import os
 import shutil
-import sys
-
 from utils import load_config
-
-sys.path.extend([os.getcwd()])
-from config import (DATA_BIDS_DIR,
-                    FREESURFER_CONTAINER, FREESURFER_LICENSE, FREESURFER_QC,
-                    FREESURFER_DIR)
+# sys.path.extend([os.getcwd()])
 
 
 def segmentation(args):
