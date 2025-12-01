@@ -1,43 +1,87 @@
-# Paths to container images
-DIR_CONTAINER = "/home/henit/nemo/fmriprep/containers"
+"""
+config.py
 
-# Paths to BIDS input directory
-DIR_INPUTS = "/home/henit/fmriprep_data/bids_dir"
+Usage:
+  - In Python: `import config; print(config.BIDS_DIR)`
+  - In bash/SLURM before running containerized commands:
+      eval "$(python3 -c 'import sys; sys.path.insert(0,"/project"); import config; config.print_paths()')"
+    (replace /project with the path you bind into the container)
+"""
 
-# Outputs structures
-DERIVATIVES = "/home/henit/fmriprep_data/derivatives"
-FREESURFER_OUTPUTS = f"{DERIVATIVES}/freesurfer"
+from pathlib import Path
+import json
+import os
 
-# Freesurfer license
-FS_LICENSE = "/home/henit/fmriprep_data/license.txt"
+# Find config.json relative to this file (project root)
+_THIS_DIR = Path(__file__).resolve().parent
+_CONFIG_FILE = _THIS_DIR / "config.json"
 
-# Freesurfer SIF
-FREESURFER_SIF = f"{DIR_CONTAINER}/freesurfer_7.4.1.sif"
+# Defaults (safe fallback)
+_defaults = {
+    "BIDS_DIR": "/scratch/hrasoanandrianina/braint_database",
+"WORK_DIR": "/scratch/hrasoanandrianina/work",
+"FS_LICENSE_FILE": "/scratch/hrasoanandrianina/containers/license.txt",
 
-# Logging & QC
-LOG_DIR = "/home/henit/fmriprep_data/logs"
-QC_DIR = "/home/henit/fmriprep_data/qc"
+"MRIQC_SIF": "/scratch/hrasoanandrianina/containers/mriqc_24.0.2.sif",
+"OUT_MRIQC_DIR": "/scratch/hrasoanandrianina/derivatives/mriqc_24.0.2",
 
-QC_TABLE = "/home/henit/fmriprep_data/freesurfer_qc.csv"
+"FMRIPREP_SIF": "/scratch/hrasoanandrianina/containers/fmriprep_25.2.0.sif",
+"OUT_FMRIPREP_DIR": "/scratch/hrasoanandrianina/derivatives/fmriprep_25.2.0",
 
+"XCP_D_SIF": "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif",
+"OUT_XCP_D_DIR": "/scratch/hrasoanandrianina/derivatives/xcp_d_0.12.0",
 
-DIR_FREESURFER = "/home/henit/freesurfer/freesurfer"
+"SLURM_DIR": "./slurm_jobs",
+"SLURM_PARTITION": "skylake",
+"SLURM_CPUS": "16",
+"SLURM_MEM": "64G",
+"SLURM_TIME": "12:00:00"
+}
+
+# load json if present
+_config = {}
+if _CONFIG_FILE.exists():
+    try:
+        with _CONFIG_FILE.open("r") as f:
+            _config = json.load(f)
+    except Exception as e:
+        raise RuntimeError(f"Failed to parse {_CONFIG_FILE}: {e}")
+
+# Merge defaults with config.json, env overrides win
+for k, v in _defaults.items():
+    val = _config.get(k, v)
+    # allow environment to override
+    val = os.environ.get(k, str(val))
+    # cast numeric fields back to int if defaults are int
+    if isinstance(_defaults[k], int):
+        try:
+            val = int(val)
+        except Exception:
+            val = _defaults[k]
+    globals()[k] = val
 
 def print_paths():
     """
-    Print paths to have access to them in a shell script
-    """
-    paths = {
-        "DIR_CONTAINER": DIR_CONTAINER,
-        "DIR_INPUTS": DIR_INPUTS,
-        "FREESURFER_OUTPUTS": FREESURFER_OUTPUTS,
-        "FS_LICENSE": FS_LICENSE,
-        "DIR_FREESURFER": DIR_FREESURFER,
-        "LOG_DIR": LOG_DIR,
-        "QC_TABLE": QC_TABLE   
-    }
-    for key, value in paths.items():
-        print(f"{key}={value}")
+    Print environment assignment lines for shell `eval`:
 
-if __name__ == "__main__":
-    print_paths()
+    Example usage from shell (project dir must be importable):
+      eval $(python3 -c 'import sys; sys.path.insert(0,"/project"); import config; config.print_paths()')
+    """
+    for name, val in list(globals().items()):
+        if name.isupper():
+            # escape double quotes
+            s = str(val).replace('"', '\\"')
+            print(f'export {name}="{s}"')
+
+def write_env_file(path):
+    """
+    Write a shell file that exports all config variables.
+    """
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("w") as f:
+        for name, val in list(globals().items()):
+            if name.isupper():
+                s = str(val).replace('"', '\\"')
+                f.write(f'export {name}="{s}"\n')
+    return str(p)

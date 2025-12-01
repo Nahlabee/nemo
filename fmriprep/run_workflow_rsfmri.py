@@ -1,28 +1,34 @@
 #!/usr/bin/env python3
-import os
+import os, sys
 import subprocess
 from pathlib import Path
+
+# ------------------------------------------
+# Add project root to PYTHONPATH
+# ------------------------------------------
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+import config
 
 # ------------------------------
 # CONFIGURATION
 # ------------------------------
-BIDS_DIR = "/scratch/hrasoanandrianina/braint_database"
-WORK_DIR = "/scratch/hrasoanandrianina/work"
-LICENSE_FILE = "/scratch/hrasoanandrianina/containers/license.txt"
+BIDS_DIR        = config.BIDS_DIR
+WORK_DIR        = config.WORK_DIR
+LICENSE_FILE    = config.LICENSE_FILE
+FMRIPREP_SIF    = config.FMRIPREP_SIF
+XCPD_SIF        = config.XCPD_SIF
 
-FMRIPREP_SIF = "/scratch/hrasoanandrianina/containers/fmriprep_25.2.0.sif"
-XCPD_SIF = "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif"
+OUT_FMRIPREP_DIR = config.OUT_FMRIPREP_DIR
+OUT_XCPD_DIR     = config.OUT_XCPD_DIR
 
-OUT_FMRIPREP_DIR = "/scratch/hrasoanandrianina/derivatives/fmriprep_25.2.0"
-OUT_XCPD_DIR = "/scratch/hrasoanandrianina/derivatives/xcp_d_0.12.0"
-
-SLURM_DIR = "./slurm_jobs"     # Where job scripts will be saved
-N_THREADS = 24
-OMP_THREADS = 8
-MEM_GB = 64
-TIME = "24:00:00"               # walltime
-PARTITION = "skylake"            # SLURM partition name
-RUN_ARRAY = True                # False = one job per subject
+SLURM_DIR       = config.SLURM_SCRIPTS
+N_THREADS       = config.SLURM_CPUS
+OMP_THREADS     = 8
+MEM_GB          = config.SLURM_MEM
+TIME            = config.SLURM_TIME               # walltime
+PARTITION       = config.SLURM_PARTITION            # SLURM partition name
 # ------------------------------
 
 def get_subjects(bids_dir):
@@ -70,49 +76,49 @@ def xcpd_is_done(sub, ses):
 def make_slurm_fmriprep_script(subject, session_id):
     """Generate the SLURM job script."""
     os.makedirs(SLURM_DIR, exist_ok=True)
-    job_file = Path(SLURM_DIR) / f"job_fmriprep_{subject}_{session_id}.slurm"
+    job_file = Path(SLURM_DIR) / f"slurm_fmriprep_{subject}_{session_id}.slurm"
 
     content = f"""#!/bin/bash
-#SBATCH --job-name=job_fmriprep_{subject}_{session_id}
+#SBATCH --job-name=slurm_fmriprep_{subject}_{session_id}
 #SBATCH --output={SLURM_DIR}/slurm_fmriprep_{subject}_{session_id}.out
 #SBATCH --error={SLURM_DIR}/slurm_fmriprep_{subject}_{session_id}.err
 #SBATCH --cpus-per-task={N_THREADS}
-#SBATCH --mem={MEM_GB}G
+#SBATCH --mem={MEM_GB}
 #SBATCH --time={TIME}
 #SBATCH --partition={PARTITION}
-#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-type=FAIL
 #SBATCH --mail-user=henitsoa.rasoanandrianina@adalab.fr
-
 
 module purge
 module load userspace/all
 module load singularity
 module load python3/3.12.0
 
-echo "Running fmriprep version 25.2.0 for subject: {subject}, session: {session_id}"
+echo "------------ Running {FMRIPREP_SIF} for subject: {subject}, session: {session_id} ---------------"
 
-apptainer run \\
-    -B {BIDS_DIR}:/data:ro \\
-    -B {OUT_FMRIPREP_DIR}:/out \\
-    -B {LICENSE_FILE}:/license.txt \\
-    {FMRIPREP_SIF} \\
-    /data /out participant \\
-    --participant-label {subject} \\
-    --session_label {session_id} \\
-    --fs-license-file /license.txt \\
-    --bids-filter-file /home/hrasoanandrianina/bids_filter_{session_id}.json \\
-    --fd-spike-threshold 0.5 \\
-    --dvars-spike-threshold 2.0 \\  
-    --cifti-output 91k \\
-    --subject-anatomical-reference sessionwise \\
-    --project-goodvoxels \\
-    --fs-license-file /license.txt \\
-    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym \\
-    --ignore slicetiming \\
-    --mem-mb 25000 \\
-    --skip-bids-validation \\
-    --nthreads {N_THREADS} --omp-nthreads {OMP_THREADS} \\
-    --work-dir {WORK_DIR} \\
+apptainer run \
+    -B {BIDS_DIR}:/data:ro \
+    -B {OUT_FMRIPREP_DIR}:/out \
+    -B {LICENSE_FILE}:/license.txt \
+    -B /scratch/hrasoanandrianina/code/nemo:/project \
+    --env PYTHONPATH=/project \
+    {FMRIPREP_SIF} \
+    /data /out participant \
+    --participant-label {subject} \
+    --session_label {session_id} \
+    --fs-license-file /license.txt \
+    --bids-filter-file /home/hrasoanandrianina/bids_filter_{session_id}.json \
+    --fd-spike-threshold 0.5 \
+    --dvars-spike-threshold 2 \
+    --cifti-output 91k \
+    --subject-anatomical-reference sessionwise \
+    --project-goodvoxels \
+    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym \
+    --ignore slicetiming \
+    --mem-mb {MEM_GB} \
+    --skip-bids-validation \
+    --nthreads {N_THREADS} --omp-nthreads {OMP_THREADS} \
+    --work-dir {WORK_DIR} \
     --stop-on-first-crash
 
 echo "Finished fMRIPrep for subject: {subject}, session: {session_id}"

@@ -1,24 +1,34 @@
 #!/usr/bin/env python3
-import os
+import sys
 import subprocess
 from pathlib import Path
 
+# ------------------------------------------
+# Add project root to PYTHONPATH
+# ------------------------------------------
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+import config
 # ------------------------------
 # CONFIGURATION
 # ------------------------------
-BIDS_DIR = "/scratch/hrasoanandrianina/braint_database"
-WORK_DIR = "/scratch/hrasoanandrianina/work"
-LICENSE_FILE = "/scratch/hrasoanandrianina/containers/license.txt"
 
-MRIQC_SIF = "/scratch/hrasoanandrianina/containers/mriqc_24.0.2.sif"
-OUT_MRIQC_DIR = "/scratch/hrasoanandrianina/derivatives/mriqc_24.0.2"
+BIDS_DIR        = config.BIDS_DIR
+OUT_MRIQC_DIR   = config.MRIQC_OUTPUT
+WORK_DIR        = config.WORK_DIR
+SLURM_DIR       = config.SLURM_SCRIPTS
+MRIQC_SIF       = config.MRIQC_SIF
 
-SLURM_DIR = "./slurm_jobs"     # Where job scripts will be saved
-N_THREADS = 24
-OMP_THREADS = 8
-MEM_GB = 64
-TIME = "24:00:00"               # walltime
-PARTITION = "skylake"            # SLURM partition name
+N_THREADS       = int(config.SLURM_CPUS) // 2
+MEM_GB          = config.SLURM_MEM
+TIME            = config.SLURM_TIME
+PARTITION       = config.SLURM_PARTITION
+OMP_THREADS     = 2
+
+# --------------------------------------------
+# HELPERS
+# --------------------------------------------  
 
 def get_subjects(bids_dir):
     """Find subjects (folders starting with 'sub-')."""
@@ -31,68 +41,84 @@ def get_sessions(bids_dir, subject):
     """Find sessions for a given subject (folders starting with 'ses-')."""
     subj_path = Path(bids_dir) / subject
     sessions = sorted([p.name for p in subj_path.glob("ses-*") if p.is_dir()])
-    if not sessions:
-        return [None] # No sessions found
-    return [s.name for s in sessions]
+    
+    return sessions if sessions else [None]  # Default to None if no sessions found
 
 def mriqc_is_done(sub, ses):
     """
-    Determines whether an MRIQC run for (subject, session) is complete.  MRIQC creates a group JSON *per modality*.
+    Determines whether an MRIQC run for (subject, session) is complete.  
+    MRIQC creates a group JSON *per modality*.
     We mark a subject as processed if at least one T1w JSON exists.
     """
-    report = Path(OUT_MRIQC_DIR) / f"sub-{sub}" / f"ses-{ses}" / "sub-{}_ses-{}_task-rest_bold.html".format(sub, ses)
-
-    if report.exists():
+    report_bold = Path(OUT_MRIQC_DIR) / f"{sub}" / f"{ses}" / f"{sub}_{ses}_task-rest_bold.html"
+    report_T1w = Path(OUT_MRIQC_DIR) / f"{sub}" / f"{ses}" / f"{sub}_{ses}_T1w.html"
+    report_DWI = Path(OUT_MRIQC_DIR) / f"{sub}" / f"{ses}" / f"{sub}_{ses}_dwi.html"
+    
+    if report_T1w.exists() or report_bold.exists() or report_DWI.exists():
         return True
     return False
 
+# ------------------------------
+# SLURM JOB SCRIPT GENERATION
+# ------------------------------
+
 def make_slurm_mriqc_script(subject, session_id):
-    """Create a SLURM job script to run MRIQC for a given subject and session."""
+    """Create a SLURM job script to run MRIQC for a given subject/session."""
     job_file = Path(SLURM_DIR) / f"mriqc_sub-{subject}_ses-{session_id}.slurm"
+    
     content = f"""#!/bin/bash
 #SBATCH --job-name=mriqc_sub-{subject}_ses-{session_id}
 #SBATCH --output={SLURM_DIR}/mriqc_sub-{subject}_ses-{session_id}.out
 #SBATCH --error={SLURM_DIR}/mriqc_sub-{subject}_ses-{session_id}.err
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={N_THREADS}
-#SBATCH --mem={MEM_GB}G
+#SBATCH --mem={MEM_GB}
 #SBATCH --time={TIME}
 #SBATCH --partition={PARTITION}
-#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-type=FAIL
 #SBATCH --mail-user=henitsoa.rasoanandrianina@adalab.fr     
 
-echo "Starting MRIQC for subject: {subject}, session: {session_id}"
+module purge
+module load userspace/all
+module load singularity
+module load python3/3.12.0
+
+echo " --------------- Starting MRIQC for subject: {subject}, session: {session_id} ---------------"
 
 apptainer run 
-    --cleanenv \\
-    -B {BIDS_DIR}:/data:ro \\
-    -B {OUT_MRIQC_DIR}:/out \\
-    -B {WORK_DIR}:/work \\
-    {MRIQC_SIF} \\
-    /data /out participant \\
-    --participant_label {subject} \\
-    --session-id {session_id} \\
-    --bids-filter-file /home/hrasoanandrianina/bids_filter_ses-{session_id}.json \\
-    --n_procs {N_THREADS} \\
-    --omp-nthreads {OMP_THREADS} \\
-    -w {WORK_DIR} \\
-    --fd_thres 0.5 \\
-    --verbose-reports \\
+    --cleanenv \
+    -B {BIDS_DIR}:/data:ro \
+    -B {OUT_MRIQC_DIR}:/out \
+    -B {WORK_DIR}:/work \
+    -B /scratch/hrasoanandrianina/code/nemo:/project \
+    --env PYTHONPATH=/project \
+    {MRIQC_SIF} \
+    /data /out participant \
+    --participant_label {subject} \
+    --session-id {session_id} \
+    --bids-filter-file /home/hrasoanandrianina/bids_filter_ses-{session_id}.json \
+    --nprocs {N_THREADS} \
+    --omp-nthreads {OMP_THREADS} \
+    --mem {MEM_GB} \
+    -w {WORK_DIR} \
+    --fd_thres 0.5 \
+    --verbose-reports \
+    --no-datalad-get \
     --no-sub
     
-echo "Finished MRIQC for subject: {subject}, session: {session_id}"
+echo "---------------- Finished MRIQC for subject: {subject}, session: {session_id} ---------------"
 """
     job_file.write_text(content)
     print(f"Created MRIQC SLURM job: {job_file} for subject {subject}, session {session_id}")
     return job_file
 
 # ------------------------------
-# MAIN SCRIPT
+# MAIN JOB SUBMISSION LOGIC
 # ------------------------------
 
 def submit_mriqc_jobs():
     """Generate and submit SLURM job scripts for MRIQC."""
-    os.makedirs(SLURM_DIR, exist_ok=True)
+    Path(SLURM_DIR).mkdir(exist_ok=True)
     subjects = get_subjects(BIDS_DIR)
 
     for sub in subjects:
@@ -109,8 +135,7 @@ def submit_mriqc_jobs():
             job_script = make_slurm_mriqc_script(sub, ses)
             mriqc_job = subprocess.run(["sbatch", str(job_script)], capture_output=True, text=True)
 
-            print(f"Submitted MRIQC job for subject {sub}, session {ses}")
-            print(mriqc_job.stdout.strip())
+            print(f"Submitted MRIQC job for subject {sub}, session {ses}: {mriqc_job.stdout.strip()}")
 
     print("\n All MRIQC jobs submitted.")
 

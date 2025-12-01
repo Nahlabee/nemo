@@ -1,0 +1,20 @@
+{
+"BIDS_DIR": "/scratch/hrasoanandrianina/braint_database",
+"WORK_DIR": "/home/hrasoanandrianina/work_dir_bis",
+"FS_LICENSE_FILE": "/scratch/hrasoanandrianina/containers/license.txt",
+
+"MRIQC_SIF": "/scratch/hrasoanandrianina/containers/mriqc_24.0.2.sif",
+"OUT_MRIQC_DIR": "/scratch/hrasoanandrianina/derivatives/mriqc_24.0.2",
+
+"FMRIPREP_SIF": "/scratch/hrasoanandrianina/containers/fmriprep_25.2.0.sif",
+"OUT_FMRIPREP_DIR": "/scratch/hrasoanandrianina/derivatives/fmriprep_25.2.0",
+
+"XCP_D_SIF": "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif",
+"OUT_XCP_D_DIR": "/scratch/hrasoanandrianina/derivatives/xcp_d_0.12.0",
+
+"SLURM_DIR": "./slurm_jobs",
+"SLURM_PARTITION": "skylake",
+"SLURM_CPUS": "16",
+"SLURM_MEM": "64G",
+"SLURM_TIME": "12:00:00"    
+}
