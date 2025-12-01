@@ -126,11 +126,11 @@ def preprocessing(args):
 
                 if args.interactive:
                     file_content = module_export + singularity_command + ownership_sharing
-                    path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_freesurfer.sh'
+                    path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_qsiprep.sh'
                     cmd = ("sh %s" % path_to_script)
                 else:
                     file_content = header + module_export + singularity_command + ownership_sharing
-                    path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_freesurfer.slurm'
+                    path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_qsiprep.slurm'
                     cmd = ("sbatch %s" % path_to_script)
 
                 with open(path_to_script, 'w') as f:
