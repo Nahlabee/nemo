@@ -3,6 +3,8 @@ import os
 import shutil
 import sys
 
+from utils import load_config
+
 sys.path.extend([os.getcwd()])
 from config import (DATA_BIDS_DIR,
                     FREESURFER_CONTAINER, FREESURFER_LICENSE, FREESURFER_QC,
@@ -40,7 +42,6 @@ def segmentation(args):
             subjects = args.subjects
 
         for subject in subjects:
-
             # Add sub prefix if not given by the user
             if not 'sub-' in subject:
                 subject = 'sub-' + subject
@@ -107,7 +108,7 @@ def segmentation(args):
                      '# export FreeSurfer environment variables\n'
                      'export SUBJECTS_DIR={}\n').format(args.input_dir)
 
-                if args.useT2:
+                if args.use_t2:
                     singularity_command = \
                         ('\n'
                          '# singularity command\n'
@@ -199,43 +200,52 @@ def main(raw_args=None):
     """
     import argparse
 
-    p = argparse.ArgumentParser("Launch anatomical segmentation on a dataset")
+    # Execution
+    p = argparse.ArgumentParser("FreeSurfer recon-all")
 
-    p.add_argument("--input_dir", default=DATA_BIDS_DIR,
+    p.add_argument("--input_dir", type=str,
                    help="Input directory containing dataset images in BIDS format.")
-    p.add_argument("--output_dir", default=FREESURFER_DIR,
+    p.add_argument("--output_dir", type=str,
                    help="Output directory for FreeSurfer.")
 
-    p.add_argument("--subjects", "-sub", default=['1054001'],
+    p.add_argument("--subjects", "-sub",
                    help="List of subjects to process (the sub- prefix can be removed). If None, all subjects "
                         "in the dataset directory will be processed.")
-    p.add_argument("--sessions", "-ses", default=[],
+    p.add_argument("--sessions", "-ses",
                    help="List of sessions to process (the ses- prefix can be removed). If None, all sessions "
                         "in the subject directory will be processed.")
-    p.add_argument("--skip_processed", "-skip", type=bool, default=True,
+    p.add_argument("--skip_processed", "-skip", type=bool,
                    help="If True, subjects with existing output files will be skipped. Overwrite if False.")
 
-    p.add_argument("--freesurfer_container", default=FREESURFER_CONTAINER,
+    p.add_argument("--freesurfer_container", type=str,
                    help="Path to FreeSurfer container.")
-    p.add_argument("--freesurfer_license", default=FREESURFER_LICENSE,
+    p.add_argument("--freesurfer_license", type=str,
                    help="Path to FreeSurfer license folder.")
-    p.add_argument("--useT2", "-t2", default=True,
+    p.add_argument("--use_t2", "-t2", type=bool,
                    help="Use T2 if available to improve Pial surface reconstruction.")
 
-    p.add_argument("--interactive", default=False,
+    # SLURM
+    p.add_argument("--interactive",
                    help="Use interactive mode to perform segmentation. Default is batch mode.")
-    p.add_argument("--requested_mem", "-mem", type=int, default=16,
+    p.add_argument("--requested_mem", "-mem", type=int,
                    help="Requested RAM on cluster node (in GB). Default is 16GB (minimum recommended for FreeSurfer).")
-    p.add_argument("--requested_time", "-time", type=int, default=9,
+    p.add_argument("--requested_time", "-time", type=int,
                    help="Requested time on cluster node (in hours). Default is 9h.")
-    p.add_argument("--email", "-em", type=str, default=None,
+    p.add_argument("--email", "-em", type=str,
                    help="To receive begin/end job notifications. No notification by default.")
-    p.add_argument("--account", "-acc", type=str, default=None,
+    p.add_argument("--account", "-acc", type=str,
                    help="Charge resources used by this job to specified account.")
 
     args = p.parse_args(raw_args)
 
-    # todo : charger un json avec le jeu de parametres pré-configuré
+    general_config_file = f"{os.path.dirname(__file__)}/config.json"
+    config = load_config(general_config_file)
+    sub_keys = ['common', 'slurm', 'freesurfer']
+    for sub_key in sub_keys:
+        workflow_config = config.get(sub_key, {})
+        for key, value in workflow_config.items():
+            if getattr(args, key, None) is None:
+                setattr(args, key, value)
 
     # Save config in json
     config = vars(args)

@@ -1,0 +1,43 @@
+{
+  "common": {
+    "input_dir": "/scratch/lhashimoto/nemo_database/imaging_data",
+    "subjects": ["1054003"],
+    "sessions": ["01"],
+    "freesurfer_license": "/scratch/lhashimoto/freesurfer/license"
+  },
+
+  "slurm": {
+    "interactive": false,
+    "email": null,
+    "account": null
+  },
+
+  "freesurfer": {
+    "output_dir": "/scratch/lhashimoto/nemo_database_derivatives/freesurfer",
+    "freesurfer_container": "/scratch/lhashimoto/freesurfer-7.4.1.sif",
+    "skip_processed": true,
+    "use_t2": true,
+    "requested_mem": 16,
+    "requested_time": 9,
+    "qc": "/scratch/lhashimoto/nemo_database_derivatives/freesurfer/qc"
+  },
+
+  "qsiprep": {
+    "output_dir": "/scratch/lhashimoto/nemo_database_derivatives/qsiprep",
+    "qsiprep_container": "/scratch/lhashimoto/qsiprep-1.0.2.sif",
+    "config_eddy": "/scratch/lhashimoto/code/nemo/dwi/eddy_params.json",
+    "config_qsiprep": "/scratch/lhashimoto/code/nemo/dwi/config_qsiprep.json",
+    "gpu_per_node": 2,
+    "requested_mem": 70,
+    "requested_time": 24,
+    "qc": "/scratch/lhashimoto/nemo_database_derivatives/qsiprep/qc"
+  },
+
+  "qsirecon": {
+    "output_dir": "/scratch/lhashimoto/nemo_database_derivatives/qsirecon",
+    "container": "/scratch/lhashimoto/qsirecon-1.1.1.sif",
+    "qc": "/scratch/lhashimoto/nemo_database_derivatives/qsirecon/qc"
+  }
+
+
+}

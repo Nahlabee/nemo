@@ -1,18 +1,29 @@
+import os
 
-DATA_BIDS_DIR="/scratch/lhashimoto/nemo_database/imaging_data"
-DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives"
-CODE_DIR="/scratch/lhashimoto/code/nemo"
+DATA_BIDS_DIR = "/scratch/lhashimoto/nemo_database/imaging_data"
+DERIVATIVES_BIDS_DIR = "/scratch/lhashimoto/nemo_database_derivatives"
+# CODE_DIR="/scratch/lhashimoto/code/nemo"
 
 FREESURFER_CONTAINER = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
-FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
+FREESURFER_LICENSE = "/scratch/lhashimoto/freesurfer/license"
 # FREESURFER_DIR="/scratch/lhashimoto/freesurfer/outputs"
 FREESURFER_DIR = DERIVATIVES_BIDS_DIR + "/freesurfer"
-FREESURFER_STDOUT = FREESURFER_DIR + "/stdout"
-# FREESURFER_OUTPUTS = FREESURFER_DIR + "/outputs"
+# FREESURFER_STDOUT = FREESURFER_DIR + "/stdout"
 FREESURFER_QC = FREESURFER_DIR + "/qc"
 
-QSIPREP_CONTAINER="/scratch/lhashimoto/qsiprep-1.0.2.sif"
-QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
+QSIPREP_CONTAINER = "/scratch/lhashimoto/qsiprep-1.0.2.sif"
+QSIPREP_DIR = DERIVATIVES_BIDS_DIR + "/qsiprep"
+
+QSIRECON_CONTAINER = "/scratch/lhashimoto/qsirecon-1.1.1.sif"
+
+CONFIG_EDDY = f"{os.path.dirname(__file__)}/dwi/eddy_params.json"
+CONFIG_QSIPREP = f"{os.path.dirname(__file__)}/dwi/config_qsiprep.json"
+
+SUBJECTS = ['1054001']
+SESSIONS = ['01']
+
+EMAIL=None
+ACCOUNT=None
 
 def print_paths():
     """
