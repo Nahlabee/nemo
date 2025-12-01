@@ -2,7 +2,8 @@ import json
 import os
 import shutil
 import sys
-sys.path.extend([os.path.dirname(__file__).parent])
+from pathlib import Path
+sys.path.extend(str(Path(__file__).parent))
 from utils import load_config
 
 
