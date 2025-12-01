@@ -3,7 +3,7 @@
 #nprocs = None
 #omp_nthreads = None
 #mem = None
-low_mem = false
+#low_mem = None
 nipype_plugin_file = ""
 sloppy = false
 anat_only = false
