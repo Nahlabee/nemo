@@ -15,9 +15,9 @@ import config
 # ------------------------------
 
 BIDS_DIR        = config.BIDS_DIR
-OUT_MRIQC_DIR   = config.MRIQC_OUTPUT
+OUT_MRIQC_DIR   = config.OUT_MRIQC_DIR
 WORK_DIR        = config.WORK_DIR
-SLURM_DIR       = config.SLURM_SCRIPTS
+SLURM_DIR       = config.SLURM_DIR
 MRIQC_SIF       = config.MRIQC_SIF
 
 N_THREADS       = int(config.SLURM_CPUS) // 2
