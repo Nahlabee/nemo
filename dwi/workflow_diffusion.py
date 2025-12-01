@@ -111,7 +111,7 @@ def preprocessing(args):
                      '    --env FREESURFER_HOME=/opt/freesurfer \\\n'
                      '    {3} /data /out participant \\\n'
                      '    --participant-label {4} --session-id {5} \\\n'
-                     '    -w /out/temp_qsiprep \\\n'
+                     '    --skip-bids-validation -v -w /out/temp_qsiprep \\\n'
                      '    --fs-license-file /opt/freesurfer/license.txt \\\n'
                      '    --eddy-config /config/eddy-config.json \\\n'
                      '    --config-file /config/config-file.json \\\n'
