@@ -66,13 +66,14 @@ def preprocessing(args):
                 header = \
                     ('#!/bin/bash\n'
                      '#SBATCH -J qsiprep_{0}_{1}\n'
-                     '#SBATCH -p kepler\n'
-                     '#SBATCH --gpus-per-node={2}\n'
+                     '#SBATCH -p {2}\n'
+                     '#SBATCH --gpus-per-node={3}\n'
                      '#SBATCH --nodes=1\n'
-                     '#SBATCH --mem={3}gb\n'
-                     '#SBATCH -t {4}:00:00\n'
-                     '#SBATCH -e {5}/stdout/%x_job-%j.err\n'
-                     '#SBATCH -o {5}/stdout/%x_job-%j.out\n').format(subject, session,
+                     '#SBATCH --mem={4}gb\n'
+                     '#SBATCH -t {5}:00:00\n'
+                     '#SBATCH -e {6}/stdout/%x_job-%j.err\n'
+                     '#SBATCH -o {6}/stdout/%x_job-%j.out\n').format(subject, session,
+                                                                     args.partition,
                                                                      args.gpu_per_node,
                                                                      args.requested_mem,
                                                                      args.requested_time,
@@ -181,6 +182,8 @@ def main(raw_args=None):
     # SLURM
     p.add_argument("--interactive",
                    help="Use interactive mode to perform segmentation. Default is batch mode.")
+    p.add_argument("--partition", "-p", type=str,
+                   help="Request a specific partition for the resource allocation.")
     p.add_argument("--gpu_per_node", "-gpu", type=int,
                    help="Number of available GPUs.")
     p.add_argument("--requested_mem", "-mem", type=int,

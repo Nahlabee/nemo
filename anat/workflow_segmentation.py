@@ -76,12 +76,13 @@ def segmentation(args):
                 header = \
                     ('#!/bin/bash\n'
                      '#SBATCH -J freesurfer_{0}_{1}\n'
-                     '#SBATCH -p skylake\n'
+                     '#SBATCH -p {2}\n'
                      '#SBATCH --nodes=1\n'
-                     '#SBATCH --mem={2}gb\n'
-                     '#SBATCH -t {3}:00:00\n'
-                     '#SBATCH -e {4}/stdout/%x_job-%j.err\n'
-                     '#SBATCH -o {4}/stdout/%x_job-%j.out\n').format(subject, session,
+                     '#SBATCH --mem={3}gb\n'
+                     '#SBATCH -t {4}:00:00\n'
+                     '#SBATCH -e {5}/stdout/%x_job-%j.err\n'
+                     '#SBATCH -o {5}/stdout/%x_job-%j.out\n').format(subject, session,
+                                                                     args.partition,
                                                                      args.requested_mem,
                                                                      args.requested_time,
                                                                      args.output_dir)
@@ -223,6 +224,8 @@ def main(raw_args=None):
     # SLURM
     p.add_argument("--interactive",
                    help="Use interactive mode to perform segmentation. Default is batch mode.")
+    p.add_argument("--partition", "-p", type=str,
+                   help="Request a specific partition for the resource allocation.")
     p.add_argument("--requested_mem", "-mem", type=int,
                    help="Requested RAM on cluster node (in GB). Default is 16GB (minimum recommended for FreeSurfer).")
     p.add_argument("--requested_time", "-time", type=int,
@@ -234,6 +237,7 @@ def main(raw_args=None):
 
     args = p.parse_args(raw_args)
 
+    # Read arguments from config file. Values in file will be overridden by command-line arguments.
     general_config_file = f"{Path(__file__).parent.parent}/config.json"
     config = load_config(general_config_file)
     sub_keys = ['common', 'slurm', 'freesurfer']
