@@ -83,7 +83,6 @@ module load userspace/all
 module load singularity
 module load python3/3.12.0
 
-
 hostname
 
 # Choose writable scratch directory

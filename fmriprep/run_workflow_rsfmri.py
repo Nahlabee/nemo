@@ -53,7 +53,8 @@ def fmriprep_is_done(sub, ses):
       1. The fMRIPrep HTML report exists, OR
       2. A valid anatomical output exists (T1w preprocessed file)
     """
-    report = Path(OUT_FMRIPREP_DIR) / f"{sub}" / f"{ses}" / f"{sub}_{ses}_desc-preproc_T1w.html"
+    report = Path(OUT_FMRIPREP_DIR) / f"{sub}.html"
+
     t1w = Path(OUT_FMRIPREP_DIR) / f"{sub}" / f"{ses}" / "anat" / f"{sub}_{ses}_desc-preproc_T1w.nii.gz"
 
     if report.exists() or t1w.exists():
@@ -81,8 +82,8 @@ def make_slurm_fmriprep_script(subject, session_id):
 
     content = f"""#!/bin/bash
 #SBATCH --job-name=slurm_fmriprep_{subject}_{session_id}
-#SBATCH --output={SLURM_DIR}/slurm_fmriprep_{subject}_{session_id}.out
-#SBATCH --error={SLURM_DIR}/slurm_fmriprep_{subject}_{session_id}.err
+#SBATCH --output={SLURM_DIR}/slurm_fmriprep_{subject}_{session_id}_%j.out
+#SBATCH --error={SLURM_DIR}/slurm_fmriprep_{subject}_{session_id}_%j.err
 #SBATCH --cpus-per-task={N_THREADS}
 #SBATCH --mem={MEM_GB}
 #SBATCH --time={TIME}
@@ -103,7 +104,7 @@ if [ -n "$SLURM_TMPDIR" ]; then
 elif [ -n "$TMPDIR" ]; then
     WORK_DIR="$TMPDIR"
 else
-    WORK_DIR=$(mktemp -d /tmp/{FMRIPREP_SIF}/{subject}_{session_id})
+    WORK_DIR=$(mktemp -d /tmp/mriqc_${{SLURM_JOB_ID}}_XXXX)
 fi
 
 echo "Using WORK_DIR: $WORK_DIR"
@@ -111,7 +112,7 @@ mkdir -p $WORK_DIR
 
 echo "------------ Running {FMRIPREP_SIF} for subject: {subject}, session: {session_id} ---------------"
 
-apptainer run \
+apptainer run --cleanenv \
     -B {BIDS_DIR}:/data:ro \
     -B {OUT_FMRIPREP_DIR}:/out \
     -B {LICENSE_FILE}:/license.txt \
@@ -150,8 +151,8 @@ def make_slurm_xcpd_script(subject, session_id):
 
     content = f"""#!/bin/bash
 #SBATCH --job-name=slurm_xcpd_{subject}_{session_id}
-#SBATCH --output={SLURM_DIR}/slurm_xcpd_{subject}_{session_id}.out
-#SBATCH --error={SLURM_DIR}/slurm_xcpd_{subject}_{session_id}.err
+#SBATCH --output={SLURM_DIR}/slurm_xcpd_{subject}_{session_id}_%j.out
+#SBATCH --error={SLURM_DIR}/slurm_xcpd_{subject}_{session_id}_%j.err
 #SBATCH --cpus-per-task={N_THREADS}
 #SBATCH --mem={MEM_GB}G
 #SBATCH --time={TIME}
@@ -179,31 +180,29 @@ echo "Using WORK_DIR: $WORK_DIR"
 mkdir -p $WORK_DIR
 
 echo "------------ Running {XCPD_SIF} for subject: {subject}, session: {session_id} ---------------"
-echo "Running XCP-D version 0.12.0 for subject: {subject}, session: {session_id}"
 
-apptainer run \\
-    --cleanenv \\
-    -B {BIDS_DIR}:/data:ro \\
-    -B {OUT_XCPD_DIR}:/out \\
-    -B {WORK_DIR}:/work \\
-    {XCPD_SIF} \\
-    /data /out participant \\
-    --mode abcd \\
-    --motion-filter-type none \\
-    --input-type fmriprep \\
-    --participant-label {subject} \\
-    --bids-filter-file /home/hrasoanandrianina/bids_filter_{session_id}.json \\
-    --nuisance-regressors 36P \\
-    --smoothing 4 \\
-    --session-id {session_id} \\
-    --despike \\
-    --dummy-scans auto \\
-    --linc-qc \\
-    --abcc-qc \\
+apptainer run --cleanenv \
+    -B {BIDS_DIR}:/data:ro \
+    -B {OUT_XCPD_DIR}:/out \
+    -B {WORK_DIR}:/work \
+    {XCPD_SIF} \
+    /data /out participant \
+    --mode abcd \
+    --motion-filter-type none \
+    --input-type fmriprep \
+    --participant-label {subject} \
+    --bids-filter-file /home/hrasoanandrianina/bids_filter_{session_id}.json \
+    --nuisance-regressors 36P \
+    --smoothing 4 \
+    --session-id {session_id} \
+    --despike \
+    --dummy-scans auto \
+    --linc-qc \
+    --abcc-qc \
 
-    --nthreads {N_THREADS} \\
-    --omp-nthreads {OMP_THREADS} \\
-    -w {WORK_DIR}  \\
+    --nthreads {N_THREADS} \
+    --omp-nthreads {OMP_THREADS} \
+    -w {WORK_DIR}  \
     --stop-on-first-crash
 
 echo "Finished XCP-D for subject: {subject}, session: {session_id}"
@@ -239,22 +238,23 @@ def submit_with_dependencies(subjects):
                 fmriprep_job_script = make_slurm_fmriprep_script(sub, ses)
                 cmd = ["sbatch"]
 
-                # Add dependency if this is not the first session
-                # if previous_job_id:
-                #     cmd += [f"--dependency=afterok:{previous_job_id}"]
+                # Add dependency if this is not the first job in the chain
+                if previous_job_id:
+                    cmd += [f"--dependency=afterok:{previous_job_id}"]
 
                 cmd.append(str(fmriprep_job_script))
                 fmriprep_job = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 
                 # Extract SLURM job ID (last token in "Submitted batch job 12345")
                 job_id = fmriprep_job.stdout.strip().split()[-1]
-                # previous_job_id = job_id
+                previous_job_id = job_id
 
                 print(f"Submitted fMRIPrep for {sub} {ses} (Job ID: {job_id})")
             else:
                 # fmriprep_job = None
                 print(f"✓ Skipping fMRIPrep for {sub} {ses}: already done")
-            
+        print(f"All FMRIPREP sessions for {sub} queued.\n")
+
         # for ses in sessions:
         #     # -----------------------
         #     # SUBMIT XCP-D JOB IF NEEDED
@@ -262,26 +262,21 @@ def submit_with_dependencies(subjects):
         #     if not xcpd_is_done(sub, ses):
         #         print(f"Submitting XCP-D job for {sub} {ses}...")
         #         xcpd_job_script = make_slurm_xcpd_script(sub, ses)
-        #         cmd = ["sbatch"]
 
         #         # Add dependency on fMRIPrep job if it was just submitted
         #         if fmriprep_is_done(sub, ses):
-        #             cmd = ["sbatch", f"--dependency=afterok:{fmriprep_job}", str(xcpd_job_script)]
-        #             print(f"Submitting XCP-D for {sub} {ses} with dependency {fmriprep_job}")
-        #         else:
-        #             print(f" Skipping XCP-D for {sub} {ses} (perform fmriprep first)")
-        #             continue
-                    
-        #         xcpd_job = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        #             xcpd_job = subprocess.run(["sbatch", str(xcpd_job_script)], capture_output=True, text=True, check=True)
+        #             # print(f"Submitting XCP-D for {sub} {ses} ")
+        #             # Extract SLURM job ID (last token in "Submitted batch job 12345")
+        #             job_id = xcpd_job.stdout.strip().split()[-1]
+        #             print(f"Submitted XCP-D for {sub} {ses} (Job ID: {job_id})")
                 
-        #         # Extract SLURM job ID (last token in "Submitted batch job 12345")
-        #         job_id = xcpd_job.stdout.strip().split()[-1]
-
-        #         print(f"Submitted XCP-D for {sub} {ses} (Job ID: {job_id})")
+        #         else:
+        #             print(f" Skipping XCP-D for {sub} {ses} (!!!!! perform fmriprep first)")
+        #             continue 
         #     else:
         #         print(f"✓ Skipping XCP-D for {sub} {ses}: already done")
-    
-        print(f"All sessions for {sub} queued.\n")
+        # print(f"All XCP_D sessions for {sub} queued.\n")
 
 
 def main():
