@@ -19,7 +19,7 @@ _CONFIG_FILE = _THIS_DIR / "config.json"
 # Defaults (safe fallback)
 _defaults = {
 "BIDS_DIR": "/scratch/hrasoanandrianina/braint_database",
-"WORK_DIR": "/home/hrasoanandrianina/work_dir_bis",
+"WORK_DIR": "/scratch/hrasoanandrianina/WORK_DIR",
 "FS_LICENSE_FILE": "/scratch/hrasoanandrianina/containers/license.txt",
 
 "MRIQC_SIF": "/scratch/hrasoanandrianina/containers/mriqc_24.0.2.sif",

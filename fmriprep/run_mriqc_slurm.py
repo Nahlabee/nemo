@@ -83,13 +83,28 @@ module load userspace/all
 module load singularity
 module load python3/3.12.0
 
+
+hostname
+
+# Choose writable scratch directory
+if [ -n "$SLURM_TMPDIR" ]; then
+    WORK_DIR="$SLURM_TMPDIR"
+elif [ -n "$TMPDIR" ]; then
+    WORK_DIR="$TMPDIR"
+else
+    WORK_DIR=$(mktemp -d /tmp/mriqc_${{SLURM_JOB_ID}}_XXXX)
+fi
+
+echo "Using WORK_DIR: $WORK_DIR"
+mkdir -p $WORK_DIR
+
 echo " --------------- Starting MRIQC for subject: {subject}, session: {session_id} ---------------"
 
 apptainer run \
     --cleanenv \
     -B {BIDS_DIR}:/data:ro \
     -B {OUT_MRIQC_DIR}:/out \
-    -B {WORK_DIR}:/work \
+    -B $WORK_DIR:/work \
     -B /scratch/hrasoanandrianina/code/nemo:/project \
     --env PYTHONPATH=/project \
     {MRIQC_SIF} \
@@ -100,7 +115,7 @@ apptainer run \
     --nprocs {N_THREADS} \
     --omp-nthreads {OMP_THREADS} \
     --mem {MEM_GB} \
-    -w {WORK_DIR} \
+    -w $WORK_DIR \
     --fd_thres 0.5 \
     --verbose-reports \
     --no-datalad-get \
