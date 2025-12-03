@@ -1,5 +1,7 @@
+import json
 import os
 import shutil
+from datetime import datetime
 from types import SimpleNamespace
 from pathlib import Path
 import sys
@@ -163,11 +165,14 @@ def run_freesurfer(args, subject, session):
     return job_id
 
 
-def main():
+def main(config_file=None):
     """
     Main function to execute FreeSurfer processing for a list of subjects and sessions.
     """
-    config = utils.load_config('config.json')
+    # Load configuration
+    if not config_file:
+        config_file = f"{Path(__file__).parent.parent}/config/config.json"
+    config = utils.load_config(config_file)
     args = SimpleNamespace()
     sub_keys = ['common', 'freesurfer']
     for sub_key in sub_keys:
@@ -186,6 +191,12 @@ def main():
         sessions = utils.get_sessions(args.input_dir, subject, args.sessions)
         for session in sessions:
             run_freesurfer(args, subject, session)
+
+    # Save config in json
+    config = vars(args)
+    filename = f"{args.derivatives}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    with open(filename, "w") as f:
+        json.dump(config, f, indent=4)
 
 
 if __name__ == "__main__":

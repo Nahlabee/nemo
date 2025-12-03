@@ -3,6 +3,9 @@ import os
 import shutil
 import sys
 from pathlib import Path
+
+import utils
+
 sys.path.append(str(Path(__file__).parent.parent))
 from utils import load_config
 
@@ -25,7 +28,7 @@ def check_prerequisites(args, subject, session):
     required_files = [
         f"{args.input_dir}/{subject}/{session}/anat/{subject}_{session}_T1w.nii.gz"
     ]
-    if args.uset2:
+    if args.use_t2:
         required_files.append(
             f"{args.input_dir}/{subject}/{session}/anat/{subject}_{session}_T2w.nii.gz"
         )
@@ -36,7 +39,7 @@ def check_prerequisites(args, subject, session):
     return True
 
 
-def do_segmentation(args):
+def run_segmentation(args):
     """
 
     Parameters
@@ -47,16 +50,12 @@ def do_segmentation(args):
     -------
 
     """
-    # Check dataset directory
-    if not os.path.exists(args.input_dir):
-        print("Dataset directory does not exist.")
-        return
+    job_ids = {}
 
     # Create output (derivatives) directories
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-        os.makedirs(args.output_dir + '/stdout')
-        os.makedirs(args.output_dir + '/scripts')
+    os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs(args.output_dir + '/stdout', exist_ok=True)
+    os.makedirs(args.output_dir + '/scripts', exist_ok=True)
 
     # Define subjects list
     if not args.subjects:
@@ -71,6 +70,8 @@ def do_segmentation(args):
         # Add sub prefix if not given by the user
         if not subject.startswith('sub-'):
             subject = 'sub-' + subject
+
+        job_ids[subject] = {}
 
         # Define sessions list
         path_to_subject = os.path.join(args.input_dir, subject)
@@ -88,13 +89,13 @@ def do_segmentation(args):
                 session = 'ses-' + session
 
             print(subject, ' - ', session)
-            path_to_output = os.path.join(args.output_dir, f"{subject}_{session}")
 
             # Check input files
             if not check_prerequisites(args, subject, session):
-                return
+                return 0
 
             # Manage subject folder if already processed and finished successfully
+            path_to_output = os.path.join(args.output_dir, f"{subject}_{session}")
             if os.path.exists(path_to_output):
                 logs = os.path.join(path_to_output, 'scripts/recon-all-status.log')
                 with open(logs, 'r') as f:
@@ -190,7 +191,9 @@ def do_segmentation(args):
             # launch slurm script
             cmd = f"sbatch {path_to_script}"
             print(cmd)
-            a = os.system(cmd)
+            job_id = utils.submit_job(cmd)
+            job_ids[subject][session] = job_id
+            # a = os.system(cmd)
             # subprocess.run(cmd, shell=True, check=True)
 
 
@@ -280,7 +283,7 @@ def main_old(raw_args=None):
     with open(os.path.join(args.output_dir, 'config.json'), "w") as f:
         json.dump(config, f, indent=4)
 
-    do_segmentation(args)
+    run_segmentation(args)
 
 
 def main():
@@ -305,9 +308,8 @@ def main():
     with open(os.path.join(args.output_dir, 'config.json'), "w") as f:
         json.dump(config, f, indent=4)
 
-    do_segmentation(args)
+    run_segmentation(args)
 
 
 if __name__ == '__main__':
-    print('Current working directory: ', os.getcwd())
     main()

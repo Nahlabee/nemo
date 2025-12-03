@@ -4,9 +4,8 @@ import subprocess
 from pathlib import Path
 
 
-def load_config(config_filename):
+def load_config(config_file):
     """Load arguments from a JSON config file."""
-    config_file = f"{Path(__file__).parent}/config/{config_filename}"
     if not os.path.exists(config_file):
         return {}
     with open(config_file, "r") as f:
