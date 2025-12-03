@@ -25,7 +25,7 @@
   "qsiprep": {
     "qsiprep_container": "/scratch/lhashimoto/qsiprep-1.0.2.sif",
     "config_eddy": "/scratch/lhashimoto/code/nemo/config/eddy_params.json",
-    "config_qsiprep": "/scratch/lhashimoto/code/nemo/config/config_qsiprep.toml",
+    "qsiprep_config": "/scratch/lhashimoto/code/nemo/config/qsiprep_config.toml",
     "output_resolution": 1.8,
     "partition": "kepler",
     "gpu_per_node": 2,
@@ -36,7 +36,7 @@
 
   "qsirecon": {
     "qsirecon_container": "/scratch/lhashimoto/qsirecon-1.1.1.sif",
-    "config_qsirecon": "/scratch/lhashimoto/code/nemo/config/config_qsirecon.toml",
+    "qsirecon_config": "/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml",
     "partition": "kepler",
     "gpu_per_node": 2,
     "requested_mem": 70,

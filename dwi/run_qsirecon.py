@@ -4,6 +4,7 @@ from datetime import datetime
 from types import SimpleNamespace
 from pathlib import Path
 import sys
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 
@@ -41,6 +42,7 @@ def check_preprocessing_completion(args, subject, session):
             print(f"FreeSurfer did not terminate.")
             return False
 
+    # Check that QSIprep finished without error
     stdout_dir = f"{args.derivatives}/qsiprep/stdout"
     if not os.path.exists(stdout_dir):
         print(f"Could not read standard outputs from QSIprep.")
@@ -55,8 +57,7 @@ def check_preprocessing_completion(args, subject, session):
     for file in stdout_files:
         file_path = os.path.join(stdout_dir, file)
         with open(file_path, 'r') as f:
-            content = f.read()
-            if 'QSIPrep finished successfully!' in content:
+            if 'QSIPrep finished successfully!' in f.read():
                 return True
 
     print("QSIprep did not terminate.")
@@ -115,6 +116,31 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'module load singularity\n'
     )
 
+    prereq_check = (
+        f'\n# Check that FreeSurfer finished without error\n'
+        f'if [ ! -d "{args.derivatives}/freesurfer/{subject}_{session}" ]; then\n'
+        f'    echo "Please run FreeSurfer recon-all command before QSIrecon."\n'
+        f'    exit 1\n'
+        f'fi\n'
+        f'if ! grep -q "finished without error" {args.derivatives}/freesurfer/{subject}_{session}/scripts/recon-all-status.log; then\n'
+        f'    echo "FreeSurfer did not terminate for {subject} {session}."\n'
+        f'    exit 1\n'
+        f'fi\n'
+        f'\n# Check that QSIprep finished without error\n'
+        f'prefix="{args.derivatives}/qsiprep/stdout/qsiprep_{subject}_{session}"\n'
+        f'found_success=false\n'
+        f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
+        f'    if grep -q "QSIPrep finished successfully" $file; then\n'
+        f'        found_success=true\n'
+        f'        break\n'
+        f'    fi\n'
+        f'done\n'
+        f'if [ "$found_success" = false ]; then\n'
+        f'    echo "QSIprep did not terminate for {subject} {session}."\n'
+        f'    exit 1\n'
+        f'fi\n'
+    )
+
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --nv --cleanenv \\\n'
@@ -122,7 +148,7 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'    -B {args.derivatives}/qsirecon:/out \\\n'
         f'    -B {args.derivatives}/freesurfer:/freesurfer \\\n'
         f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
-        f'    -B {args.config_qsirecon}:/config/config-file.toml \\\n'
+        f'    -B {args.qsirecon_config}:/config/config-file.toml \\\n'
         f'    {args.qsirecon_container} /in /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    -v -w /out/temp_qsirecon \\\n'
@@ -136,7 +162,7 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + singularity_command + ownership_sharing)
+        f.write(header + module_export + prereq_check + singularity_command + ownership_sharing)
 
 
 def run_qsirecon(args, subject, session, job_ids=None):
@@ -219,4 +245,3 @@ def main(config_file=None):
 
 if __name__ == "__main__":
     main()
-

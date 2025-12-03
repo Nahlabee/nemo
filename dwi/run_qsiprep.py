@@ -70,7 +70,7 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'    -B {args.derivatives}/qsiprep:/out \\\n'
         f'    -B {args.freesurfer_license}:/license \\\n'
         f'    -B {args.config_eddy}:/config/eddy_params.json \\\n'
-        f'    -B {args.config_qsiprep}:/config/config-file.toml \\\n'
+        f'    -B {args.qsiprep_config}:/config/config-file.toml \\\n'
         f'    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
         f'    --env FREESURFER_HOME=/opt/freesurfer \\\n'
         f'    {args.qsiprep_container} /data /out participant \\\n'
