@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 import utils
 from anat.run_freesurfer import run_freesurfer
+from dwi.run_qsiprep import run_qsiprep
+from dwi.run_qsirecon import run_qsirecon
 
 
 def main(config_file=None):
@@ -41,7 +43,7 @@ def main(config_file=None):
                 step_config = config.get('qsiprep', {})
                 for key, value in step_config.items():
                     setattr(args, key, value)
-                qsiprep_job_id = run_qsiprep(args, subject, session, freesurfer_job_id)
+                qsiprep_job_id = run_qsiprep(args, subject, session)
             else:
                 qsiprep_job_id = None
 
@@ -49,7 +51,7 @@ def main(config_file=None):
                 step_config = config.get('qsirecon', {})
                 for key, value in step_config.items():
                     setattr(args, key, value)
-                qsirecon_job_id = run_qsirecon(args, subject, session, qsiprep_job_id)
+                qsirecon_job_id = run_qsirecon(args, subject, session, [freesurfer_job_id, qsiprep_job_id])
             else:
                 qsirecon_job_id = None
 

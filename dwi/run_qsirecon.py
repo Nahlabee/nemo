@@ -8,14 +8,69 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 
 
-def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
+def check_preprocessing_completion(args, subject, session):
     """
-    Generate the SLURM script for QSIprep processing.
+    Check that FreeSurfer recon-all finished successfully.
+    Check that QSIprep finished successfully.
 
     Parameters
     ----------
     args : Namespace
-        Configuration arguments containing parameters for SLURM and QSIprep.
+        Configuration arguments.
+    subject : str
+        Subject identifier (e.g., "sub-01").
+    session : str
+        Session identifier (e.g., "ses-01").
+
+    Returns
+    -------
+    bool
+        True if all requirements are met, False otherwise.
+    """
+
+    # Check that FreeSurfer finished without error
+    if not os.path.exists(f"{args.derivatives}/freesurfer/{subject}_{session}"):
+        print(f"Please run FreeSurfer recon-all command before QSIrecon.")
+        return False
+
+    logs = f"{args.derivatives}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
+    with open(logs, 'r') as f:
+        lines = f.readlines()
+    for l in lines:
+        if not 'finished without error' in l:
+            print(f"FreeSurfer did not terminate.")
+            return False
+
+    stdout_dir = f"{args.derivatives}/qsiprep/stdout"
+    if not os.path.exists(stdout_dir):
+        print(f"Could not read standard outputs from QSIprep.")
+        return False
+
+    prefix = f"qsiprep_{subject}_{session}"
+    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+    if not stdout_files:
+        print(f"Could not read standard outputs from QSIprep.")
+        return False
+
+    for file in stdout_files:
+        file_path = os.path.join(stdout_dir, file)
+        with open(file_path, 'r') as f:
+            content = f.read()
+            if 'QSIPrep finished successfully!' in content:
+                return True
+
+    print("QSIprep did not terminate.")
+    return False
+
+
+def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
+    """
+    Generate the SLURM script for QSIrecon processing.
+
+    Parameters
+    ----------
+    args : Namespace
+        Configuration arguments containing parameters for SLURM and QSIrecon.
     subject : str
         Subject identifier.
     session : str
@@ -36,8 +91,8 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'#SBATCH --nodes=1\n'
         f'#SBATCH --mem={args.requested_mem}gb\n'
         f'#SBATCH -t {args.requested_time}:00:00\n'
-        f'#SBATCH -e {args.derivatives}/qsiprep/stdout/%x_job-%j.err\n'
-        f'#SBATCH -o {args.derivatives}/qsiprep/stdout/%x_job-%j.out\n'
+        f'#SBATCH -e {args.derivatives}/qsirecon/stdout/%x_job-%j.err\n'
+        f'#SBATCH -o {args.derivatives}/qsirecon/stdout/%x_job-%j.out\n'
     )
 
     if job_ids:
@@ -60,39 +115,33 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'module load singularity\n'
     )
 
-    # Define the Singularity command for running QSIprep
-    # Note: Temporary binding to a local FreeSurfer version is included
-    # todo: After PR accepted and new container built, remove bound to local freesurfer 7.4.1 and env variable
     singularity_command = (
         f'\napptainer run \\\n'
-        f'    --cleanenv \\\n'
-        f'    -B {args.input_dir}:/data \\\n'
-        f'    -B {args.derivatives}/qsiprep:/out \\\n'
-        f'    -B {args.freesurfer_license}:/license \\\n'
-        f'    -B {args.config_eddy}:/config/eddy_params.json \\\n'
-        f'    -B {args.config_qsiprep}:/config/config-file.toml \\\n'
-        f'    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
-        f'    --env FREESURFER_HOME=/opt/freesurfer \\\n'
-        f'    {args.qsiprep_container} /data /out participant \\\n'
+        f'    --nv --cleanenv \\\n'
+        f'    -B {args.derivatives}/qsiprep:/in \\\n'
+        f'    -B {args.derivatives}/qsirecon:/out \\\n'
+        f'    -B {args.derivatives}/freesurfer:/freesurfer \\\n'
+        f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
+        f'    -B {args.config_qsirecon}:/config/config-file.toml \\\n'
+        f'    {args.qsirecon_container} /in /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
-        f'    --skip-bids-validation -v -w /out/temp_qsiprep \\\n'
+        f'    -v -w /out/temp_qsirecon \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
-        f'    --eddy-config /config/eddy_params.json \\\n'
+        f'    --fs-subjects-dir /freesurfer \\\n'
         f'    --config-file /config/config-file.toml \\\n'
-        f'    --output-resolution {args.output_resolution}\n'
     )
 
     # Add permissions for shared ownership of the output directory
-    ownership_sharing = f'\nchmod -Rf 771 {args.derivatives}/qsiprep\n'
+    ownership_sharing = f'\nchmod -Rf 771 {args.derivatives}/qsirecon\n'
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
         f.write(header + module_export + singularity_command + ownership_sharing)
 
 
-def run_qsiprep(args, subject, session, job_ids=None):
+def run_qsirecon(args, subject, session, job_ids=None):
     """
-    Run the QSIprep for a given subject and session.
+    Run the QSIrecon for a given subject and session.
 
     Parameters
     ----------
@@ -110,19 +159,20 @@ def run_qsiprep(args, subject, session, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
-    # QSIprep manages already processed subjects.
+    # QSIrecon manages already processed subjects.
     # No need to remove existing folder or skip subjects.
-    # Required files are checked inside the process.
+    if not check_preprocessing_completion(args, subject, session):
+        return None
 
     # Create output (derivatives) directories
     if job_ids is None:
         job_ids = []
 
-    os.makedirs(f"{args.derivatives}/qsiprep", exist_ok=True)
-    os.makedirs(f"{args.derivatives}/qsiprep/stdout", exist_ok=True)
-    os.makedirs(f"{args.derivatives}/qsiprep/scripts", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qsirecon", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qsirecon/stdout", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qsirecon/scripts", exist_ok=True)
 
-    path_to_script = f"{args.derivatives}/qsiprep/scripts/{subject}_{session}_qsiprep.slurm"
+    path_to_script = f"{args.derivatives}/qsirecon/scripts/{subject}_{session}_qsirecon.slurm"
     generate_slurm_script(args, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"
@@ -140,7 +190,7 @@ def main(config_file=None):
         config_file = f"{Path(__file__).parent.parent}/config/config.json"
     config = utils.load_config(config_file)
     args = SimpleNamespace()
-    sub_keys = ['common', 'qsiprep']
+    sub_keys = ['common', 'qsirecon']
     for sub_key in sub_keys:
         step_config = config.get(sub_key, {})
         for key, value in step_config.items():
@@ -156,7 +206,7 @@ def main(config_file=None):
     for subject in subjects:
         sessions = utils.get_sessions(args.input_dir, subject, args.sessions)
         for session in sessions:
-            run_qsiprep(args, subject, session)
+            run_qsirecon(args, subject, session)
 
     # Save config in json
     config = vars(args)
