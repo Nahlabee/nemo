@@ -9,6 +9,10 @@ This repository is dedicated to launch pre- and post-processing workflows on MR 
 - DWI_AP_109vol (1.8x1.8x1.8 mm3)
 - rs-FMRI + fieldmap
 
+Data are considered as non-longitudinal.
+Multiple sessions are possible.
+
+
 **File system**
 Data must be organized according to the BIDS format (https://bids.neuroimaging.io/index.html)
 dataset/
@@ -40,16 +44,42 @@ dataset/
 **Prerequisites**
 BIDS version : 1.8.0
 Python 3.12
-FreeSurfer 7.4.1
-
+FreeSurfer 7.4.1 (singularity container)
+QSIprep 1.0.2 (singularity container)
+QSIrecon 1.1.1 (singularity container)
+FMRIprep
+XCP-D
 
 Please make sure to adapt the paths in the config.py file to your own disk configuration before using one of these scripts !
 
+## User-guide
+The pipelines take as arguments the dataset BIDS directory, the output BIDS derivative directory and a list of subjects.
+They can be launch either in interactive or batch mode.
+
+To set all other arguments, the easiest way is to use config files. For each pipeline, several config files can be found 
+that you can choose depending on your objectives. These configurations have been adapted to the MR protocol defined above. 
+Or you can create your one config file with custom parameters.
+
+Some tips and explanations can be found bellow.
+However, for more details about each pipeline, please visit the corresponding websites.
+
 ## anat
+Choice has been made to use "recon-all" for anatomical segmentation. The reason is that results have been proven 
+to be of good quality in many studies, while CNN-versions of FastSurfer are quite new.
+Also, this historical algorithm uses the T2 contrast to improve white and pial surface reconstruction, which can be 
+crucial on infant data.
 
 ## dwi
+Runtime is hardly predictable, as several jobs are ran in parallel. Each job starts as soon as previous jobs are 
+finished and the individual runtime depends on the number of available processors at that moment.
+
+In some cases, errors occur which are not handle properly and nypipe just continues to hang indefinitely. 
+In that case, it is recommended to stop the job and re-run it (sometimes several times). For that reason, 
+it is essential to save intermediate files on disk.
 
 ## func
+Sequence filtering : keep only resting state...
+
 
 dataset/
 ├─ derivatives/
@@ -64,7 +94,7 @@ dataset/
 │  │  ├─ metrics/
 │  │  ├─ screenshots/
 │  │  │  ├─ sub-01/
-│  ├─ sub-01/ (contient tous les derivatives des BIDS app)
+│  ├─ sub-01/ (contient tous les derivatives des BIDS app ? ou alors séparés ? Oui ça permet de tester plusieurs versions pour chaque container)
 │  │  ├─ anat/ (average across sessions)
 │  │  ├─ figures/
 │  │  ├─ log/

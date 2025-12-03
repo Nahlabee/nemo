@@ -7,7 +7,36 @@ sys.path.append(str(Path(__file__).parent.parent))
 from utils import load_config
 
 
-def segmentation(args):
+def check_prerequisites(args, subject, session):
+    """
+    Check that T1w (and T2w if necessary) nifti files exist.
+
+    Parameters
+    ----------
+    args
+    subject
+    session
+
+    Returns
+    -------
+    bool
+        True if files exist, else False.
+    """
+    required_files = [
+        f"{args.input_dir}/{subject}/{session}/anat/{subject}_{session}_T1w.nii.gz"
+    ]
+    if args.uset2:
+        required_files.append(
+            f"{args.input_dir}/{subject}/{session}/anat/{subject}_{session}_T2w.nii.gz"
+        )
+    for file in required_files:
+        if not os.path.exists(file):
+            print(f"ERROR - Missing file : {file}")
+            return False
+    return True
+
+
+def do_segmentation(args):
     """
 
     Parameters
@@ -21,148 +50,148 @@ def segmentation(args):
     # Check dataset directory
     if not os.path.exists(args.input_dir):
         print("Dataset directory does not exist.")
+        return
+
+    # Create output (derivatives) directories
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+        os.makedirs(args.output_dir + '/stdout')
+        os.makedirs(args.output_dir + '/scripts')
+
+    # Define subjects list
+    if not args.subjects:
+        subjects = [d for d in os.listdir(args.input_dir) if
+                    d.startswith("sub-") and os.path.isdir(os.path.join(args.input_dir, d))]
+        print(f"Subjects found in {args.input_dir}:\n"
+              f"{subjects}")
     else:
-        # Create output (derivatives) directories
-        if not os.path.exists(args.output_dir):
-            os.makedirs(args.output_dir)
-            os.makedirs(args.output_dir + '/stdout')
-            os.makedirs(args.output_dir + '/scripts')
+        subjects = args.subjects
 
-        # Define subjects list
-        if not args.subjects:
-            subjects = [d for d in os.listdir(args.input_dir) if
-                        d.startswith("sub-") and os.path.isdir(os.path.join(args.input_dir, d))]
-            print(f"Subjects found in {args.input_dir}:\n"
-                  f"{subjects}")
+    for subject in subjects:
+        # Add sub prefix if not given by the user
+        if not subject.startswith('sub-'):
+            subject = 'sub-' + subject
+
+        # Define sessions list
+        path_to_subject = os.path.join(args.input_dir, subject)
+        if not args.sessions:
+            sessions = [d for d in os.listdir(path_to_subject) if
+                        d.startswith("ses-") and os.path.isdir(os.path.join(path_to_subject, d))]
+            print(f"Sessions found in {path_to_subject}:\n"
+                  f"{sessions}")
         else:
-            subjects = args.subjects
+            sessions = args.sessions
 
-        for subject in subjects:
-            # Add sub prefix if not given by the user
-            if not 'sub-' in subject:
-                subject = 'sub-' + subject
+        for session in sessions:
+            # Add ses prefix if not given by the user
+            if not session.startswith('ses-'):
+                session = 'ses-' + session
 
-            # Define sessions list
-            path_to_subject = os.path.join(args.input_dir, subject)
-            if not args.sessions:
-                sessions = [d for d in os.listdir(path_to_subject) if
-                            d.startswith("ses-") and os.path.isdir(os.path.join(path_to_subject, d))]
-                print(f"Sessions found in {path_to_subject}:\n"
-                      f"{sessions}")
+            print(subject, ' - ', session)
+            path_to_output = os.path.join(args.output_dir, f"{subject}_{session}")
+
+            # Check input files
+            if not check_prerequisites(args, subject, session):
+                return
+
+            # Manage subject folder if already processed and finished successfully
+            if os.path.exists(path_to_output):
+                logs = os.path.join(path_to_output, 'scripts/recon-all-status.log')
+                with open(logs, 'r') as f:
+                    lines = f.readlines()
+                for l in lines:
+                    if 'finished without error' in l and args.skip_processed:
+                        print(f"Skip already processed subject {subject}_{session}")
+                        continue
+                # Remove existing subject folder
+                shutil.rmtree(path_to_output)
+
+            # write and launch slurm commands
+            header = (
+                f'#!/bin/bash\n'
+                f'#SBATCH -J freesurfer_{subject}_{session}\n'
+                f'#SBATCH -p {args.partition}\n'
+                f'#SBATCH --nodes=1\n'
+                f'#SBATCH --mem={args.requested_mem}gb\n'
+                f'#SBATCH -t {args.requested_time}:00:00\n'
+                f'#SBATCH -e {args.output_dir}/stdout/%x_job-%j.err\n'
+                f'#SBATCH -o {args.output_dir}/stdout/%x_job-%j.out\n'
+            )
+
+            if args.email:
+                header += (
+                    f'#SBATCH --mail-type=BEGIN,END\n'
+                    f'#SBATCH --mail-user={args.email}\n'
+                )
+
+            if args.account:
+                header += (
+                    f'#SBATCH --account={args.account}\n'
+                )
+
+            module_export = (
+                f'\n'
+                f'module purge\n'
+                f'module load userspace/all\n'
+                f'module load singularity\n'
+                f'\n'
+                f'# export FreeSurfer environment variables\n'
+                f'export SUBJECTS_DIR={args.input_dir}\n'
+            )
+
+            if args.use_t2:
+                singularity_command = (
+                    f'\n'
+                    f'apptainer run \\\n'
+                    f'    --cleanenv \\\n'
+                    f'    -B {args.input_dir}:/data \\\n'
+                    f'    -B {args.output_dir}:/out \\\n'
+                    f'    -B {args.freesurfer_license}:/license \\\n'
+                    f'    --env FS_LICENSE=/license/license.txt \\\n'
+                    f'    {args.freesurfer_container} bash -c \\\n'
+                    f'        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
+                    f'        recon-all \\\n'
+                    f'            -all \\\n'
+                    f'            -s {subject}_{session} \\\n'
+                    f'            -i /data/{subject}/{session}/anat/{subject}_{session}_T1w.nii.gz \\\n'
+                    f'            -sd /out \\\n'
+                    f'            -T2 /data/{subject}/{session}/anat/{subject}_{session}_T2w.nii.gz \\\n'
+                    f'            -T2pial"\n'
+                )
+
             else:
-                sessions = args.sessions
+                singularity_command = (
+                    f'\n'
+                    f'apptainer run \\\n'
+                    f'    --cleanenv \\\n'
+                    f'    -B {args.input_dir}:/data \\\n'
+                    f'    -B {args.output_dir}:/out \\\n'
+                    f'    -B {args.freesurfer_license}:/license \\\n'
+                    f'    --env FS_LICENSE=/license/license.txt \\\n'
+                    f'    {args.freesurfer_container} bash -c \\\n'
+                    f'        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
+                    f'        recon-all \\\n'
+                    f'            -all \\\n'
+                    f'            -s {subject}_{session} \\\n'
+                    f'            -i /data/{subject}/{session}/anat/{subject}_{session}_T1w.nii.gz \\\n'
+                    f'            -sd /out \\\n'
+                )
+                # todo : simplifier si possible l'ajout des otpions t2
 
-            for session in sessions:
-                # Add ses prefix if not given by the user
-                if not 'ses-' in session:
-                    session = 'ses-' + session
+            ownership_sharing = (
+                f'\n'
+                f'chmod -Rf 771 {args.output_dir}\n'
+            )
 
-                print(subject, ' - ', session)
-                path_to_output = os.path.join(args.output_dir, f"{subject}_{session}")
+            path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_freesurfer.slurm'
+            with open(path_to_script, 'w') as f:
+                f.write(header + module_export + singularity_command + ownership_sharing)
 
-                # Manage subject folder if already processed and finished successfully
-                if os.path.exists(path_to_output):
-                    logs = os.path.join(path_to_output, 'scripts/recon-all-status.log')
-                    with open(logs, 'r') as f:
-                        lines = f.readlines()
-                    for l in lines:
-                        if 'finished without error' in l and args.skip_processed:
-                            print(f"Skip already processed subject {subject}_{session}")
-                            continue
-                    # Remove existing subject folder
-                    shutil.rmtree(path_to_output)
-
-                # write and launch slurm commands
-                header = \
-                    ('#!/bin/bash\n'
-                     '#SBATCH -J freesurfer_{0}_{1}\n'
-                     '#SBATCH -p {2}\n'
-                     '#SBATCH --nodes=1\n'
-                     '#SBATCH --mem={3}gb\n'
-                     '#SBATCH -t {4}:00:00\n'
-                     '#SBATCH -e {5}/stdout/%x_job-%j.err\n'
-                     '#SBATCH -o {5}/stdout/%x_job-%j.out\n').format(subject, session,
-                                                                     args.partition,
-                                                                     args.requested_mem,
-                                                                     args.requested_time,
-                                                                     args.output_dir)
-
-                if args.email:
-                    header += \
-                        ('#SBATCH --mail-type=BEGIN,END\n'
-                         '#SBATCH --mail-user={}\n').format(args.email)
-
-                if args.account:
-                    header += \
-                        '#SBATCH --account={}\n'.format(args.account)
-
-                module_export = \
-                    ('\n'
-                     'module purge\n'
-                     'module load userspace/all\n'
-                     'module load singularity\n'
-                     '\n'
-                     '# export FreeSurfer environment variables\n'
-                     'export SUBJECTS_DIR={}\n').format(args.input_dir)
-
-                if args.use_t2:
-                    singularity_command = \
-                        ('\n'
-                         '# singularity command\n'
-                         'apptainer run -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\\n'
-                         '    {3} bash -c \\\n'
-                         '        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
-                         '        recon-all \\\n'
-                         '            -all \\\n'
-                         '            -s {4}_{5} \\\n'
-                         '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
-                         '            -sd /out \\\n'
-                         '            -T2 /data/{4}/{5}/anat/{4}_{5}_T2w.nii.gz \\\n'
-                         '            -T2pial"\n').format(args.input_dir,
-                                                          args.output_dir,
-                                                          args.freesurfer_license,
-                                                          args.freesurfer_container,
-                                                          subject, session)
-
-                else:
-                    singularity_command = \
-                        ('\n'
-                         '# singularity command\n'
-                         'apptainer run -B {0}:/data,{1}:/out,{2}:/license --env FS_LICENSE=/license/license.txt \\\n'
-                         '    {3} bash -c \\\n'
-                         '        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
-                         '        recon-all \\\n'
-                         '            -all \\\n'
-                         '            -s {4}_{5} \\\n'
-                         '            -i /data/{4}/{5}/anat/{4}_{5}_T1w.nii.gz \\\n'
-                         '            -sd /out"\n').format(args.input_dir,
-                                                           args.output_dir,
-                                                           args.freesurfer_license,
-                                                           args.freesurfer_container,
-                                                           subject, session)
-
-                # todo: voir comment intégrer les autres args** de la commande FS via la config
-
-                ownership_sharing = \
-                    ('\n'
-                     'chmod -Rf 771 {0}\n').format(args.output_dir)
-
-                if args.interactive:
-                    file_content = module_export + singularity_command + ownership_sharing
-                    path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_freesurfer.sh'
-                    cmd = ("sh %s" % path_to_script)
-                else:
-                    file_content = header + module_export + singularity_command + ownership_sharing
-                    path_to_script = f'{args.output_dir}/scripts/{subject}_{session}_freesurfer.slurm'
-                    cmd = ("sbatch %s" % path_to_script)
-
-                with open(path_to_script, 'w') as f:
-                    f.write(file_content)
-
-                # launch slurm script
-                print(cmd)
-                a = os.system(cmd)
-                print(a)
+            # launch slurm script
+            cmd = f"sbatch {path_to_script}"
+            print(cmd)
+            a = os.system(cmd)
+            # subprocess.run(cmd, shell=True, check=True)
 
 
 def segmentation_qc():
@@ -180,7 +209,7 @@ def segmentation_qc():
     # +Group-wise QC avec normalisation et calcul définitif des outliers
 
 
-def main(raw_args=None):
+def main_old(raw_args=None):
     """
     The argument parser allow to launch FreeSurfer via a command line.
     However, by default it will rely on the content of the config file.
@@ -251,7 +280,32 @@ def main(raw_args=None):
     with open(os.path.join(args.output_dir, 'config.json'), "w") as f:
         json.dump(config, f, indent=4)
 
-    segmentation(args)
+    do_segmentation(args)
+
+
+def main():
+    from types import SimpleNamespace
+    args = SimpleNamespace()
+
+    # Read arguments from config file.
+    general_config_file = f"{Path(__file__).parent.parent}/config.json"
+    config = load_config(general_config_file)
+    sub_keys = ['common', 'slurm', 'freesurfer']
+    for sub_key in sub_keys:
+        workflow_config = config.get(sub_key, {})
+        for key, value in workflow_config.items():
+            if getattr(args, key, None) is None:
+                setattr(args, key, value)
+
+    args.output_dir = f"{args.derivatives}/freesurfer"
+
+    # Save config in json
+    config = vars(args)
+    print(args)
+    with open(os.path.join(args.output_dir, 'config.json'), "w") as f:
+        json.dump(config, f, indent=4)
+
+    do_segmentation(args)
 
 
 if __name__ == '__main__':
