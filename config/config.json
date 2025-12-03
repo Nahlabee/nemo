@@ -2,7 +2,7 @@
   "common": {
     "input_dir": "/scratch/lhashimoto/nemo_database/imaging_data",
     "derivatives": "/scratch/lhashimoto/nemo_database_derivatives",
-    "subjects": ["1054002"],
+    "subjects": ["1054003"],
     "sessions": ["01"],
     "freesurfer_license": "/scratch/lhashimoto/freesurfer/license",
     "run_freesurfer": true,
