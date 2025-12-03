@@ -161,13 +161,15 @@ def run_qsirecon(args, subject, session, job_ids=None):
 
     # QSIrecon manages already processed subjects.
     # No need to remove existing folder or skip subjects.
-    if not check_preprocessing_completion(args, subject, session):
-        return None
 
-    # Create output (derivatives) directories
     if job_ids is None:
+        # Check if preprocessing are terminated only outside a workflow submission. Otherwise, the job is never
+        # submitted.
+        if not check_preprocessing_completion(args, subject, session):
+            return None
         job_ids = []
 
+    # Create output (derivatives) directories
     os.makedirs(f"{args.derivatives}/qsirecon", exist_ok=True)
     os.makedirs(f"{args.derivatives}/qsirecon/stdout", exist_ok=True)
     os.makedirs(f"{args.derivatives}/qsirecon/scripts", exist_ok=True)

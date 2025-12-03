@@ -57,7 +57,7 @@ def main(config_file=None):
             else:
                 qsirecon_job_id = None
 
-            print("Workflow completed.")
+            print("Workflow submitted.")
             print("Freesurfer job IDs:", freesurfer_job_id)
             print("QSIprep job IDs:", qsiprep_job_id)
             print("QSIrecon job IDs:", qsirecon_job_id)

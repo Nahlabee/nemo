@@ -114,10 +114,10 @@ def run_qsiprep(args, subject, session, job_ids=None):
     # No need to remove existing folder or skip subjects.
     # Required files are checked inside the process.
 
-    # Create output (derivatives) directories
     if job_ids is None:
         job_ids = []
 
+    # Create output (derivatives) directories
     os.makedirs(f"{args.derivatives}/qsiprep", exist_ok=True)
     os.makedirs(f"{args.derivatives}/qsiprep/stdout", exist_ok=True)
     os.makedirs(f"{args.derivatives}/qsiprep/scripts", exist_ok=True)
