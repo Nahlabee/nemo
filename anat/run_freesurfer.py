@@ -1,7 +1,10 @@
 import os
 import shutil
 from types import SimpleNamespace
-from .. import utils
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+import utils
 
 
 def check_prerequisites(args, subject, session):
