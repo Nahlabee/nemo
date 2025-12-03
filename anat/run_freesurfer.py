@@ -1,9 +1,7 @@
 import os
-import sys
 import shutil
 from types import SimpleNamespace
-sys.path.append('../..')
-import utils
+from .. import utils
 
 
 def check_prerequisites(args, subject, session):
