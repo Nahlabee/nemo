@@ -17,7 +17,10 @@ def main(config_file=None):
     if not config_file:
         config_file = f"{Path(__file__).parent.parent}/config/config.json"
     config = utils.load_config(config_file)
-    args = SimpleNamespace(**config.get('common', {}))
+    args = SimpleNamespace()
+    step_config = config.get('common', {})
+    for key, value in step_config.items():
+        setattr(args, key, value)
 
     # Check dataset directory
     if not os.path.exists(args.input_dir):
