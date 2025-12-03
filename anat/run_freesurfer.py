@@ -166,8 +166,7 @@ def main():
     """
     Main function to execute FreeSurfer processing for a list of subjects and sessions.
     """
-    config_file = f"{Path(__file__).parent.parent}/config.json"
-    config = utils.load_config(config_file)
+    config = utils.load_config('config.json')
     args = SimpleNamespace()
     sub_keys = ['common', 'freesurfer']
     for sub_key in sub_keys:
