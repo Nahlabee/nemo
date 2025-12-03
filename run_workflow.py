@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 import sys
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+sys.path.append(str(Path(__file__).resolve().parent))
 import utils
 from anat.run_freesurfer import run_freesurfer
 from dwi.run_qsiprep import run_qsiprep
@@ -17,7 +17,7 @@ def main(config_file=None):
     """
     # Load configuration
     if not config_file:
-        config_file = f"{Path(__file__).parent.parent}/config/config.json"
+        config_file = f"{Path(__file__).parent}/config/config.json"
     config = utils.load_config(config_file)
     args = SimpleNamespace(**config.get('common', {}))
 
