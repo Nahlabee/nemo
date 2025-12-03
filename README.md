@@ -103,3 +103,47 @@ dataset/
 │  │  │  ├─ dwi/
 │  │  │  ├─ fmap/
 │  │  │  └─ func/
+
+
+project/
+├── config/
+│   ├── config.json                # Fichier de configuration général
+│   ├── freesurfer_config.json     # Configuration spécifique à FreeSurfer
+│   ├── qsiprep_config.json        # Configuration spécifique à QSIprep
+│   ├── qsirecon_config.json       # Configuration spécifique à QSIrecon
+│   ├── fmriprep_config.json       # Configuration spécifique à fMRIPrep
+│   ├── xcpd_config.json           # Configuration spécifique à XCP-D
+│   └── qc_config.json             # Configuration spécifique au QC
+├── scripts/
+│   ├── run_freesurfer.py          # Script principal pour FreeSurfer
+│   ├── run_qsiprep.py             # Script principal pour QSIprep
+│   ├── run_qsirecon.py            # Script principal pour QSIrecon
+│   ├── run_fmriprep.py            # Script principal pour fMRIPrep
+│   ├── run_xcpd.py                # Script principal pour XCP-D
+│   ├── qc_freesurfer.py           # QC pour FreeSurfer
+│   ├── qc_qsiprep.py              # QC pour QSIprep
+│   ├── qc_qsirecon.py             # QC pour QSIrecon
+│   ├── qc_fmriprep.py             # QC pour fMRIPrep
+│   ├── qc_xcpd.py                 # QC pour XCP-D
+│   └── qc_group.py                # QC de groupe final
+├── utils/
+│   ├── __init__.py                # Initialisation du module utils
+│   ├── slurm_utils.py             # Fonctions utilitaires pour soumettre des jobs SLURM
+│   ├── file_utils.py              # Fonctions pour gérer les fichiers et dossiers
+│   ├── config_utils.py            # Fonctions pour charger et gérer les configurations
+│   └── qc_utils.py                # Fonctions utilitaires pour les étapes de QC
+├── logs/                          # Dossier pour les fichiers de log
+│   ├── freesurfer/
+│   ├── qsiprep/
+│   ├── qsirecon/
+│   ├── fmriprep/
+│   ├── xcpd/
+│   └── qc/
+├── outputs/                       # Dossier pour les résultats finaux
+│   ├── freesurfer/
+│   ├── qsiprep/
+│   ├── qsirecon/
+│   ├── fmriprep/
+│   ├── xcpd/
+│   └── qc/
+└── main_workflow.py               # Script principal pour exécuter tout le workflow
