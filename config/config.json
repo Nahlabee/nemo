@@ -4,10 +4,10 @@
     "derivatives": "/scratch/lhashimoto/nemo_database_derivatives",
     "subjects": ["1054004"],
     "sessions": ["01"],
-    "freesurfer_license": "/scratch/lhashimoto/freesurfer/license"
-  },
-
-  "slurm": {
+    "freesurfer_license": "/scratch/lhashimoto/freesurfer/license",
+    "run_freesurfer": true,
+    "run_qsiprep": true,
+    "run_qsirecon": true,
     "email": null,
     "account": null
   },
