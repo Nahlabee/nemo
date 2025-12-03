@@ -113,7 +113,7 @@ def run_qsiprep(args, freesurfer_job_ids=None):
                 f'    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
                 f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
                 f'    -B {args.config_eddy}:/config/eddy-config.json \\\n'
-                f'    -B {args.config_qsiprep}:/config/config-file.toml \\\n'
+                f'    -B {args.qsiprep_config}:/config/config-file.toml \\\n'
                 f'    --env FREESURFER_HOME=/opt/freesurfer \\\n'
                 f'    {args.qsiprep_container} /data /out participant \\\n'
                 f'    --participant-label {subject} --session-id {session} \\\n'
@@ -313,7 +313,7 @@ def run_qsirecon(args, qsiprep_job_ids=None):
                 f'    -B {args.derivatives}/qsirecon:/out \\\n'
                 f'    -B {args.derivatives}/freesurfer:/freesurfer \\\n'
                 f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
-                f'    -B {args.config_qsirecon}:/config/config-file.toml \\\n'
+                f'    -B {args.qsirecon_config}:/config/config-file.toml \\\n'
                 f'    {args.qsirecon_container} /in /out participant \\\n'
                 f'    --participant-label {subject} --session-id {session} \\\n'
                 f'    -v -w /out/temp_qsirecon \\\n'
@@ -375,7 +375,7 @@ def main_old(raw_args=None):
                    help="Path to FreeSurfer license folder.")
     p.add_argument("--config_eddy", type=str,
                    help="Configuration file containing all the workflow settings.")
-    p.add_argument("--config_qsiprep", type=str,
+    p.add_argument("--qsiprep_config", type=str,
                    help="Configuration file containing all the workflow settings.")
     p.add_argument("--output_resolution",
                    help="The isotropic voxel size in mm the data will be resampled to after preprocessing.")  # Mandatory
