@@ -3,6 +3,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 from anat.run_freesurfer import run_freesurfer
 from dwi.run_qsiprep import run_qsiprep
@@ -17,10 +19,7 @@ def main(config_file=None):
     if not config_file:
         config_file = f"{Path(__file__).parent.parent}/config/config.json"
     config = utils.load_config(config_file)
-    args = SimpleNamespace()
-    step_config = config.get('common', {})
-    for key, value in step_config.items():
-        setattr(args, key, value)
+    args = SimpleNamespace(**config.get('common', {}))
 
     # Check dataset directory
     if not os.path.exists(args.input_dir):
