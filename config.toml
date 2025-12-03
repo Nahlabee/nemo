@@ -1,0 +1,48 @@
+# =============================
+#   PROJECT-WIDE SETTINGS
+# =============================
+[project]
+root_dir = "/scratch/hrasoanandrianina"
+bids_dir = "/scratch/hrasoanandrianina/braint_database"
+work_dir = "/scratch/hrasoanandrianina/derivatives/work_dir"
+slurm_dir = "/scratch/hrasoanandrianina/code/nemo/fmriprep/slurm_scripts"
+log_dir = "/scratch/hrasoanandrianina/derivatives/logs"
+bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/fmriprep/bids_filters"
+
+# =============================
+#   PARTITION SETTINGS
+# =============================
+[partition]
+name = "skylake"
+time = "12:00:00"
+mem_gb = "64G"
+reserved_cpus = 8
+omp_threads = 4
+mail = ""
+mail_freq = "FAIL"
+
+# =============================
+#   PIPELINE: fMRIPrep
+# =============================
+[fmriprep]
+sif = "/scratch/hrasoanandrianina/containers/fmriprep_25.2.1.sif"
+output_dir = "/scratch/hrasoanandrianina/derivatives/fmriprep_25.2.1"
+fs_license = "/scratch/hrasoanandrianina/containers/license.txt"
+cifti = true
+
+
+# =============================
+#   PIPELINE: XCP-D
+# =============================
+[xcp_d]
+sif = "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif"
+output_dir = "/scratch/hrasoanandrianina/derivatives/xcp_d_0.12.0"
+
+
+# =============================
+#   PIPELINE: MRIQC
+# =============================
+[mriqc]
+sif = "/scratch/hrasoanandrianina/containers/mriqc_24.0.2.sif"
+output_dir = "/scratch/hrasoanandrianina/derivatives/mriqc_24.0.2"
+

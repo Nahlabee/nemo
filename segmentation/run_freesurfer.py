@@ -3,21 +3,21 @@ import os
 import sys
 import subprocess
 import shutil
-import config
+import config_loader
 import pandas as pd
 from datetime import datetime
 from qc_generator import generate_qc_pdf
 
 
 # Create necessary directories
-os.makedirs(config.LOG_DIR + "/freesurfer", exist_ok=True)
-os.makedirs(config.LOG_DIR + "/xcp_d", exist_ok=True)
-os.makedirs(os.path.dirname(config.QC_TABLE), exist_ok=True)
+os.makedirs(config_loader.LOG_DIR + "/freesurfer", exist_ok=True)
+os.makedirs(config_loader.LOG_DIR + "/xcp_d", exist_ok=True)
+os.makedirs(os.path.dirname(config_loader.QC_TABLE), exist_ok=True)
 
 # Set required environment vars
 os.environ["FREESURFER_HOME"] = "/usr/local/freesurfer"
 os.environ["FS_LICENSE"] = "/usr/local/freesurfer/license.txt"
-os.environ["SUBJECTS_DIR"] = config.FREESURFER_OUTPUTS
+os.environ["SUBJECTS_DIR"] = config_loader.FREESURFER_OUTPUTS
 
 print("FREESURFER_HOME:", os.environ['FREESURFER_HOME'])
 print("FS_LICENSE:", os.environ['FS_LICENSE'])
@@ -26,7 +26,7 @@ print("SUBJECTS_DIR:", os.environ['SUBJECTS_DIR'])
 def log_path(tool, subject):
     """Generate log file path.
     """
-    return f"{config.LOG_DIR}/{tool}/{subject}.log"
+    return f"{config_loader.LOG_DIR}/{tool}/{subject}.log"
 
 
 def run_cmd(cmd, logfile):
@@ -41,16 +41,16 @@ def run_freesurfer(subject):
     """
 
     # Cleanup previous recon (optional)
-    subject_dir = f"{config.FREESURFER_OUTPUTS}/{subject}"
+    subject_dir = f"{config_loader.FREESURFER_OUTPUTS}/{subject}"
     if os.path.exists(subject_dir):
         shutil.rmtree(subject_dir)
 
     cmd = [
     "apptainer", "exec",
-    "-B", f"{config.DIR_INPUTS}:/data",
-    "-B", f"{config.FREESURFER_OUTPUTS}:/output",
-    "-B", f"{config.FS_LICENSE}:/usr/local/freesurfer/license.txt",
-    config.FREESURFER_SIF,
+    "-B", f"{config_loader.DIR_INPUTS}:/data",
+    "-B", f"{config_loader.FREESURFER_OUTPUTS}:/output",
+    "-B", f"{config_loader.FS_LICENSE}:/usr/local/freesurfer/license.txt",
+    config_loader.FREESURFER_SIF,
     "bash", "-c",
     "export FREESURFER_HOME=/usr/local/freesurfer && "
     "source $FREESURFER_HOME/SetUpFreeSurfer.sh && "
@@ -62,7 +62,7 @@ def run_freesurfer(subject):
     run_cmd(cmd, log_path("freesurfer", subject))
 
 def extract_qc(subject):
-    stats_file = f"{config.FREESURFER_OUTPUTS}/{subject}/stats/aseg.stats"
+    stats_file = f"{config_loader.FREESURFER_OUTPUTS}/{subject}/stats/aseg.stats"
     if not os.path.exists(stats_file):
         return None
 
@@ -83,13 +83,13 @@ def main(subject):
 
     if qc:
         df = pd.DataFrame([qc])
-        if not os.path.exists(config.QC_TABLE):
-            df.to_csv(config.QC_TABLE, index=False)
+        if not os.path.exists(config_loader.QC_TABLE):
+            df.to_csv(config_loader.QC_TABLE, index=False)
         else:
-            df.to_csv(config.QC_TABLE, mode='a', header=False, index=False)
+            df.to_csv(config_loader.QC_TABLE, mode='a', header=False, index=False)
 
-    generate_qc_pdf(subject, config.FREESURFER_OUTPUTS,
-                    f"{config.LOG_DIR}/freesurfer/{subject}_qc.pdf")
+    generate_qc_pdf(subject, config_loader.FREESURFER_OUTPUTS,
+                    f"{config_loader.LOG_DIR}/freesurfer/{subject}_qc.pdf")
     print(f"✅ Completed {subject}")
 
 
