@@ -8,6 +8,45 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 
 
+def is_already_processed(args, subject, session):
+    """
+    Check if subject_session is already processed successfully.
+
+    Parameters
+    ----------
+    args : Namespace
+        Configuration arguments.
+    subject : str
+        Subject identifier (e.g., "sub-01").
+    session : str
+        Session identifier (e.g., "ses-01").
+
+    Returns
+    -------
+    bool
+        True if already processed, False otherwise.
+    """
+
+    # Check if QSIprep already processed without error
+    stdout_dir = f"{args.derivatives}/qsiprep/stdout"
+    if not os.path.exists(stdout_dir):
+        return False
+
+    prefix = f"qsiprep_{subject}_{session}"
+    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+    if not stdout_files:
+        return False
+
+    for file in stdout_files:
+        file_path = os.path.join(stdout_dir, file)
+        with open(file_path, 'r') as f:
+            if 'QSIPrep finished successfully!' in f.read():
+                print(f"Skip already processed subject {subject}_{session}")
+                return True
+
+    return False
+
+
 def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
     """
     Generate the SLURM script for QSIprep processing.
@@ -113,6 +152,8 @@ def run_qsiprep(args, subject, session, job_ids=None):
     # QSIprep manages already processed subjects.
     # No need to remove existing folder or skip subjects.
     # Required files are checked inside the process.
+    if is_already_processed(args, subject, session):
+        return None
 
     if job_ids is None:
         job_ids = []
@@ -129,42 +170,3 @@ def run_qsiprep(args, subject, session, job_ids=None):
     print(f"Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id
-
-
-def main(config_file=None):
-    """
-    Main function to execute FreeSurfer processing for a list of subjects and sessions.
-    """
-    # Load configuration
-    if not config_file:
-        config_file = f"{Path(__file__).parent.parent}/config/config.json"
-    config = utils.load_config(config_file)
-    args = SimpleNamespace()
-    sub_keys = ['common', 'qsiprep']
-    for sub_key in sub_keys:
-        step_config = config.get(sub_key, {})
-        for key, value in step_config.items():
-            setattr(args, key, value)
-
-    # Check dataset directory
-    if not os.path.exists(args.input_dir):
-        print("Dataset directory does not exist.")
-        return 0
-
-    # Loop over subjects and sessions
-    subjects = utils.get_subjects(args.input_dir, args.subjects)
-    for subject in subjects:
-        sessions = utils.get_sessions(args.input_dir, subject, args.sessions)
-        for session in sessions:
-            run_qsiprep(args, subject, session)
-
-    # Save config in json
-    config = vars(args)
-    filename = f"{args.derivatives}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
-    with open(filename, "w") as f:
-        json.dump(config, f, indent=4)
-
-
-if __name__ == "__main__":
-    main()
-

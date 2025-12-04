@@ -43,6 +43,7 @@ def main(config_file=None):
                 for key, value in step_config.items():
                     setattr(args, key, value)
                 freesurfer_job_id = run_freesurfer(args, subject, session)
+                print("Freesurfer job IDs:", freesurfer_job_id)
             else:
                 freesurfer_job_id = None
 
@@ -51,6 +52,7 @@ def main(config_file=None):
                 for key, value in step_config.items():
                     setattr(args, key, value)
                 qsiprep_job_id = run_qsiprep(args, subject, session)
+                print("QSIprep job IDs:", qsiprep_job_id)
             else:
                 qsiprep_job_id = None
 
@@ -60,13 +62,11 @@ def main(config_file=None):
                     setattr(args, key, value)
                 dependencies = [job_id for job_id in [freesurfer_job_id, qsiprep_job_id] if job_id is not None]
                 qsirecon_job_id = run_qsirecon(args, subject, session, dependencies)
+                print("QSIrecon job IDs:", qsirecon_job_id)
             else:
                 qsirecon_job_id = None
 
             print("Workflow submitted.")
-            print("Freesurfer job IDs:", freesurfer_job_id)
-            print("QSIprep job IDs:", qsiprep_job_id)
-            print("QSIrecon job IDs:", qsirecon_job_id)
 
 
 if __name__ == "__main__":
