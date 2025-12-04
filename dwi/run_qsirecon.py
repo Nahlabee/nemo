@@ -142,34 +142,35 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'fi\n'
     )
 
-    # singularity_command = (
-    #     f'\napptainer run \\\n'
-    #     f'    --nv --cleanenv \\\n'
-    #     f'    -B {args.derivatives}/qsiprep:/data \\\n'
-    #     f'    -B {args.derivatives}/qsirecon:/out \\\n'
-    #     f'    -B {args.derivatives}/freesurfer:/freesurfer \\\n'
-    #     f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
-    #     f'    -B {args.qsirecon_config}:/config/config-file.toml \\\n'
-    #     f'    {args.qsirecon_container} /data /out participant \\\n'
-    #     f'    --participant-label {subject} --session-id {session} \\\n'
-    #     f'    -v -w /out/temp_qsirecon \\\n'
-    #     f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
-    #     f'    --fs-subjects-dir /freesurfer \\\n'
-    #     f'    --config-file /config/config-file.toml \\\n'
-    # )
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --nv --cleanenv \\\n'
-        f'    -B {args.derivatives}:/data \\\n'
+        f'    -B {args.derivatives}/qsiprep:/in \\\n'
+        f'    -B {args.derivatives}/qsirecon:/out \\\n'
+        f'    -B {args.derivatives}/freesurfer:/freesurfer \\\n'
         f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
         f'    -B {args.qsirecon_config}:/config/config-file.toml \\\n'
-        f'    {args.qsirecon_container} /data/qsiprep /data/qsirecon participant \\\n'
+        f'    {args.qsirecon_container} /in /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
-        f'    -v -w /data/qsirecon/temp_qsirecon \\\n'
+        f'    -v -w /out/temp_qsirecon \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
-        f'    --fs-subjects-dir /data/freesurfer \\\n'
-        f'    --config-file /config/config-file.toml \\\n'
+        f'    --fs-subjects-dir /freesurfer \\\n'
+        f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
+        f'    --atlases AAL116\n'
     )
+    # singularity_command = (
+    #     f'\napptainer run \\\n'
+    #     f'    --nv --cleanenv \\\n'
+    #     f'    -B {args.derivatives}:/data \\\n'
+    #     f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
+    #     f'    -B {args.qsirecon_config}:/config/config-file.toml \\\n'
+    #     f'    {args.qsirecon_container} /data/qsiprep /data/qsirecon participant \\\n'
+    #     f'    --participant-label {subject} --session-id {session} \\\n'
+    #     f'    -v -w /data/qsirecon/temp_qsirecon \\\n'
+    #     f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
+    #     f'    --fs-subjects-dir /data/freesurfer \\\n'
+    #     f'    --config-file /config/config-file.toml \\\n'
+    # )
 
     # Add permissions for shared ownership of the output directory
     ownership_sharing = f'\nchmod -Rf 771 {args.derivatives}/qsirecon\n'
