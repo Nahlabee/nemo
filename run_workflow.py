@@ -37,6 +37,8 @@ def main(config_file=None):
         sessions = utils.get_sessions(args.input_dir, subject, args.sessions)
         for session in sessions:
 
+            print(subject, ' - ', session)
+
             # Run workflow steps based on configuration
             if args.run_freesurfer:
                 step_config = config.get('freesurfer', {})
