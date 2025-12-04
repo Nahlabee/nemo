@@ -23,7 +23,7 @@ DATA_BIDS_DIR="/scratch/lhashimoto/nemo_derivatives/qsiprep"
 DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_derivatives"
 FREESURFER_CONTAINER="/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
-FREESURFER_DIR="/scratch/lhashimoto/nemo_database_derivatives/freesurfer"
+FREESURFER_DIR="/scratch/lhashimoto/freesurfer/outputs"
 QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
 
 # Execute Singularity container
@@ -31,7 +31,7 @@ apptainer run \
   --nv --containall --writable-tmpfs --cleanenv \
   -B $DERIVATIVES_BIDS_DIR/qsiprep:/data \
   -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
-  -B $DERIVATIVES_BIDS_DIR/freesurfer:/freesurfer \
+  -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   $QSIRECON_CONTAINER /data /out participant \
     --participant-label sub-1054001 --session-id ses-01 \
