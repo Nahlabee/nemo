@@ -34,7 +34,7 @@ apptainer run \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   $QSIRECON_CONTAINER /data /out participant \
-    --participant-label sub-1054001 --session-id ses-01 \
+    --participant-label 1054001 --session-id 01 \
     -v -w /out/temp_qsirecon \
     --fs-license-file /opt/freesurfer/license.txt \
     --fs-subjects-dir /freesurfer \
