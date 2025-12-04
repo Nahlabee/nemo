@@ -2,12 +2,12 @@
   "common": {
     "input_dir": "/scratch/lhashimoto/nemo_database/imaging_data",
     "derivatives": "/scratch/lhashimoto/nemo_database_derivatives",
-    "subjects": ["1054004"],
+    "subjects": ["1054010"],
     "sessions": ["01"],
     "freesurfer_license": "/scratch/lhashimoto/freesurfer/license",
     "run_freesurfer": false,
     "run_qsiprep": true,
-    "run_qsirecon": true,
+    "run_qsirecon": false,
     "email": null,
     "account": null
   },
