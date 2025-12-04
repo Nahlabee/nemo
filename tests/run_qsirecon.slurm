@@ -29,7 +29,7 @@ QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
 # Execute Singularity container
 apptainer run \
   --nv --containall --writable-tmpfs --cleanenv \
-  -B DERIVATIVES_BIDS_DIR/qsiprep:/data \
+  -B $DERIVATIVES_BIDS_DIR/qsiprep:/data \
   -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
