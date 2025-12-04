@@ -11,6 +11,7 @@ import utils
 def is_already_processed(args, subject, session):
     """
     Check if subject_session is already processed successfully.
+    Note: Even if QSIprep put files in cache, some steps are recomputed which require several hours of ressources.
 
     Parameters
     ----------
@@ -41,7 +42,7 @@ def is_already_processed(args, subject, session):
         file_path = os.path.join(stdout_dir, file)
         with open(file_path, 'r') as f:
             if 'QSIPrep finished successfully!' in f.read():
-                print(f"Skip already processed subject {subject}_{session}")
+                print(f"[QSIPREP] Skip already processed subject {subject}_{session}")
                 return True
 
     return False
@@ -167,6 +168,6 @@ def run_qsiprep(args, subject, session, job_ids=None):
     generate_slurm_script(args, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"
-    print(f"Submitting job: {cmd}")
+    print(f"[QSIPREP] Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id

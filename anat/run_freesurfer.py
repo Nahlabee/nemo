@@ -38,7 +38,7 @@ def check_prerequisites(args, subject, session):
         )
     for file in required_files:
         if not os.path.exists(file):
-            print(f"ERROR - Missing file: {file}")
+            print(f"[FREESURFER] ERROR - Missing file: {file}")
             return False
 
     # Check if already processed
@@ -49,7 +49,7 @@ def check_prerequisites(args, subject, session):
             lines = f.readlines()
         for l in lines:
             if 'finished without error' in l and args.skip_processed:
-                print(f"Skip already processed subject {subject}_{session}")
+                print(f"[FREESURFER] Skip already processed subject {subject}_{session}")
                 return False
         # Remove existing subject folder
         shutil.rmtree(path_to_output)
@@ -160,6 +160,6 @@ def run_freesurfer(args, subject, session):
     generate_slurm_script(args, subject, session, path_to_script)
 
     cmd = f"sbatch {path_to_script}"
-    print(f"Submitting job: {cmd}")
+    print(f"[FREESURFER] Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id

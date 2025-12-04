@@ -31,7 +31,7 @@ def check_preprocessing_completion(args, subject, session):
 
     # Check that FreeSurfer finished without error
     if not os.path.exists(f"{args.derivatives}/freesurfer/{subject}_{session}"):
-        print(f"Please run FreeSurfer recon-all command before QSIrecon.")
+        print(f"[QSIRECON] Please run FreeSurfer recon-all command before QSIrecon.")
         return False
 
     logs = f"{args.derivatives}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
@@ -39,19 +39,19 @@ def check_preprocessing_completion(args, subject, session):
         lines = f.readlines()
     for l in lines:
         if not 'finished without error' in l:
-            print(f"FreeSurfer did not terminate.")
+            print(f"[QSIRECON] FreeSurfer did not terminate.")
             return False
 
     # Check that QSIprep finished without error
     stdout_dir = f"{args.derivatives}/qsiprep/stdout"
     if not os.path.exists(stdout_dir):
-        print(f"Could not read standard outputs from QSIprep.")
+        print(f"[QSIRECON] Could not read standard outputs from QSIprep.")
         return False
 
     prefix = f"qsiprep_{subject}_{session}"
     stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
     if not stdout_files:
-        print(f"Could not read standard outputs from QSIprep.")
+        print(f"[QSIRECON] Could not read standard outputs from QSIprep.")
         return False
 
     for file in stdout_files:
@@ -60,7 +60,7 @@ def check_preprocessing_completion(args, subject, session):
             if 'QSIPrep finished successfully!' in f.read():
                 return True
 
-    print("QSIprep did not terminate.")
+    print("[QSIRECON] QSIprep did not terminate. Please run QSIprep command before QSIrecon.")
     return False
 
 
@@ -119,11 +119,11 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
     prereq_check = (
         f'\n# Check that FreeSurfer finished without error\n'
         f'if [ ! -d "{args.derivatives}/freesurfer/{subject}_{session}" ]; then\n'
-        f'    echo "Please run FreeSurfer recon-all command before QSIrecon."\n'
+        f'    echo "[QSIRECON] Please run FreeSurfer recon-all command before QSIrecon."\n'
         f'    exit 1\n'
         f'fi\n'
-        f'if ! grep -q "finished without error" {args.derivatives}/freesurfer/{subject}_{session}/scripts/recon-all-status.log; then\n'
-        f'    echo "FreeSurfer did not terminate for {subject} {session}."\n'
+        f'if ! grep -q "finished without error" {args.derivatives}/freesurfer/{subject}_{session}/scripts/recon-all.log; then\n'
+        f'    echo "[QSIRECON] FreeSurfer did not terminate for {subject} {session}."\n'
         f'    exit 1\n'
         f'fi\n'
         f'\n# Check that QSIprep finished without error\n'
@@ -136,7 +136,8 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'    fi\n'
         f'done\n'
         f'if [ "$found_success" = false ]; then\n'
-        f'    echo "QSIprep did not terminate for {subject} {session}."\n'
+        f'    echo "[QSIRECON] QSIprep did not terminate for {subject} {session}. Please run QSIprep command before '
+        f'QSIrecon."\n'
         f'    exit 1\n'
         f'fi\n'
     )
@@ -204,6 +205,6 @@ def run_qsirecon(args, subject, session, job_ids=None):
     generate_slurm_script(args, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"
-    print(f"Submitting job: {cmd}")
+    print(f"[QSIRECON] Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id
