@@ -13,7 +13,7 @@ module load userspace/all
 module load singularity
 
 # Set the path to config.py
-CONFIG_FILE="../config.py"
+CONFIG_FILE="tests/config.py"
 
 # Read paths from config.py and export them as environment variables
 eval $(python3 -c 'import config; config.print_paths()')
