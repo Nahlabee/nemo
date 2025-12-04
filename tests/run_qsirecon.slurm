@@ -20,22 +20,18 @@ module load singularity
 #eval $(python3 -c 'import config; config.print_paths()')
 
 DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives"
-FREESURFER_CONTAINER="/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
-FREESURFER_DIR="/scratch/lhashimoto/nemo_database_derivatives/freesurfer"
 QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
 
 # Execute Singularity container
 apptainer run \
   --nv --containall --writable-tmpfs --cleanenv \
-  -B $DERIVATIVES_BIDS_DIR/qsiprep:/qsiprep \
-  -B $DERIVATIVES_BIDS_DIR/qsirecon:/qsirecon \
-  -B $FREESURFER_DIR:/freesurfer \
+  -B $DERIVATIVES_BIDS_DIR \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
-  $QSIRECON_CONTAINER /qsiprep /qsirecon participant \
+  $QSIRECON_CONTAINER $DERIVATIVES_BIDS_DIR/qsiprep $DERIVATIVES_BIDS_DIR/qsirecon participant \
     --participant-label sub-1054001 --session-id ses-01 \
-    -v -w /qsirecon/temp_qsirecon \
+    -v -w $DERIVATIVES_BIDS_DIR/work \
     --fs-license-file /opt/freesurfer/license.txt \
-    --fs-subjects-dir /freesurfer \
+    --fs-subjects-dir $DERIVATIVES_BIDS_DIR/freesurfer \
     --recon-spec mrtrix_multishell_msmt_ACT-hsvs \
     --atlases AAL116
