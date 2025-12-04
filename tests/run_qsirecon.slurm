@@ -31,7 +31,7 @@ apptainer run \
   --nv --containall --writable-tmpfs --cleanenv \
   -B $DERIVATIVES_BIDS_DIR/qsiprep:/data \
   -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
-  -B $FREESURFER_DIR:/freesurfer \
+  -B $DERIVATIVES_BIDS_DIR/freesurfer:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   $QSIRECON_CONTAINER /data /out participant \
     --participant-label sub-1054001 --session-id ses-01 \
