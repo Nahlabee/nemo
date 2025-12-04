@@ -19,7 +19,7 @@ module load singularity
 # Read paths from config.py and export them as environment variables
 #eval $(python3 -c 'import config; config.print_paths()')
 
-DATA_BIDS_DIR="/scratch/lhashimoto/nemo_database/imaging_data"
+DATA_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives/qsiprep"
 DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives"
 FREESURFER_CONTAINER="/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
