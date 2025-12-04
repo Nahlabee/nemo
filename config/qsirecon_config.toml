@@ -1,12 +1,12 @@
 [environment]
 
 [execution]
-atlases = [ "AAL116",]
+atlases = [ "AAL116","AICHA384Ext"]
 bids_database_dir = ""
 boilerplate_only = false
 sloppy = false
 debug = []
-log_level = 20
+log_level = 25
 low_mem = false
 notrack = false
 reports_only = false
