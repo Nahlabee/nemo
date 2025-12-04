@@ -5,7 +5,7 @@
     "subjects": ["1054010"],
     "sessions": ["01"],
     "freesurfer_license": "/scratch/lhashimoto/freesurfer/license",
-    "run_freesurfer": true,
+    "run_freesurfer": false,
     "run_qsiprep": true,
     "run_qsirecon": true,
     "email": null,

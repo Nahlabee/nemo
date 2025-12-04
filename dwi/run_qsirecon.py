@@ -86,7 +86,7 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
 
     header = (
         f'#!/bin/bash\n'
-        f'#SBATCH -J qsiprep_{subject}_{session}\n'
+        f'#SBATCH -J qsirecon_{subject}_{session}\n'
         f'#SBATCH -p {args.partition}\n'
         f'#SBATCH --gpus-per-node={args.gpu_per_node}\n'
         f'#SBATCH --nodes=1\n'
