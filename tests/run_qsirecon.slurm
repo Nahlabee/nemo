@@ -22,8 +22,9 @@ module load singularity
 DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives"
 FREESURFER_CONTAINER="/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
-FREESURFER_DIR=DERIVATIVES_BIDS_DIR + "/freesurfer"
+FREESURFER_DIR=DERIVATIVES_BIDS_DIR+"/freesurfer"
 QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
+echo $FREESURFER_DIR
 
 # Execute Singularity container
 apptainer run \
