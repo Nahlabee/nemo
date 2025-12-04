@@ -144,7 +144,7 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
 
     singularity_command = (
         f'\napptainer run \\\n'
-        f'    --nv --cleanenv \\\n'
+        f'    --nv --cleanenv --containall \\\n'
         f'    -B {args.derivatives}/qsiprep:/data \\\n'
         f'    -B {args.derivatives}/qsirecon:/out \\\n'
         f'    -B {args.derivatives}/freesurfer:/freesurfer \\\n'
@@ -155,7 +155,6 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'    -v -w /out/temp_qsirecon \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --fs-subjects-dir /freesurfer \\\n'
-        f'    --output-resolution 1.8 \\\n'
         f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
         f'    --atlases AAL116\n'
     )

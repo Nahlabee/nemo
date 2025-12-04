@@ -37,7 +37,7 @@ def main(config_file=None):
         sessions = utils.get_sessions(args.input_dir, subject, args.sessions)
         for session in sessions:
 
-            print(subject, ' - ', session)
+            print('\n', subject, ' - ', session, '\n')
 
             # Run workflow steps based on configuration
             if args.run_freesurfer:
@@ -45,7 +45,7 @@ def main(config_file=None):
                 for key, value in step_config.items():
                     setattr(args, key, value)
                 freesurfer_job_id = run_freesurfer(args, subject, session)
-                print("[FREESURFER] job IDs:", freesurfer_job_id)
+                print(f"[FREESURFER] job IDs: {freesurfer_job_id}\n")
             else:
                 freesurfer_job_id = None
 
@@ -54,7 +54,7 @@ def main(config_file=None):
                 for key, value in step_config.items():
                     setattr(args, key, value)
                 qsiprep_job_id = run_qsiprep(args, subject, session)
-                print("[QSIPREP] job IDs:", qsiprep_job_id)
+                print(f"[QSIPREP] job IDs: {qsiprep_job_id}\n")
             else:
                 qsiprep_job_id = None
 
@@ -64,7 +64,7 @@ def main(config_file=None):
                     setattr(args, key, value)
                 dependencies = [job_id for job_id in [freesurfer_job_id, qsiprep_job_id] if job_id is not None]
                 qsirecon_job_id = run_qsirecon(args, subject, session, dependencies)
-                print("[QSIRECON] job IDs:", qsirecon_job_id)
+                print(f"[QSIRECON] job IDs: {qsirecon_job_id}\n")
             else:
                 qsirecon_job_id = None
 
