@@ -168,7 +168,7 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
     #     f'    -v -w /data/qsirecon/temp_qsirecon \\\n'
     #     f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
     #     f'    --fs-subjects-dir /data/freesurfer \\\n'
-    #     f'    --config-file /config/config-file.toml \\\n'
+    #     f'    --config-file /config/config-file.toml\n'
     # )
 
     # Add permissions for shared ownership of the output directory
