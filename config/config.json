@@ -6,8 +6,8 @@
     "sessions": ["01"],
     "freesurfer_license": "/scratch/lhashimoto/freesurfer/license",
     "run_freesurfer": false,
-    "run_qsiprep": true,
-    "run_qsirecon": false,
+    "run_qsiprep": false,
+    "run_qsirecon": true,
     "email": null,
     "account": null
   },
