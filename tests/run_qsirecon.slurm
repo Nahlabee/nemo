@@ -27,18 +27,19 @@ QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
 
 # Execute Singularity container
 apptainer run \
-  --nv --cleanenv \
+  --nv --containall --writable-tmpfs --cleanenv \
   -B $DERIVATIVES_BIDS_DIR/qsiprep:/data \
   -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
-  $QSIRECON_CONTAINER ls /data \
-  $QSIRECON_CONTAINER ls /out \
-  $QSIRECON_CONTAINER /data /out participant \
-  --participant-label sub-1054001 --session-id ses-01 \
-  -v -w /out/temp_qsirecon \
-  --fs-license-file /opt/freesurfer/license.txt \
-  --fs-subjects-dir /freesurfer \
-  --output-resolution 1.8 \
-  --recon-spec mrtrix_multishell_msmt_ACT-hsvs \
-  --atlases AAL116
+  $QSIRECON_CONTAINER bash -c \
+    "ls /data && \
+    ls /out && \
+    qsirecon /data /out participant \
+    --participant-label sub-1054001 --session-id ses-01 \
+    -v -w /out/temp_qsirecon \
+    --fs-license-file /opt/freesurfer/license.txt \
+    --fs-subjects-dir /freesurfer \
+    --output-resolution 1.8 \
+    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \
+    --atlases AAL116"
