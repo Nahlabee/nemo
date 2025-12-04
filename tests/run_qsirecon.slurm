@@ -19,8 +19,8 @@ module load singularity
 # Read paths from config.py and export them as environment variables
 #eval $(python3 -c 'import config; config.print_paths()')
 
-DATA_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives/qsiprep"
-DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives"
+DATA_BIDS_DIR="/scratch/lhashimoto/nemo_derivatives/qsiprep"
+DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_derivatives"
 FREESURFER_CONTAINER="/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
 FREESURFER_DIR="/scratch/lhashimoto/nemo_database_derivatives/freesurfer"
@@ -29,12 +29,12 @@ QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
 # Execute Singularity container
 apptainer run \
   --nv --containall --writable-tmpfs --cleanenv \
-  -B $DATA_BIDS_DIR:/data \
+  -B DERIVATIVES_BIDS_DIR/qsiprep:/data \
   -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
   $QSIRECON_CONTAINER /data /out participant \
-    --participant-label 1054001 --session-id 01 \
+    --participant-label sub-1054001 --session-id ses-01 \
     -v -w /out/temp_qsirecon \
     --fs-license-file /opt/freesurfer/license.txt \
     --fs-subjects-dir /freesurfer \
