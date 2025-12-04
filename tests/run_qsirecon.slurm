@@ -38,4 +38,4 @@ apptainer run \
     --fs-license-file /opt/freesurfer/license.txt \
     --fs-subjects-dir /freesurfer \
     --recon-spec mrtrix_multishell_msmt_ACT-hsvs \
-    --atlases AAL116"
+    --atlases AAL116
