@@ -1,6 +1,7 @@
 [environment]
 
 [execution]
+bids_dir = "/data"
 atlases = [ "AAL116",]
 #bids_database_dir = ""
 boilerplate_only = false
