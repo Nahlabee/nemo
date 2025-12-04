@@ -21,6 +21,11 @@ def main(config_file=None):
     config = utils.load_config(config_file)
     args = SimpleNamespace(**config.get('common', {}))
 
+    # Save config with datetime
+    filename = f"{args.derivatives}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    with open(filename, "w") as f:
+        json.dump(config, f, indent=4)
+
     # Check dataset directory
     if not os.path.exists(args.input_dir):
         print("Dataset directory does not exist.")
@@ -62,11 +67,6 @@ def main(config_file=None):
             print("Freesurfer job IDs:", freesurfer_job_id)
             print("QSIprep job IDs:", qsiprep_job_id)
             print("QSIrecon job IDs:", qsirecon_job_id)
-
-    # Save config in json
-    filename = f"{args.derivatives}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
-    with open(filename, "w") as f:
-        json.dump(config, f, indent=4)
 
 
 if __name__ == "__main__":
