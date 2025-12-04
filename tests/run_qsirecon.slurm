@@ -11,13 +11,19 @@
 module purge
 module load userspace/all
 module load singularity
-module load python3/3.12.0
+#module load python3/3.12.0
 
 # Set the path to config.py
-CONFIG_FILE="tests/config.py"
+#CONFIG_FILE="tests/config.py"
 
 # Read paths from config.py and export them as environment variables
-eval $(python3 -c 'import config; config.print_paths()')
+#eval $(python3 -c 'import config; config.print_paths()')
+
+DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_database_derivatives"
+FREESURFER_CONTAINER="/scratch/lhashimoto/freesurfer-7.4.1.sif"
+FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
+FREESURFER_DIR=DERIVATIVES_BIDS_DIR + "/freesurfer"
+QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
 
 # Execute Singularity container
 apptainer run \
