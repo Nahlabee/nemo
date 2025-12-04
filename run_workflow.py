@@ -53,7 +53,8 @@ def main(config_file=None):
                 step_config = config.get('qsirecon', {})
                 for key, value in step_config.items():
                     setattr(args, key, value)
-                qsirecon_job_id = run_qsirecon(args, subject, session, [freesurfer_job_id, qsiprep_job_id])
+                dependencies = [job_id for job_id in [freesurfer_job_id, qsiprep_job_id] if job_id is not None]
+                qsirecon_job_id = run_qsirecon(args, subject, session, dependencies)
             else:
                 qsirecon_job_id = None
 
