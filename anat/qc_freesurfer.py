@@ -158,7 +158,7 @@ def normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract
         df_aseg = pd.DataFrame([aseg_stats])
 
         # Normalize volumes
-        df_aseg_norm = df_aseg.drop(columns=columns_to_extract + ETIV)
+        df_aseg_norm = df_aseg.drop(columns=columns_to_extract + list(ETIV))
         df_aseg_norm = df_aseg_norm.div(df_aseg['aseg.EstimatedTotalIntraCranialVol'], axis=0)
         df_aseg_norm.to_csv(f"{freesurfer_dir}/{sub_sess}/stats/aseg_stats_norm.csv", index=False)
 

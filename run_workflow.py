@@ -90,6 +90,5 @@ def main(config_file=None):
         # fsqc_job_id = qc_freesurfer(args, sub_ses, freesurfer_job_ids)
 
 
-
 if __name__ == "__main__":
     main()
