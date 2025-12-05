@@ -21,7 +21,7 @@ def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None)
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH -J fsqc\n'
-        f'#SBATCH -p kepler\n'
+        f'#SBATCH -p visu\n'
         f'#SBATCH --nodes=1\n'
         f'#SBATCH --mem={args.requested_mem}gb\n'
         f'#SBATCH -t {args.requested_time}:00:00\n'
@@ -53,7 +53,7 @@ def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None)
     subjects_sessions_str = " ".join(subjects_sessions)
     singularity_command = (
         f'\napptainer run \\\n'
-        f'    --nv --writable-tmpfs --cleanenv \\\n'
+        f'    --writable-tmpfs --cleanenv \\\n'
         f'    -B {args.derivatives}/freesurfer:/data \\\n'
         f'    -B {args.derivatives}/qc/fsqc:/out \\\n'
         f'    {args.fsqc_container} \\\n'
