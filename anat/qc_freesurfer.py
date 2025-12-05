@@ -49,6 +49,7 @@ def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None)
         f'module load singularity\n'
     )
 
+    subjects_sessions_str = " ".join(subjects_sessions)
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --writable-tmpfs --cleanenv \\\n'
@@ -57,7 +58,7 @@ def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None)
         f'    {args.fsqc_container} \\\n'
         f'      --subjects_dir /data \\\n'
         f'      --output_dir /out \\\n'
-        f'      --subjects {subjects_sessions}  \\\n'
+        f'      --subjects "{subjects_sessions_str}"  \\\n'
     )
 
     if args.qc_screenshots:
