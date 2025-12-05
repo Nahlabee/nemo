@@ -20,8 +20,7 @@ apptainer run \
   --writable-tmpfs --cleanenv \
   -B $DERIVATIVES_BIDS_DIR/freesurfer:/data \
   -B $DERIVATIVES_BIDS_DIR/qc/fsqc:/out \
-  $FSQC_CONTAINER \
-    --subjects_dir /data --output_dir /out \
+  $FSQC_CONTAINER --subjects_dir /data --output_dir /out \
     --subjects sub-1054001_ses-01 \
     --screenshots \
     --surfaces \
