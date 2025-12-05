@@ -158,12 +158,12 @@ def normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract
         df_aseg = pd.DataFrame([aseg_stats])
 
         # Normalize volumes
-        df_aseg_norm = df_aseg.drop(columns=columns_to_extract.pop(ETIV))
-        df_aseg_norm = df_aseg_norm.div(df_aseg['aseg.EstimatedTotalIntraCranialVol'], axis=0)
+        df_aseg_norm = df_aseg.drop(columns=columns_to_extract)
+        df_aseg_norm = df_aseg_norm.div(df_aseg[ETIV], axis=0)
         df_aseg_norm.to_csv(f"{freesurfer_dir}/{sub_sess}/stats/aseg_stats_norm.csv", index=False)
 
         # Extract columns for QC
-        df_sub = df_aseg[[columns_to_extract.pop(ETIV)]]
+        df_sub = df_aseg[[columns_to_extract]]
         df_sub['subject'] = [sub_sess]
         df_qc.append(df_sub)
 
@@ -324,7 +324,8 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     qc = convert_radians_to_degrees(qc)
 
     # Normalize ASEG volumes by ETIV
-    columns_to_extract = ['aseg.BrainSegVol_to_eTIV', 'aseg.MaskVol_to_eTIV', 'aseg.lhSurfaceHoles',
+    columns_to_extract = ['aseg.EstimatedTotalIntraCranialVol',
+                          'aseg.BrainSegVol_to_eTIV', 'aseg.MaskVol_to_eTIV', 'aseg.lhSurfaceHoles',
                           'aseg.rhSurfaceHoles', 'aseg.SurfaceHoles']
     vols = normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract)
     qc = pd.merge(qc, vols, on="subject", how="left")
