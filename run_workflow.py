@@ -83,7 +83,7 @@ def main(config_file=None):
             setattr(args, key, value)
         path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
         cmd = (f'nohup python3 anat/qc_freesurfer.py '
-               f'"{json.dumps(vars(args))}" {",".join(subjects_sessions)} '
+               f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)} "
                f'> {args.derivatives}/qc/fsqc/stdout/fsqc.out 2>&1 &')
         print(f"[FSQC] Submitting task in background: {cmd}")
         os.system(cmd)
