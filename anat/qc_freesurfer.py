@@ -163,7 +163,7 @@ def normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract
         df_aseg_norm.to_csv(f"{freesurfer_dir}/{sub_sess}/stats/aseg_stats_norm.csv", index=False)
 
         # Extract columns for QC
-        df_sub = df_aseg[[columns_to_extract]]
+        df_sub = df_aseg[columns_to_extract]
         df_sub['subject'] = [sub_sess]
         df_qc.append(df_sub)
 
