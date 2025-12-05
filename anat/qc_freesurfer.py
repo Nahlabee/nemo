@@ -58,7 +58,7 @@ def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None)
         f'    {args.fsqc_container} \\\n'
         f'      --subjects_dir /data \\\n'
         f'      --output_dir /out \\\n'
-        f'      --subjects "{subjects_sessions_str}"  \\\n'
+        f'      --subjects {subjects_sessions_str}  \\\n'
     )
 
     if args.qc_screenshots:
