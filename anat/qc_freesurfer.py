@@ -1,4 +1,7 @@
+import json
 import os
+from types import SimpleNamespace
+
 import fsqc
 import pandas as pd
 from fsqc.outlierDetection import readAsegStats
@@ -350,7 +353,10 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
 
 if __name__ == "__main__":
     import sys
-    args = sys.argv[1]
+    args_json = sys.argv[1]
+    args_dict = json.loads(args_json)
+    args = SimpleNamespace(**args_dict)
+
     subjects_sessions = sys.argv[2].split(",")
     freesurfer_job_ids = sys.argv[3].split(",") if len(sys.argv) > 3 else []
 
