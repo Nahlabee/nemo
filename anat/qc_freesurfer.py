@@ -260,6 +260,8 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     # if not check_prerequisites(args, subject, session):
     #     return None
 
+    print(args)
+
     freesurfer_dir = f"{args.derivatives}/freesurfer"
     fsqc_dir = f"{args.derivatives}/qc/fsqc"
 
