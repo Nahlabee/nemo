@@ -307,7 +307,7 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
             dir_count = utils.count_dirs(f"{freesurfer_dir}/{sub_sess}")
             file_count = utils.count_files(f"{freesurfer_dir}/{sub_sess}")
         frames.append([sub_sess, dir_count, file_count] + list(info))
-    logs = pd.DataFrame(frames)
+    logs = pd.DataFrame(frames, columns=cols)
     qc = pd.merge(fsqc_results, logs, on="subject", how="left")
 
     # Convert radians to degrees
