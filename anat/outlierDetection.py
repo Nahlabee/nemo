@@ -200,7 +200,7 @@ def outlierDetection_normalized(
     outlierSampleNonparNum = dict()
     outlierSampleParamNum = dict()
 
-    ########### MODIFIED TO SAFE DATAFRAME WITH GROUP MORPHOMETRIC VALUES #################
+    ########### MODIFIED TO SAVE DATAFRAME WITH GROUP MORPHOMETRIC VALUES #################
     df = pd.DataFrame.from_dict(regions).transpose()
     # Put the subject's name in the first column
     df.index.name = "subject"

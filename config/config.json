@@ -55,6 +55,7 @@
     "qc_fornix": true,
     "qc_hypothalamus": false,
     "qc_hippocampus": false,
+    "qc_hippocampus_label": "",
     "qc_outlier": false,
     "qc_skip_existing": true
   }

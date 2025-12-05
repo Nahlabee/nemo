@@ -33,7 +33,7 @@ def main(config_file=None):
         print("Dataset directory does not exist.")
         return 0
 
-    sub_ses = []
+    subjects_sessions = []
     freesurfer_job_ids = []
     # Loop over subjects and sessions
     subjects = utils.get_subjects(args.input_dir, args.subjects)
@@ -42,7 +42,7 @@ def main(config_file=None):
         for session in sessions:
 
             print('\n', subject, ' - ', session, '\n')
-            sub_ses.append(f"{subject}_{session}")
+            subjects_sessions.append(f"{subject}_{session}")
 
             # Run workflow steps based on configuration
             if args.run_freesurfer:
@@ -76,13 +76,18 @@ def main(config_file=None):
 
             # print("Workflow submitted.")
 
-    if args.run_freesurfer_qc and sub_ses:
+    if args.run_freesurfer_qc and subjects_sessions:
         # Run FreeSurfer QC
-        # Note that FSQC must run on a viz node to be able to display (and save) graphical outputs
+        # Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
         step_config = config.get('fsqc', {})
         for key, value in step_config.items():
             setattr(args, key, value)
-        fsqc_job_id = qc_freesurfer(args, sub_ses, freesurfer_job_ids)
+        path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
+        cmd = (f'nohup python3 qc_freesurfer.py {args} {subjects_sessions} '
+               f'> {args.derivatives}/qc/fsqc/stdout/fsqc.out 2>&1 &')
+        print(f"[FSQC] Submitting task in background: {cmd}")
+        os.system(cmd)
+        # fsqc_job_id = qc_freesurfer(args, sub_ses, freesurfer_job_ids)
 
 
 

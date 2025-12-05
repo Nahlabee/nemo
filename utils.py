@@ -103,3 +103,19 @@ def submit_job(cmd):
         # Handle errors during the job submission process
         print(f"Error while submitting the SLURM job: {e}")
         return None
+
+
+def count_dirs(directory):
+    """
+    Count the number of directories in a given directory (non-recursively)
+
+    """
+    return sum([1 for item in os.listdir(directory) if os.path.isdir(os.path.join(directory, item))])
+
+
+def count_files(directory):
+    """
+    Count the number of files in a given directory
+
+    """
+    return sum([len(files) for _, _, files in os.walk(directory)])
