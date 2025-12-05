@@ -2,14 +2,14 @@
 #   PROJECT-WIDE SETTINGS
 # =============================
 [common]
-account = "lhashimoto"
+account = "hrasoanandrianina"
 email = ""
 email_frequency = "FAIL"
-input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
-derivatives = "/scratch/lhashimoto/nemo_database_derivatives"
-subjects = ["1054004"]
-sessions = ["01"]
-freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
+input_dir = "/scratch/hrasoanandrianina/braint_database"
+derivatives = "/scratch/hrasoanandrianina/derivatives"
+subjects = [""]
+sessions = [""]
+freesurfer_license = "/scratch/hrasoanandrianina/containers/license.txt"
 
 
 # =============================
