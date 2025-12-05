@@ -51,6 +51,6 @@
     "requested_mem": 70,
     "requested_time": 24,
     "qc": "/scratch/lhashimoto/nemo_database_derivatives/qsirecon/qc"
-  },
+  }
 
 }
