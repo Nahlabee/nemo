@@ -29,7 +29,7 @@ CONFIG="/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml"
 
 # Execute Singularity container
 apptainer run \
-  --nv --containall --writable-tmpfs --cleanenv \
+  --nv --writable-tmpfs --cleanenv \
   -B $DERIVATIVES_BIDS_DIR/qsiprep:/data \
   -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
   -B $FREESURFER_DIR:/freesurfer \
