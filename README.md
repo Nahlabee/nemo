@@ -44,6 +44,7 @@ dataset/
 **Prerequisites**
 BIDS version : 1.8.0
 Python 3.12
+fsqc 2.1.1
 FreeSurfer 7.4.1 (singularity container)
 QSIprep 1.0.2 (singularity container)
 QSIrecon 1.1.1 (singularity container)

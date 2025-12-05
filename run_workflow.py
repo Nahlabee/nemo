@@ -4,6 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 import sys
+from anat.qc_freesurfer import qc_freesurfer
+
 sys.path.append(str(Path(__file__).resolve().parent))
 import utils
 from anat.run_freesurfer import run_freesurfer
@@ -31,6 +33,8 @@ def main(config_file=None):
         print("Dataset directory does not exist.")
         return 0
 
+    sub_ses = []
+    freesurfer_job_ids = []
     # Loop over subjects and sessions
     subjects = utils.get_subjects(args.input_dir, args.subjects)
     for subject in subjects:
@@ -38,6 +42,7 @@ def main(config_file=None):
         for session in sessions:
 
             print('\n', subject, ' - ', session, '\n')
+            sub_ses.append(f"{subject}_{session}")
 
             # Run workflow steps based on configuration
             if args.run_freesurfer:
@@ -45,6 +50,7 @@ def main(config_file=None):
                 for key, value in step_config.items():
                     setattr(args, key, value)
                 freesurfer_job_id = run_freesurfer(args, subject, session)
+                freesurfer_job_ids.append(freesurfer_job_id)
                 print(f"[FREESURFER] job IDs: {freesurfer_job_id}\n")
             else:
                 freesurfer_job_id = None
@@ -68,7 +74,15 @@ def main(config_file=None):
             else:
                 qsirecon_job_id = None
 
-            print("Workflow submitted.")
+            # print("Workflow submitted.")
+
+    if args.run_freesurfer_qc and sub_ses:
+        # Run FreeSurfer QC
+        step_config = config.get('freesurfer', {})
+        for key, value in step_config.items():
+            setattr(args, key, value)
+        fsqc_job_id = qc_freesurfer(args, sub_ses, freesurfer_job_ids)
+
 
 
 if __name__ == "__main__":
