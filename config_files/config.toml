@@ -1,0 +1,98 @@
+# =============================
+#   PROJECT-WIDE SETTINGS
+# =============================
+[common]
+account = "lhashimoto"
+email = ""
+email_frequency = "FAIL"
+input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
+derivatives = "/scratch/lhashimoto/nemo_database_derivatives"
+subjects = ["1054004"]
+sessions = ["01"]
+freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
+
+
+# =============================
+#   WORKFLOW SETTINGS
+# =============================
+[workflow]
+run_freesurfer = false
+run_qsiprep = false
+run_qsirecon = false
+run_fmriprep = true
+run_xcp_d = true
+run_mriqc_raw = true
+run_mriqc_derivatives = true
+
+# =============================
+#   PIPELINE: FreeSurfer
+# =============================
+[freesurfer]
+freesurfer_container = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
+skip_processed = true
+use_t2 = true
+partition = "skylake"
+requested_mem = 16
+requested_time = 9
+qc = "/scratch/lhashimoto/nemo_database_derivatives/freesurfer/qc"
+
+# =============================
+#   PIPELINE: QSIPrep
+# =============================
+[qsiprep]
+qsiprep_container = "/scratch/lhashimoto/qsiprep-1.0.2.sif"
+config_eddy = "/scratch/lhashimoto/code/nemo/config/eddy_params.json"
+qsiprep_config = "/scratch/lhashimoto/code/nemo/config/qsiprep_config.toml"
+output_resolution = 1.8
+partition = "kepler"
+gpu_per_node = 2
+requested_mem = 70
+requested_time = 24
+qc = "/scratch/lhashimoto/nemo_database_derivatives/qsiprep/qc"
+
+# =============================
+#   PIPELINE: QSIRecon
+# =============================
+[qsirecon]
+qsirecon_container = "/scratch/lhashimoto/qsirecon-1.1.1.sif"
+qsirecon_config = "/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml"
+partition = "kepler"
+gpu_per_node = 2
+requested_mem = 70
+requested_time = 24
+qc = "/scratch/lhashimoto/nemo_database_derivatives/qsirecon/qc"
+
+# =============================
+#   PIPELINE: fMRIPrep
+# =============================
+[fmriprep]
+fmriprep_container = "/scratch/hrasoanandrianina/containers/fmriprep_25.2.1.sif"
+fmriprep_config = "/scratch/hrasoanandrianina/code/nemo/config/fmriprep_config.toml"
+bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/fmriprep/bids_filters"
+partition = "skylake"
+requested_mem = 64
+requested_time = 12
+reserved_cpus = 8
+omp_threads = 4
+
+# =============================
+#   PIPELINE: XCP-D
+# =============================
+[xcp_d]
+xcp_d_container = "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif"
+xcp_d_config = "/scratch/hrasoanandrianina/code/nemo/config/xcp_d_config.toml"
+partition = "skylake"
+requested_mem = 64
+requested_time = 12
+reserved_cpus = 8
+omp_threads = 4
+
+# =============================
+#   PIPELINE: MRIQC
+# =============================
+[mriqc]
+mriqc_container = "/scratch/hrasoanandrianina/containers/mriqc_24.0.2.sif"
+mriqc_config = "/scratch/hrasoanandrianina/code/nemo/config/mriqc_config.toml"
+partition = "skylake"
+requested_mem = 32
+requested_time = 8

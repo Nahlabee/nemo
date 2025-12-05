@@ -1,0 +1,83 @@
+[environment]
+cpu_count = 24
+exec_env = "posix"
+free_mem = 27.5
+overcommit_policy = "heuristic"
+overcommit_limit = "50%"
+nipype_version = "1.10.0"
+templateflow_version = "25.0.3"
+version = "0.12.0"
+
+[execution]
+fmri_dir = "/data"
+aggr_ses_reports = 4
+bids_database_dir = "/work/20251124-114311_6e744c09-9576-4f5d-989e-3e21cbf664bb/bids_db"
+bids_description_hash = "08712e354937d9d24edec8746c0b84ea145ce04c5dca101e5d59f6c520a5874c"
+boilerplate_only = false
+confounds_config = "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/data/nuisance/36P.yml"
+debug = []
+layout = "BIDS Layout: .../data | Subjects: 1 | Sessions: 2 | Runs: 0"
+log_dir = "/out/logs"
+log_level = 25
+low_mem = false
+md_only_boilerplate = false
+notrack = false
+output_layout = "auto"
+parameters_hash = "482da588"
+report_output_level = "root"
+reports_only = false
+output_dir = "/out"
+atlases = [ "4S1056Parcels", "4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", "4S956Parcels", "Glasser", "Gordon", "HCP", "MIDB", "MyersLabonte", "Tian",]
+run_uuid = "20251124-114311_6e744c09-9576-4f5d-989e-3e21cbf664bb"
+participant_label = [ "002",]
+task_id = "rest"
+processing_list = [ "002:01:01", "002:02:02",]
+templateflow_home = "/home/henit/.cache/templateflow"
+work_dir = "/work"
+write_graph = false
+
+[workflow]
+mode = "linc"
+file_format = "cifti"
+dummy_scans = "auto"
+input_type = "fmriprep"
+despike = true
+smoothing = 4.0
+output_interpolated = false
+combine_runs = false
+motion_filter_order = 4
+head_radius = 50
+fd_thresh = 0
+min_time = 0
+bandpass_filter = true
+high_pass = 0.01
+low_pass = 0.08
+bpf_order = 2
+min_coverage = 0.5
+correlation_lengths = [ "all",]
+process_surfaces = false
+abcc_qc = true
+linc_qc = true
+
+[nipype]
+crashfile_format = "txt"
+get_linked_libs = false
+nprocs = 8
+omp_nthreads = 8
+plugin = "MultiProc"
+resource_monitor = false
+stop_on_first_crash = true
+
+[seeds]
+master = 35707
+
+[execution.datasets]
+xcpdatlases = "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/data/atlases"
+xcpd4s = "/AtlasPack"
+
+[execution.dataset_links]
+preprocessed = "/data"
+templateflow = "/home/henit/.cache/templateflow"
+atlas = "/out/atlases"
+xcpdatlases = "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/data/atlases"
+xcpd4s = "/AtlasPack"

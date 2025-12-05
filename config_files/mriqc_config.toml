@@ -1,0 +1,50 @@
+[environment]
+
+[execution]
+ants_float = false
+bids_dir = ""
+bids_dir_datalad = false
+bids_database_dir = ""
+bids_database_wipe = false
+cwd = ""
+datalad_get = true
+debug = false
+dry_run = false
+dsname = "<unset>"
+float32 = true
+log_level = 25
+modalities = [ "T1w", "T2w", "bold", "dwi",]
+no_sub = true
+notrack = false
+output_dir = ""
+pdb = false
+reports_only = false
+resource_monitor = false
+templateflow_home = "/templateflow"
+upload_strict = false
+verbose_reports = true
+webapi_url = "https://mriqc.nimh.nih.gov:443/api/v1"
+work_dir = ""
+write_graph = false
+
+[workflow]
+deoblique = false
+despike = false
+fd_thres = 0.5
+fd_radius = 50
+fft_spikes_detector = true
+inputs_path = ""
+min_len_dwi = 7
+min_len_bold = 5
+species = "human"
+template_id = "MNI152NLin2009cAsym"
+
+[nipype]
+crashfile_format = "txt"
+get_linked_libs = false
+local_hash_check = true
+plugin = "MultiProc"
+remove_node_directories = false
+resource_monitor = false
+stop_on_first_crash = false
+write_crashfile = true

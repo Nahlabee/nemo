@@ -1,0 +1,52 @@
+[environment]
+
+[execution]
+bids_database_dir = ""
+bids_filter = ""
+boilerplate_only = false
+debug = []
+log_level = 20
+low_mem = false
+notrack = false
+reports_only = false
+skip_anat_based_spatial_normalization = false
+sloppy = false
+write_graph = false
+
+[workflow]
+anat_modality = "T1w"
+anat_only = false
+anatomical_template = "MNI152NLin2009cAsym"
+b0_motion_corr_to = "iterative"
+b0_threshold = 50
+b0_to_t1w_transform = "Rigid"
+b1_biascorrect_stage = "final"
+denoise_after_combining = false
+denoise_method = "dwidenoise"
+distortion_group_merge = "average"
+dwi_denoise_window = "auto"
+fmap_bspline = false
+fmap_demean = false
+force_syn = false
+hmc_model = "eddy"
+hmc_transform = "Affine"
+ignore = []
+infant = false
+intramodal_template_iters = 0
+intramodal_template_transform = "BSplineSyN"
+longitudinal = false
+no_b0_harmonization = false
+pepolar_method = "TOPUP"
+separate_all_dwis = false
+shoreline_iters = 2
+subject_anatomical_reference = "first_alphabetically"
+unringing_method = "mrdegibbs"
+use_syn_sdc = false
+
+[nipype]
+#nprocs = 24
+#omp_nthreads = 8
+plugin = 'MultiProc'
+remove_unnecessary_outputs = false
+resource_monitor = false
+stop_on_first_crash = false
