@@ -2,7 +2,7 @@ import os
 import fsqc
 import pandas as pd
 from fsqc.outlierDetection import readAsegStats
-from anat.outlierDetection import outlierDetection_normalized, outlierTable
+from .outlierDetection import outlierDetection_normalized, outlierTable
 import utils
 import re
 import csv
