@@ -48,7 +48,6 @@ def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None)
         f'module load userspace/all\n'
         f'module load singularity\n'
         f'module load python3/3.12.0\n'
-        f'xhost +\n'
     )
 
     subjects_sessions_str = " ".join(subjects_sessions)
@@ -142,10 +141,10 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     #               )
     # return None
 
-    path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.slurm"
+    path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
     generate_slurm_script(args, subjects_sessions, path_to_script, job_ids)
 
-    cmd = f"sbatch {path_to_script}"
+    cmd = f"nohup sh {path_to_script} > {args.derivatives}/qc/fsqc/stdout/fsqc.out 2>&1 &"
     print(f"[FSQC] Submitting job: {cmd}")
-    job_id = utils.submit_job(cmd)
-    return job_id
+    os.system(cmd)
+    return None
