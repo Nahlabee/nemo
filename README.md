@@ -2,112 +2,148 @@
 
 MR data analyses for bipolar disorder
 
+This repository is dedicated to launch pre- and post-processing workflows on MR data acquired with the following MR protocol:
+- T1w (1.0x1.0x1.0 mm3)
+- T2w (1.0x1.0x1.0 mm3)
+- DWI_PA_109vol (1.8x1.8x1.8 mm3)
+- DWI_AP_109vol (1.8x1.8x1.8 mm3)
+- rs-FMRI + fieldmap
+
+Data are considered as non-longitudinal.
+Multiple sessions are possible.
+
+
+**File system**
+Data must be organized according to the BIDS format (https://bids.neuroimaging.io/index.html)
+dataset/
+├─ sub-01/
+│  ├─ ses-01/
+│  │  ├─ anat/
+│  │  │  ├─sub-01_ses-01_T1w.nii.gz
+│  │  │  ├─sub-01_ses-01_T2w.nii.gz
+│  │  ├─ dwi/
+│  │  │  ├─sub-01_ses-01_dir-AP_run-01_dwi.nii.gz
+│  │  │  ├─sub-01_ses-01_dir-AP_run-01_dwi.bval
+│  │  │  ├─sub-01_ses-01_dir-AP_run-01_dwi.bvec
+│  │  │  ├─sub-01_ses-01_dir-PA_run-01_dwi.nii.gz
+│  │  │  ├─sub-01_ses-01_dir-PA_run-01_dwi.bval
+│  │  │  └─sub-01_ses-01_dir-PA_run-01_dwi.bvec
+│  │  ├─ fmap/
+│  │  │  ├─sub-01_ses-01_dir-AP_epi.nii.gz
+│  │  │  └─sub-01_ses-01_dir-PA_epi.nii.gz
+│  │  └─ func/
+│  │  │  ├─sub-01_ses-01_task-rest_bold.nii.gz
+│  │  │  └─sub-01_ses-01_task-rest_sbref.nii.gz
+
+**Workflows**
+- (anat) Anatomical Segmentation using FreeSurfer
+- (anat) Sulcal Pits Extraction using Slam
+- (dwi) Structural Connectome Estimation using QSIprep
+- (func) Functional Connectome Estimation using FMRIprep and XCP-D
+
+**Prerequisites**
+BIDS version : 1.8.0
+Python 3.12
+FreeSurfer 7.4.1 (singularity container)
+QSIprep 1.0.2 (singularity container)
+QSIrecon 1.1.1 (singularity container)
+FMRIprep
+XCP-D
+
 Please make sure to adapt the paths in the config.py file to your own disk configuration before using one of these scripts !
 
-## Segmentation
+## User-guide
+The pipelines take as arguments the dataset BIDS directory, the output BIDS derivative directory and a list of subjects.
+They can be launch either in interactive or batch mode.
 
-Requirements to run the shell scripts:
-- Singularity container of FreeSurfer 7.4.0
-- Python 3.6+ (used to get config.py file paths)
-They have been configured to run on the cluster of the MESOCENTRE, but can be adapted to run on any other cluster.
+To set all other arguments, the easiest way is to use config files. For each pipeline, several config files can be found 
+that you can choose depending on your objectives. These configurations have been adapted to the MR protocol defined above. 
+Or you can create your one config file with custom parameters.
 
-First steps on MESOCENTRE:
-1) Load modules  
-`module load userspace/all`  
-`module load python3/3.12.0`
+Some tips and explanations can be found bellow.
+However, for more details about each pipeline, please visit the corresponding websites.
 
-2) (optional) Connect to an interactive node using for instance  
-`srun -p skylake --time=7:00:0 --pty bash -i`
+## anat
+Choice has been made to use "recon-all" for anatomical segmentation. The reason is that results have been proven 
+to be of good quality in many studies, while CNN-versions of FastSurfer are quite new.
+Also, this historical algorithm uses the T2 contrast to improve white and pial surface reconstruction, which can be 
+crucial on infant data.
 
-To run freesurfer segmentation, use the following commands from the nemo root directory:
-- On a single case (interactive mode) : `sh segmentation/run_freesurfer.sh SUBJECT`
-- On a single case (batch mode) : `sbatch segmentation/run_freesurfer.slurm SUBJECT`
-- On all new cases (batch mode) : `sh segmentation/run_freesurfer_newcases.sh`
+## dwi
+Runtime is hardly predictable, as several jobs are ran in parallel. Each job starts as soon as previous jobs are 
+finished and the individual runtime depends on the number of available processors at that moment.
 
-> Note that **SUBJECT** must correspond to the name of the subject folder!
+In some cases, errors occur which are not handle properly and nypipe just continues to hang indefinitely. 
+In that case, it is recommended to stop the job and re-run it (sometimes several times). For that reason, 
+it is essential to save intermediate files on disk.
 
-To run a specific freesurfer command on interactive mode, adapt and run the script `segmentation/run_freesurfer_usefull_commands.sh SUBJECT`
-
-To run any command (interactive or batch) on a group of subjects, adapt and run the script `segmentation/run_loop.sh`
-
-> Please note that when running in batch mode, you can specify an email address to get **notifications at beginning/end of the job**.
-To set this email address, please modify the following line in the segmentation/run_freesurfer.slurm script:
-<br>    **#SBATCH --mail-user=lucile.hashimoto@adalab.fr**
+## func
+Sequence filtering : keep only resting state...
 
 
-### WARNING : 
-
-**.pial.T1 and .pial.T2 are symbolic links and may disapear when data is transfered from a user to another.**
-
-In that case, recreate the symbolic links 
-
-EXAMPLE: 
-
-    for subj in *; do
-        if [ -d "$subj/surf" ]; then
-            [ -e "$subj/surf/rh.white.H" ] || ln -s rh.white.preaparc.H "$subj/surf/rh.white.H"
-            [ -e "$subj/surf/rh.white.K" ] || ln -s rh.white.preaparc.K "$subj/surf/rh.white.K"
-            [ -e "$subj/surf/rh.pial" ] || ln -s rh.pial.T2 "$subj/surf/rh.pial"
-            [ -e "$subj/surf/rh.fsaverage.sphere.reg" ] || ln -s rh.sphere.reg "$subj/surf/rh.fsaverage.sphere.reg"
-        fi
-    done
-    
-    
-    for subj in *; do
-        if [ -d "$subj/surf" ]; then
-        [ -e "$subj/surf/lh.white.H" ] || ln -s lh.white.preaparc.H "$subj/surf/lh.white.H"
-        [ -e "$subj/surf/lh.white.K" ] || ln -s lh.white.preaparc.K "$subj/surf/lh.white.K"
-        [ -e "$subj/surf/lh.pial" ] || ln -s lh.pial.T2 "$subj/surf/lh.pial"
-        [ -e "$subj/surf/lh.fsaverage.sphere.reg" ] || ln -s lh.sphere.reg "$subj/surf/lh.fsaverage.sphere.reg"
-        fi
-    done
-
-## Quality Control
-
-Requirements:
-- fsqc toolbox (https://github.com/Deep-MI/fsqc)
-This package provides quality assurance / quality control scripts for FastSurfer- or FreeSurfer-processed structural MRI data. It will check outputs of these two software packages by means of quantitative and visual summaries. Prior processing of data using either FastSurfer or FreeSurfer is required, i.e. the software cannot be used on raw images.
-
-To run the quality control, use the following commands from the nemo root directory:
-1) `python3 -m qc/check_log.py`
-
-This script will check the log files of the freesurfer segmentation and generate a csv file with segmentation errors and stats.
-- Subject
-- Number of folders generated
-- Number of files generated
-- Finished without error
-- Processing time (hours)
-- Euler number before topo correction LH
-- Euler number after topo correction RH
-- Euler number before topo correction LH
-- Euler number after topo correction RH
-
-2) `python3 -m qc/qc_fsqc.py`
-
-This script will generate a report for each subject and a csv file for group statistics named 'fsqc-results.csv'.
-
-Three configurations are available. Choose the one you want to use by uncommenting the corresponding lines in the qc_fsqc.py file.
-- Run FSQC on a subject or a list of subjects
-- Run FSQC for group-level statistics
-- Run FSQC only on hippocampus and amygdala segmentations
-
-If QC has already been performed on one or several subjects, you can run FSQC on the remaining subjects by providing a subject list. After that, the group-level analysis can be run on the subjects who have successfully completed FSQC.
-> Setting group_only = true, will skip individual-level processing and run only the group-level analysis.
-
-> To run in batch mode, use `qc_fsqc.slurm`
-
-3) `python3 -m ./qc/qc_complete.py`
-
-This script will recompute the group statistics of aparc and aseg segmentations after normalization of volumes by ETIV.
-
-A new aseg_stats_norm.csv is saved for each subject.
-
-The number of outliers is updated and all QC statistics are merged and saved in the fsqc-results-complete.csv file.
+dataset/
+├─ derivatives/
+│  ├─ freesurfer
+│  │  ├─ sub-01/
+│  │  │  ├─ ses-01/
+│  │  │  │  ├─ label/
+│  │  │  │  ├─ mri/
+│  │  │  │  ├─ surf/
+│  ├─ fsqc
+│  │  ├─ fornix/
+│  │  ├─ metrics/
+│  │  ├─ screenshots/
+│  │  │  ├─ sub-01/
+│  ├─ sub-01/ (contient tous les derivatives des BIDS app ? ou alors séparés ? Oui ça permet de tester plusieurs versions pour chaque container)
+│  │  ├─ anat/ (average across sessions)
+│  │  ├─ figures/
+│  │  ├─ log/
+│  │  ├─ ses-01/
+│  │  │  ├─ anat/
+│  │  │  ├─ dwi/
+│  │  │  ├─ fmap/
+│  │  │  └─ func/
 
 
-## Statistics
-
-This folder is intended to contain notebooks for statistical analyses on the NEMO dataset.
-
-To date, analyses have only been achieved on morphometry measurements (cortical volumes and thickness from Freesurfer segmentation) and their correlation with clinical observations.
-
+project/
+├── config/
+│   ├── config.json                # Fichier de configuration général
+│   ├── freesurfer_config.json     # Configuration spécifique à FreeSurfer
+│   ├── qsiprep_config.json        # Configuration spécifique à QSIprep
+│   ├── qsirecon_config.json       # Configuration spécifique à QSIrecon
+│   ├── fmriprep_config.json       # Configuration spécifique à fMRIPrep
+│   ├── xcpd_config.json           # Configuration spécifique à XCP-D
+│   └── qc_config.json             # Configuration spécifique au QC
+├── scripts/
+│   ├── run_freesurfer.py          # Script principal pour FreeSurfer
+│   ├── run_qsiprep.py             # Script principal pour QSIprep
+│   ├── run_qsirecon.py            # Script principal pour QSIrecon
+│   ├── run_fmriprep.py            # Script principal pour fMRIPrep
+│   ├── run_xcpd.py                # Script principal pour XCP-D
+│   ├── qc_freesurfer.py           # QC pour FreeSurfer
+│   ├── qc_qsiprep.py              # QC pour QSIprep
+│   ├── qc_qsirecon.py             # QC pour QSIrecon
+│   ├── qc_fmriprep.py             # QC pour fMRIPrep
+│   ├── qc_xcpd.py                 # QC pour XCP-D
+│   └── qc_group.py                # QC de groupe final
+├── utils/
+│   ├── __init__.py                # Initialisation du module utils
+│   ├── slurm_utils.py             # Fonctions utilitaires pour soumettre des jobs SLURM
+│   ├── file_utils.py              # Fonctions pour gérer les fichiers et dossiers
+│   ├── config_utils.py            # Fonctions pour charger et gérer les configurations
+│   └── qc_utils.py                # Fonctions utilitaires pour les étapes de QC
+├── logs/                          # Dossier pour les fichiers de log
+│   ├── freesurfer/
+│   ├── qsiprep/
+│   ├── qsirecon/
+│   ├── fmriprep/
+│   ├── xcpd/
+│   └── qc/
+├── outputs/                       # Dossier pour les résultats finaux
+│   ├── freesurfer/
+│   ├── qsiprep/
+│   ├── qsirecon/
+│   ├── fmriprep/
+│   ├── xcpd/
+│   └── qc/
+└── main_workflow.py               # Script principal pour exécuter tout le workflow
