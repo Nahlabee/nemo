@@ -13,7 +13,7 @@ module load singularity
 
 DATA_BIDS_DIR="/scratch/lhashimoto/nemo_derivatives/qsiprep"
 DERIVATIVES_BIDS_DIR="/scratch/lhashimoto/nemo_derivatives"
-$FSQC_CONTAINER="/scratch/lhashimoto/fsqc-2.1.4.sif"
+FSQC_CONTAINER="/scratch/lhashimoto/fsqc-2.1.4.sif"
 
 # Execute Singularity container
 apptainer run \
