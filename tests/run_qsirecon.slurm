@@ -26,7 +26,6 @@ FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
 FREESURFER_DIR="/scratch/lhashimoto/freesurfer/outputs"
 QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
 CONFIG="/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml"
-BIDS_DB_DIR=""
 
 # Execute Singularity container
 apptainer run \
