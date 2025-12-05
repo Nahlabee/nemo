@@ -78,7 +78,8 @@ def main(config_file=None):
 
     if args.run_freesurfer_qc and sub_ses:
         # Run FreeSurfer QC
-        step_config = config.get('freesurfer', {})
+        # Note that FSQC must run on a viz node to be able to display (and save) graphical outputs
+        step_config = config.get('fsqc', {})
         for key, value in step_config.items():
             setattr(args, key, value)
         fsqc_job_id = qc_freesurfer(args, sub_ses, freesurfer_job_ids)

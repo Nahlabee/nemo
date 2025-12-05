@@ -19,16 +19,7 @@
     "use_t2": true,
     "partition": "skylake",
     "requested_mem": 16,
-    "requested_time": 9,
-    "fsqc_container": "/scratch/lhashimoto/fsqc-2.1.4.sif",
-    "qc_screenshots": true,
-    "qc_surfaces": true,
-    "qc_skullstrip": true,
-    "qc_fornix": true,
-    "qc_hypothalamus": false,
-    "qc_hippocampus": false,
-    "qc_outlier": false,
-    "qc_skip_existing": true
+    "requested_time": 9
   },
 
   "qsiprep": {
@@ -51,6 +42,21 @@
     "requested_mem": 70,
     "requested_time": 24,
     "qc": "/scratch/lhashimoto/nemo_database_derivatives/qsirecon/qc"
+  },
+
+  "fsqc": {
+    "fsqc_container": "/scratch/lhashimoto/fsqc-2.1.4.sif",
+    "partition": "visu",
+    "requested_mem": 16,
+    "requested_time": 9,
+    "qc_screenshots": true,
+    "qc_surfaces": true,
+    "qc_skullstrip": true,
+    "qc_fornix": true,
+    "qc_hypothalamus": false,
+    "qc_hippocampus": false,
+    "qc_outlier": false,
+    "qc_skip_existing": true
   }
 
 }

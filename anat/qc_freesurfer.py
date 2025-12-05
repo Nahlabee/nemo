@@ -48,6 +48,7 @@ def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None)
         f'module load userspace/all\n'
         f'module load singularity\n'
         f'module load python3/3.12.0\n'
+        f'xhost +\n'
     )
 
     subjects_sessions_str = " ".join(subjects_sessions)
