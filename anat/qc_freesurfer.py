@@ -120,6 +120,8 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     # Create output (derivatives) directories
     os.makedirs(f"{args.derivatives}/qc", exist_ok=True)
     os.makedirs(f"{args.derivatives}/qc/fsqc", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qc/fsqc/stdout", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qc/fsqc/scripts", exist_ok=True)
 
     # # Run FSQC on a list of subjects
     # fsqc.run_fsqc(subjects_dir=f"{args.derivatives}/freesurfer",
