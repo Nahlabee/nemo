@@ -2,7 +2,11 @@ import os
 import fsqc
 import pandas as pd
 from fsqc.outlierDetection import readAsegStats
-from .outlierDetection import outlierDetection_normalized, outlierTable
+from pathlib import Path
+import sys
+
+sys.path.append(str(Path(__file__).resolve().parent))
+from outlierDetection import outlierDetection_normalized, outlierTable
 import utils
 import re
 import csv
