@@ -25,6 +25,7 @@ FREESURFER_CONTAINER="/scratch/lhashimoto/freesurfer-7.4.1.sif"
 FREESURFER_LICENSE="/scratch/lhashimoto/freesurfer/license"
 FREESURFER_DIR="/scratch/lhashimoto/freesurfer/outputs"
 QSIRECON_CONTAINER="/scratch/lhashimoto/qsirecon-1.1.1.sif"
+CONFIG=
 
 # Execute Singularity container
 apptainer run \
@@ -33,10 +34,10 @@ apptainer run \
   -B $DERIVATIVES_BIDS_DIR/qsirecon:/out \
   -B $FREESURFER_DIR:/freesurfer \
   -B $FREESURFER_LICENSE/license.txt:/opt/freesurfer/license.txt \
+  -B $CONFIG:/config/qsirecon_config.toml \
   $QSIRECON_CONTAINER /data /out participant \
     --participant-label sub-1054001 --session-id ses-01 \
     -v -w /out/temp_qsirecon \
     --fs-license-file /opt/freesurfer/license.txt \
     --fs-subjects-dir /freesurfer \
-    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \
-    --atlases AAL116
+    --config-file /config/qsirecon_config.toml
