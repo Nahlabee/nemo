@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 import sys
-from anat.qc_freesurfer import qc_freesurfer
 
 sys.path.append(str(Path(__file__).resolve().parent))
 import utils

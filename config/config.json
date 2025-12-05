@@ -46,7 +46,7 @@
 
   "fsqc": {
     "fsqc_container": "/scratch/lhashimoto/fsqc-2.1.4.sif",
-    "partition": "visu",
+    "partition": "skylake",
     "requested_mem": 16,
     "requested_time": 9,
     "qc_screenshots": true,
