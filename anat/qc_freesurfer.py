@@ -98,7 +98,7 @@ def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None)
     ownership_sharing = f'\nchmod -Rf 771 {args.derivatives}/qc/fsqc\n'
 
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + singularity_command + ownership_sharing)
+        f.write(module_export + singularity_command + ownership_sharing)
 
 
 def qc_freesurfer(args, subjects_sessions, job_ids=None):
