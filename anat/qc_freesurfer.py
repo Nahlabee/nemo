@@ -164,7 +164,7 @@ def normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract
 
         # Extract columns for QC
         df_sub = df_aseg[columns_to_extract]
-        df_sub['subject'] = [sub_sess]
+        df_sub['subject'] = sub_sess
         df_qc.append(df_sub)
 
     return pd.concat(df_qc, ignore_index=True)
@@ -272,6 +272,7 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     os.makedirs(fsqc_dir, exist_ok=True)
     os.makedirs(f"{fsqc_dir}/stdout", exist_ok=True)
     os.makedirs(f"{fsqc_dir}/scripts", exist_ok=True)
+    os.makedirs(f"{fsqc_dir}/outliers", exist_ok=True)
 
     # Run FSQC on a list of subjects
     fsqc.run_fsqc(subjects_dir=freesurfer_dir,
