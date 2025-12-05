@@ -12,10 +12,9 @@ import config_files
 # HELPERS
 # --------------------------------------------  
 
-def is_already_processed(subject, session):
+def is_already_processed(subject, session, data_type="raw"):
     """
     Check if subject_session is already processed successfully.
-    Note: Even if FMRIprep put files in cache, some steps are recomputed which require several hours of ressources.
 
     Parameters
     ----------
@@ -23,6 +22,8 @@ def is_already_processed(subject, session):
         Subject identifier (e.g., "sub-01").
     session : str
         Session identifier (e.g., "ses-01").
+    data_type : str
+        Type of data to process (e.g., "raw" or "fmriprep" or "qsiprep").
 
     Returns
     -------
@@ -30,9 +31,13 @@ def is_already_processed(subject, session):
         True if already processed, False otherwise.
     """
 
-    # Check if fmriprep already processed without error
-    stdout_dir = f"{config_files.config['common']['derivatives']}/mriqc/stdout"
+    # Check if mriqc already processed without error
+    if data_type not in ["raw", "fmriprep", "xcp_d","qsiprep", "qsirecon"]:
+        raise ValueError(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
+    
+    stdout_dir = f"{config_files.config['common']['derivatives']}/mriqc_{data_type}/stdout"
     if not os.path.exists(stdout_dir):
+        print(f"[MRIQC] Could not read standard outputs from MRIQC, recomputing ....")
         return False
 
     prefix = f"mriqc_{subject}_{session}"
@@ -52,7 +57,7 @@ def is_already_processed(subject, session):
 # ------------------------
 # Create SLURM job scripts 
 # ------------------------
-def generate_slurm_mriqc_script(subject, session, job_ids=None):
+def generate_slurm_mriqc_script(subject, session, data_type="raw", job_ids=None):
     """Generate the SLURM job script.
     Parameters
     ----------
@@ -61,14 +66,16 @@ def generate_slurm_mriqc_script(subject, session, job_ids=None):
         Subject identifier.
     session : str
         Session identifier.
+    data_type : str
+        Type of data to process (e.g., "raw" or "fmriprep" or "qsiprep").
     job_ids : list, optional
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
     # Create output (derivatives) directories
-    os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc/stdout", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc/scripts", exist_ok=True)
+    os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc_{data_type}", exist_ok=True)
+    os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc_{data_type}/stdout", exist_ok=True)
+    os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc_{data_type}/scripts", exist_ok=True)
 
     if job_ids is None:
         job_ids = []
@@ -76,8 +83,8 @@ def generate_slurm_mriqc_script(subject, session, job_ids=None):
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH --job-name=mriqc_{subject}_{session}\n'
-        f'#SBATCH --output={config_files.config["common"]["derivatives"]}/mriqc/stdout/mriqc_{subject}_{session}_%j.out\n'
-        f'#SBATCH --error={config_files.config["common"]["derivatives"]}/mriqc/stdout/mriqc_{subject}_{session}_%j.err\n'
+        f'#SBATCH --output={config_files.config["common"]["derivatives"]}/mriqc_{data_type}/stdout/mriqc_{subject}_{session}_%j.out\n'
+        f'#SBATCH --error={config_files.config["common"]["derivatives"]}/mriqc_{data_type}/stdout/mriqc_{subject}_{session}_%j.err\n'
         f'#SBATCH --cpus-per-task={config_files.config["mriqc"]["requested_cpus"]}\n'
         f'#SBATCH --mem={config_files.config["mriqc"]["requested_mem"]}\n'
         f'#SBATCH --time={config_files.config["mriqc"]["requested_time"]}\n'
@@ -118,98 +125,93 @@ def generate_slurm_mriqc_script(subject, session, job_ids=None):
         f'fi\n'
         f'mkdir -p $WORK_DIR\n'
         f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-        f'echo "Using OUT_MRIQC_DIR = {config_files.config["common"]["derivatives"]}/mriqc"\n'
+        f'echo "Using OUT_MRIQC_DIR = {config_files.config["common"]["derivatives"]}/mriqc_{data_type}"\n'
     )
 
-def make_slurm_mriqc_script(subject, session_id):
-    """Create a SLURM job script to run MRIQC for a given subject/session."""
-    job_file = Path(SLURM_DIR) / f"mriqc_{subject}_{session_id}.slurm"
+    # Define the Singularity command for running MRIQC
+    # Note: Unlike fmriprep, no config file is used here, the option doesn't exist for mriqc
+    singularity_cmd = (
+        f'\napptainer run \\\n'
+        f'    --cleanenv \\\n'
+        f'    -B {config_files.config["common"]["input_dir"]}:/data:ro \\\n'
+        f'    -B {config_files.config["common"]["derivatives"]}/mriqc_{data_type}:/out \\\n'
+        f'    {config_files.config["mriqc"]["container"]} /data /out participant \\\n'
+        f'    --participant_label {subject} \\\n'
+        f'    --session-id {session} \\\n'
+        f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
+        f'    --mem {config_files.config["mriqc"]["requested_mem"]} \\\n'
+        f'    -w $TMP_WORK_DIR \\\n'
+        f'    --fd_thres 0.5 \\\n'
+        f'    --verbose-reports \\\n'
+        f'    --no-datalad-get \\\n'
+        f'    --no-sub\n'
+    )
+
+    save_work = (
+        f'\necho "Cleaning up temporary work directory..."\n'
+        f'\nchmod -Rf 771 {config_files.config["common"]["derivatives"]}/mriqc_{data_type}\n'
+        f'\ncp -r $TMP_WORK_DIR/* {config_files.config["common"]["derivatives"]}/mriqc_{data_type}/work\n'
+        f'\nrm -rf $TMP_WORK_DIR\n' 
+        f'echo "Finished MRIQC for subject: {subject}, session: {session}"\n'
+    )
     
-    content = f"""#!/bin/bash
-#SBATCH --job-name=mriqc_{subject}_{session_id}
-#SBATCH --output={SLURM_DIR}/mriqc_{subject}_{session_id}.out
-#SBATCH --error={SLURM_DIR}/mriqc_{subject}_{session_id}.err
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task={N_THREADS}
-#SBATCH --mem={MEM_GB}
-#SBATCH --time={TIME}
-#SBATCH --partition={PARTITION}
-#SBATCH --mail-type={MAIL_FREQ}
-#SBATCH --mail-user={MAIL}
+    # Combine all parts into the final script 
+    path_to_script = f"{config_files.config['common']['derivatives']}/mriqc_{data_type}/scripts/{subject}_{session}_mriqc.slurm"
 
-module purge
-module load userspace/all
-module load singularity
-module load python3/3.12.0
+    with open(path_to_script, 'w') as f:
+        f.write(header + module_export + tmp_dir_setup + singularity_cmd + save_work)
+    print(f"Created MRIQC SLURM job: {path_to_script} for subject {subject}, session {session}")
 
-hostname
-
-# Choose writable scratch directory
-if [ -n "$SLURM_TMPDIR" ]; then
-    WORK_DIR="$SLURM_TMPDIR"
-elif [ -n "$TMPDIR" ]; then
-    WORK_DIR="$TMPDIR"
-else
-    WORK_DIR=$(mktemp -d /tmp/mriqc_${{SLURM_JOB_ID}}_XXXX)
-fi
-
-echo "Using WORK_DIR: $WORK_DIR"
-mkdir -p $WORK_DIR
-
-echo " --------------- Starting MRIQC for subject: {subject}, session: {session_id} ---------------"
-
-apptainer run \
-    --cleanenv \
-    -B {BIDS_DIR}:/data:ro \
-    -B {OUT_MRIQC_DIR}:/out \
-    -B $WORK_DIR:/work \
-    -B /scratch/hrasoanandrianina/code/nemo:/project \
-    {MRIQC_SIF} \
-    /data /out participant \
-    --participant_label {subject} \
-    --session-id {session_id} \
-    --bids-filter-file {BIDS_FILTER_DIR}/bids_filter_{session_id}.json \
-    --nprocs {N_THREADS} \
-    --omp-nthreads {OMP_THREADS} \
-    --mem {MEM_GB} \
-    -w $WORK_DIR \
-    --fd_thres 0.5 \
-    --verbose-reports \
-    --no-datalad-get \
-    --no-sub
-    
-echo "---------------- Finished MRIQC for subject: {subject}, session: {session_id} ---------------"
-"""
-    job_file.write_text(content)
-    print(f"Created MRIQC SLURM job: {job_file} for subject {subject}, session {session_id}")
-    return job_file
+    return path_to_script
 
 # ------------------------------
 # MAIN JOB SUBMISSION LOGIC
 # ------------------------------
 
-def submit_mriqc_jobs():
-    """Generate and submit SLURM job scripts for MRIQC."""
-    Path(SLURM_DIR).mkdir(exist_ok=True)
-    subjects = get_subjects(BIDS_DIR)
+def submit_mriqc_jobs(input_dir, data_type="raw", job_ids=None):
+    """Generate and submit SLURM job scripts for MRIQC.
+    Parameters
+    ----------
+    input_dir : str
+        Path to the BIDS formatted input directory.
+    data_type : str
+        Type of data to process (e.g., "raw" or "fmriprep" or "qsiprep").
+    job_ids : list, optional
+        List of SLURM job IDs to set as dependencies (default is None).
+    """
+
+    subjects = utils.get_subjects(input_dir)
+    
+    if job_ids is None:
+        job_ids = []
 
     for sub in subjects:
-        sessions = get_sessions(BIDS_DIR, sub)
+        previous_job_id = None
+        sessions = utils.get_sessions(input_dir, sub)
+        
         for ses in sessions:
             # -----------------------
-            # SKIP CHECK IF DONE
+            # SKIP CHECK IF BOTH DONE
             # -----------------------
-            if mriqc_is_done(sub, ses):
+            if is_already_processed(sub, ses) :
                 print(f"✓ Skipping {sub} {ses}: already processed")
                 continue
             # -----------------------
 
-            job_script = make_slurm_mriqc_script(sub, ses)
-            mriqc_job = subprocess.run(["sbatch", str(job_script)], capture_output=True, text=True)
+            # -----------------------
+            # SUBMIT FMRIPREP JOB IF NEEDED
+            # -----------------------
+            else :
+                print(f"Submitting MRIQC job for {sub} {ses}...")
 
-            print(f"Submitted MRIQC job for subject {sub}, session {ses}: {mriqc_job.stdout.strip()}")
+                # Add dependency if this is not the first job in the chain
+                path_to_script = generate_slurm_mriqc_script(sub, ses, data_type=data_type, job_ids=[previous_job_id])
+                cmd = f"sbatch {path_to_script}"
 
-    print("\n All MRIQC jobs submitted.")
+                # Extract SLURM job ID (last token in "Submitted batch job 12345")
+                job_id = utils.submit_job(cmd)
+                previous_job_id = job_id
+        print(f"All FMRIPREP sessions for {sub} queued.\n")
 
 if __name__ == "__main__":
-    submit_mriqc_jobs()
+    submit_mriqc_jobs(config_files.config["common"]["input_dir"], data_type="raw")

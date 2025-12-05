@@ -81,6 +81,7 @@ omp_threads = 4
 [xcp_d]
 xcp_d_container = "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif"
 xcp_d_config = "/scratch/hrasoanandrianina/code/nemo/config/xcp_d_config.toml"
+bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/fmriprep/bids_filters"
 partition = "skylake"
 requested_mem = 64
 requested_time = 12
