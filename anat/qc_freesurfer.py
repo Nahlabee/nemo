@@ -160,10 +160,12 @@ def normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract
         # Normalize volumes
         df_aseg_norm = df_aseg.drop(columns=columns_to_extract)
         df_aseg_norm = df_aseg_norm.div(df_aseg[ETIV], axis=0)
-        df_aseg_norm.to_csv(f"{freesurfer_dir}/{sub_sess}/stats/aseg_stats_norm.csv", index=False)
+        aseg_norm = f"{freesurfer_dir}/{sub_sess}/stats/aseg_stats_norm.csv"
+        df_aseg_norm.to_csv(aseg_norm, index=False)
+        print(f"Normalized aseg volumes saved in {aseg_norm}")
 
         # Extract columns for QC
-        df_sub = df_aseg[columns_to_extract]
+        df_sub = df_aseg[columns_to_extract].copy()
         df_sub.loc[0, 'subject'] = sub_sess
         df_qc.append(df_sub)
 
@@ -242,6 +244,8 @@ def calculate_outliers(freesurfer_dir, subjects_sessions, outlier_dir, outlier_p
     df_outliers = pd.DataFrame(outlierDict).T.reset_index()
     df_outliers = df_outliers.rename(columns={'index': 'subject'})
 
+    print("Outlier detection done.")
+
     return df_group_stats, df_outliers
 
 
@@ -262,8 +266,6 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     """
     # if not check_prerequisites(args, subject, session):
     #     return None
-
-    print(args)
 
     freesurfer_dir = f"{args.derivatives}/freesurfer"
     fsqc_dir = f"{args.derivatives}/qc/fsqc"
@@ -349,6 +351,8 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     qc = pd.merge(qc, df_outliers, on="subject", how="left")
     path_to_final_fsqc = f"{fsqc_dir}/fsqc-results-final.csv"
     qc.to_csv(path_to_final_fsqc, index=False)
+
+    print("FreeSurfer Quality Check terminated successfully.")
 
     return None
 
