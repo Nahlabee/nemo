@@ -297,7 +297,7 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     # print(f"[FSQC] Submitting task in background: {cmd}")
     # os.system(cmd)
 
-    print("Running log verification")
+    print("\nRunning log verification")
     fsqc_results = pd.read_csv(f"{fsqc_dir}/fsqc-results.csv")
     cols = ["subject",
             "Number of folders generated",
@@ -320,13 +320,13 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
             file_count = utils.count_files(f"{freesurfer_dir}/{sub_sess}")
         frames.append([sub_sess, dir_count, file_count] + list(info))
     logs = pd.DataFrame(frames, columns=cols)
-    qc = pd.merge(fsqc_results, logs, on="subject", how="left")
+    qc = pd.merge(logs, fsqc_results, on="subject", how="left")
 
     # Convert radians to degrees
     qc = convert_radians_to_degrees(qc)
 
     # Normalize ASEG volumes by ETIV
-    print("Running volume normalization")
+    print("\nRunning volume normalization")
     columns_to_extract = ['aseg.EstimatedTotalIntraCranialVol',
                           'aseg.BrainSegVol_to_eTIV', 'aseg.MaskVol_to_eTIV', 'aseg.lhSurfaceHoles',
                           'aseg.rhSurfaceHoles', 'aseg.SurfaceHoles']
@@ -352,7 +352,7 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     path_to_final_fsqc = f"{fsqc_dir}/fsqc-results.csv"
     qc.to_csv(path_to_final_fsqc, index=False)
 
-    print(f"QC saved in {path_to_final_fsqc}")
+    print(f"\nQC saved in {path_to_final_fsqc}\n")
 
     print("FreeSurfer Quality Check terminated successfully.")
 
