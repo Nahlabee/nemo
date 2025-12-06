@@ -277,6 +277,7 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     os.makedirs(f"{fsqc_dir}/outliers", exist_ok=True)
 
     # Run FSQC on a list of subjects
+    print("Running FSQC on subjects")
     fsqc.run_fsqc(subjects_dir=freesurfer_dir,
                   output_dir=fsqc_dir,
                   subjects=subjects_sessions,
@@ -298,8 +299,8 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     # print(f"[FSQC] Submitting task in background: {cmd}")
     # os.system(cmd)
 
+    print("Running log verification")
     fsqc_results = pd.read_csv(f"{fsqc_dir}/fsqc-results.csv")
-
     cols = ["subject",
             "Number of folders generated",
             "Number of files generated",
@@ -327,6 +328,7 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     qc = convert_radians_to_degrees(qc)
 
     # Normalize ASEG volumes by ETIV
+    print("Running volume normalization")
     columns_to_extract = ['aseg.EstimatedTotalIntraCranialVol',
                           'aseg.BrainSegVol_to_eTIV', 'aseg.MaskVol_to_eTIV', 'aseg.lhSurfaceHoles',
                           'aseg.rhSurfaceHoles', 'aseg.SurfaceHoles']
