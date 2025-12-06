@@ -70,41 +70,35 @@ def generate_slurm_fmriprep_script(subject, session, job_ids=None):
     os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep", exist_ok=True)
     os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/stdout", exist_ok=True)
     os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/scripts", exist_ok=True)
-
-    if job_ids is None:
-        job_ids = []
+    os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/work", exist_ok=True)
 
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH --job-name=fmriprep_{subject}_{session}\n'
         f'#SBATCH --output={config_files.config["common"]["derivatives"]}/fmriprep/stdout/fmriprep_{subject}_{session}_%j.out\n'
         f'#SBATCH --error={config_files.config["common"]["derivatives"]}/fmriprep/stdout/fmriprep_{subject}_{session}_%j.err\n'
-        f'#SBATCH --cpus-per-task={config_files.config["fmriprep"]["requested_cpus"]}\n'
         f'#SBATCH --mem={config_files.config["fmriprep"]["requested_mem"]}\n'
         f'#SBATCH --time={config_files.config["fmriprep"]["requested_time"]}\n'
         f'#SBATCH --partition={config_files.config["fmriprep"]["partition"]}\n'
     )
-
+    
     if job_ids:
-        header += (
-            f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
-        )
-
+          valid_ids = [jid for jid in job_ids if jid]
+          if valid_ids:
+            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
+    
     if config_files.config["common"].get("email"):
         header += (
             f'#SBATCH --mail-type={config_files.config["common"]["email_frequency"]}\n'
             f'#SBATCH --mail-user={config_files.config["common"]["email"]}\n'
         )
 
-    if config_files.config["common"].get("account"):
-        header += f'#SBATCH --account={config_files.config["common"]["account"]}\n'
-
     module_export = (
         f'\nmodule purge\n'
         f'module load userspace/all\n'
         f'module load singularity\n'
 
-        f'echo "------ Running {config_files.config["fmriprep"]["container"]} for subject: {subject}, session: {session} --------"\n'
+        f'echo "------ Running {config_files.config["fmriprep"]["fmriprep_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
     tmp_dir_setup = (
@@ -117,7 +111,7 @@ def generate_slurm_fmriprep_script(subject, session, job_ids=None):
         f'else\n'
         f'    TMP_WORK_DIR=$(mktemp -d /tmp/fmriprep_{subject}_{session})\n'
         f'fi\n'
-        f'mkdir -p $WORK_DIR\n'
+        f'mkdir -p "$TMP_WORK_DIR"\n'
         f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
         f'echo "Using OUT_FMRIPREP_DIR = {config_files.config["common"]["derivatives"]}/fmriprep"\n'
     )
@@ -128,8 +122,8 @@ def generate_slurm_fmriprep_script(subject, session, job_ids=None):
         f'    -B {config_files.config["common"]["input_dir"]}:/data:ro \\\n'
         f'    -B {config_files.config["common"]["derivatives"]}/fmriprep:/out \\\n'
         f'    -B {config_files.config["common"]["freesurfer_license"]}:/license.txt \\\n'
-        f'    -B {config_files.config["fmriprep"]["bids_filter_dir"]}:/bids_filter_dir\\\n'
-
+        f'    -B {config_files.config["fmriprep"]["fmriprep_config"]}:/fmriprep_config.toml \\\n'
+        f'    -B {config_files.config["fmriprep"]["bids_filter_dir"]}:/bids_filter_dir \\\n'
         f'    {config_files.config["fmriprep"]["fmriprep_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} \\\n'
         f'    --session-label {session} \\\n'
@@ -137,16 +131,16 @@ def generate_slurm_fmriprep_script(subject, session, job_ids=None):
         f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
         f'    --project-goodvoxels \\\n'
         f'    --mem-mb {config_files.config["fmriprep"]["requested_mem"]} \\\n'
+        f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
         f'    --skip-bids-validation \\\n'
         f'    --work-dir $TMP_WORK_DIR \\\n'
-        f'    --config-file {config_files.config["fmriprep"]["fmriprep_config"]} \\\n'
+        f'    --config-file /fmriprep_config.toml \n'
     )
 
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {config_files.config["common"]["derivatives"]}/fmriprep\n'
         f'\ncp -r $TMP_WORK_DIR/* {config_files.config["common"]["derivatives"]}/fmriprep/work\n'
-        f'\nrm -rf $TMP_WORK_DIR\n' 
         f'echo "Finished fMRIPrep for subject: {subject}, session: {session}"\n'
     )
     

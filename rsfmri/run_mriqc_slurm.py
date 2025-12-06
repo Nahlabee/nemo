@@ -40,17 +40,18 @@ def is_already_processed(subject, session, data_type="raw"):
         print(f"[MRIQC] Could not read standard outputs from MRIQC, recomputing ....")
         return False
 
-    prefix = f"mriqc_{subject}_{session}"
-    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-    if not stdout_files:
-        return False
+    else: 
+        prefix = f"mriqc_{subject}_{session}"
+        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+        if not stdout_files:
+            return False
 
-    for file in stdout_files:
-        file_path = os.path.join(stdout_dir, file)
-        with open(file_path, 'r') as f:
-            if 'MRIQC completed' in f.read():
-                print(f"[MRIQC] Skip already processed subject {subject}_{session}")
-                return True
+        for file in stdout_files:
+            file_path = os.path.join(stdout_dir, file)
+            with open(file_path, 'r') as f:
+                if 'MRIQC completed' in f.read():
+                    print(f"[MRIQC] Skip already processed subject {subject}_{session}")
+                    return True
 
     return False
 
@@ -76,6 +77,7 @@ def generate_slurm_mriqc_script(subject, session, data_type="raw", job_ids=None)
     os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc_{data_type}", exist_ok=True)
     os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc_{data_type}/stdout", exist_ok=True)
     os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc_{data_type}/scripts", exist_ok=True)
+    os.makedirs(f"{config_files.config['common']['derivatives']}/mriqc_{data_type}/work", exist_ok=True)
 
     if job_ids is None:
         job_ids = []
@@ -85,16 +87,15 @@ def generate_slurm_mriqc_script(subject, session, data_type="raw", job_ids=None)
         f'#SBATCH --job-name=mriqc_{subject}_{session}\n'
         f'#SBATCH --output={config_files.config["common"]["derivatives"]}/mriqc_{data_type}/stdout/mriqc_{subject}_{session}_%j.out\n'
         f'#SBATCH --error={config_files.config["common"]["derivatives"]}/mriqc_{data_type}/stdout/mriqc_{subject}_{session}_%j.err\n'
-        f'#SBATCH --cpus-per-task={config_files.config["mriqc"]["requested_cpus"]}\n'
         f'#SBATCH --mem={config_files.config["mriqc"]["requested_mem"]}\n'
         f'#SBATCH --time={config_files.config["mriqc"]["requested_time"]}\n'
         f'#SBATCH --partition={config_files.config["mriqc"]["partition"]}\n'
     )
 
     if job_ids:
-        header += (
-            f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
-        )
+          valid_ids = [jid for jid in job_ids if jid]
+          if valid_ids:
+            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
 
     if config_files.config["common"].get("email"):
         header += (
@@ -110,7 +111,7 @@ def generate_slurm_mriqc_script(subject, session, data_type="raw", job_ids=None)
         f'module load userspace/all\n'
         f'module load singularity\n'
 
-        f'echo "------ Running {config_files.config["mriqc"]["container"]} for subject: {subject}, session: {session} --------"\n'
+        f'echo "------ Running {config_files.config["mriqc"]["mriqc_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
     tmp_dir_setup = (
@@ -123,7 +124,9 @@ def generate_slurm_mriqc_script(subject, session, data_type="raw", job_ids=None)
         f'else\n'
         f'    TMP_WORK_DIR=$(mktemp -d /tmp/mriqc_{subject}_{session})\n'
         f'fi\n'
-        f'mkdir -p $WORK_DIR\n'
+
+        f'mkdir -p $TMP_WORK_DIR\n'
+        f'chmod -Rf 771 $TMP_WORK_DIR\n'
         f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
         f'echo "Using OUT_MRIQC_DIR = {config_files.config["common"]["derivatives"]}/mriqc_{data_type}"\n'
     )
@@ -135,7 +138,8 @@ def generate_slurm_mriqc_script(subject, session, data_type="raw", job_ids=None)
         f'    --cleanenv \\\n'
         f'    -B {config_files.config["common"]["input_dir"]}:/data:ro \\\n'
         f'    -B {config_files.config["common"]["derivatives"]}/mriqc_{data_type}:/out \\\n'
-        f'    {config_files.config["mriqc"]["container"]} /data /out participant \\\n'
+        f'    -B {config_files.config["mriqc"]["bids_filter_dir"]}:/bids_filter_dir \\\n'
+        f'    {config_files.config["mriqc"]["mriqc_container"]} /data /out participant \\\n'
         f'    --participant_label {subject} \\\n'
         f'    --session-id {session} \\\n'
         f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
@@ -143,15 +147,14 @@ def generate_slurm_mriqc_script(subject, session, data_type="raw", job_ids=None)
         f'    -w $TMP_WORK_DIR \\\n'
         f'    --fd_thres 0.5 \\\n'
         f'    --verbose-reports \\\n'
-        f'    --no-datalad-get \\\n'
-        f'    --no-sub\n'
+        f'    --verbose \\\n'
+        f'    --no-sub --notrack\n'
     )
 
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {config_files.config["common"]["derivatives"]}/mriqc_{data_type}\n'
         f'\ncp -r $TMP_WORK_DIR/* {config_files.config["common"]["derivatives"]}/mriqc_{data_type}/work\n'
-        f'\nrm -rf $TMP_WORK_DIR\n' 
         f'echo "Finished MRIQC for subject: {subject}, session: {session}"\n'
     )
     
@@ -199,7 +202,7 @@ def submit_mriqc_jobs(input_dir, data_type="raw", job_ids=None):
             # -----------------------
 
             # -----------------------
-            # SUBMIT FMRIPREP JOB IF NEEDED
+            # SUBMIT MRIQC JOB IF NEEDED
             # -----------------------
             else :
                 print(f"Submitting MRIQC job for {sub} {ses}...")
@@ -211,7 +214,7 @@ def submit_mriqc_jobs(input_dir, data_type="raw", job_ids=None):
                 # Extract SLURM job ID (last token in "Submitted batch job 12345")
                 job_id = utils.submit_job(cmd)
                 previous_job_id = job_id
-        print(f"All FMRIPREP sessions for {sub} queued.\n")
+        print(f"All MRIQC sessions for {sub} queued.\n")
 
 if __name__ == "__main__":
     submit_mriqc_jobs(config_files.config["common"]["input_dir"], data_type="raw")

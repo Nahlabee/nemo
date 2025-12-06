@@ -13,7 +13,6 @@ track_carbon = false
 me_output_echos = false
 aggr_ses_reports = 4
 output_layout = "bids"
-output_spaces = "fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native"
 reports_only = false
 write_graph = false
 
