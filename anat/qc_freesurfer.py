@@ -244,8 +244,6 @@ def calculate_outliers(freesurfer_dir, subjects_sessions, outlier_dir, outlier_p
     df_outliers = pd.DataFrame(outlierDict).T.reset_index()
     df_outliers = df_outliers.rename(columns={'index': 'subject'})
 
-    print("Outlier detection done.")
-
     return df_group_stats, df_outliers
 
 
@@ -347,12 +345,14 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     }
     df_group_stats, df_outliers = calculate_outliers(freesurfer_dir, subjects_sessions, outlier_dir, outlier_params)
     df_group_stats.reset_index(inplace=True)
-    path_to_group_stats = f"{fsqc_dir}/group_stats.csv"
+    path_to_group_stats = f"{fsqc_dir}/group_aparc-aseg_values.csv"
     df_group_stats.to_csv(path_to_group_stats, index=False)
 
     qc = pd.merge(qc, df_outliers, on="subject", how="left")
-    path_to_final_fsqc = f"{fsqc_dir}/fsqc-results-final.csv"
+    path_to_final_fsqc = f"{fsqc_dir}/fsqc-results.csv"
     qc.to_csv(path_to_final_fsqc, index=False)
+
+    print(f"QC saved in {path_to_final_fsqc}")
 
     print("FreeSurfer Quality Check terminated successfully.")
 
