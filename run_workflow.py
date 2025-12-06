@@ -9,7 +9,10 @@ import utils
 from anat.run_freesurfer import run_freesurfer
 from dwi.run_qsiprep import run_qsiprep
 from dwi.run_qsirecon import run_qsirecon
-
+from rsfmri.run_fmriprep_slurm import is_already_processed as is_fmriprep_done
+from rsfmri.run_mriqc_slurm import is_already_processed as is_mriqc_done
+from rsfmri.run_xcp_d_slurm import is_already_processed as is_xcpdone_done
+import config_files
 
 def main(config_file=None):
     """
@@ -17,7 +20,7 @@ def main(config_file=None):
     """
     # Load configuration
     if not config_file:
-        config_file = f"{Path(__file__).parent}/config/config.json"
+        config_file = f"{Path(__file__).parent}/config_files/config.toml"
     config = utils.load_config(config_file)
     args = SimpleNamespace(**config.get('common', {}))
 
