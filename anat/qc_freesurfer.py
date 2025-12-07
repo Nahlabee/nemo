@@ -374,7 +374,7 @@ def run(args, subjects_sessions, job_ids=None):
     os.makedirs(f"{args.derivatives}/qc/fsqc/outliers", exist_ok=True)
 
     path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
-    generate_bash_script(args, subjects_sessions, path_to_script, job_ids)
+    generate_bash_script(args, subjects_sessions, path_to_script)
 
     cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
            f'--partition={args.partition} '
