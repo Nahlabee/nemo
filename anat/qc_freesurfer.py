@@ -17,78 +17,6 @@ import csv
 import numpy as np
 
 
-def generate_slurm_script(args, subjects_sessions, path_to_script, job_ids=None):
-    """
-    Generate the SLURM script for FSQC processing.
-
-    Parameters
-    ----------
-    args : Namespace
-        Configuration arguments.
-    subject : str
-        Subject identifier.
-    session : str
-        Session identifier.
-    path_to_script : str
-        Path where the SLURM script will be saved.
-    """
-    module_export = (
-        f'\nmodule purge\n'
-        f'module load userspace/all\n'
-        f'module load singularity\n'
-        f'module load python3/3.12.0\n'
-    )
-
-    subjects_sessions_str = " ".join(subjects_sessions)
-    singularity_command = (
-        f'\napptainer run \\\n'
-        f'    --writable-tmpfs --cleanenv \\\n'
-        f'    -B {args.derivatives}/freesurfer:/data \\\n'
-        f'    -B {args.derivatives}/qc/fsqc:/out \\\n'
-        f'    {args.fsqc_container} \\\n'
-        f'      --subjects_dir /data \\\n'
-        f'      --output_dir /out \\\n'
-        f'      --subjects {subjects_sessions_str}  \\\n'
-    )
-    if args.qc_screenshots:
-        singularity_command += (
-            f'      --screenshots \\\n'
-        )
-    if args.qc_surfaces:
-        singularity_command += (
-            f'      --surfaces \\\n'
-        )
-    if args.qc_skullstrip:
-        singularity_command += (
-            f'      --skullstrip \\\n'
-        )
-    if args.qc_fornix:
-        singularity_command += (
-            f'      --fornix \\\n'
-        )
-    if args.qc_hypothalamus:
-        singularity_command += (
-            f'      --hypothalamus \\\n'
-        )
-    if args.qc_hippocampus:
-        singularity_command += (
-            f'      --hippocampus \\\n'
-        )
-    if args.qc_skip_existing:
-        singularity_command += (
-            f'      --skip-existing \\\n'
-        )
-    if args.qc_outlier:
-        singularity_command += (
-            f'      --outlier \\\n'
-        )
-
-    ownership_sharing = f'\nchmod -Rf 771 {args.derivatives}/qc/fsqc\n'
-
-    with open(path_to_script, 'w') as f:
-        f.write(module_export + singularity_command + ownership_sharing)
-
-
 def read_log(log_file):
     """
     Uses regex to extract information from the log file such as the runtime, the number of Euler number before and after topological correction
@@ -138,7 +66,8 @@ def convert_radians_to_degrees(df):
     return df
 
 
-def normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract, ETIV='aseg.EstimatedTotalIntraCranialVol'):
+def normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract,
+                           ETIV='aseg.EstimatedTotalIntraCranialVol'):
     """
     Extract ETIV value for each subject.
     Normalize ASEG volumes by EstimatedTotalIntraCranialVol and save it in a csv file.
@@ -247,7 +176,7 @@ def calculate_outliers(freesurfer_dir, subjects_sessions, outlier_dir, outlier_p
     return df_group_stats, df_outliers
 
 
-def qc_freesurfer(args, subjects_sessions, job_ids=None):
+def qc_freesurfer(args, subjects_sessions):
     """
     Note : Note that a minimum of 5 supplied subjects is required for running outlier analyses,
     otherwise NaNs will be returned.
@@ -268,34 +197,21 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     freesurfer_dir = f"{args.derivatives}/freesurfer"
     fsqc_dir = f"{args.derivatives}/qc/fsqc"
 
-    # Create output (derivatives) directories
-    os.makedirs(fsqc_dir, exist_ok=True)
-    os.makedirs(f"{fsqc_dir}/stdout", exist_ok=True)
-    os.makedirs(f"{fsqc_dir}/scripts", exist_ok=True)
-    os.makedirs(f"{fsqc_dir}/outliers", exist_ok=True)
-
-    # Run FSQC on a list of subjects
-    print("Running FSQC on subjects")
-    fsqc.run_fsqc(subjects_dir=freesurfer_dir,
-                  output_dir=fsqc_dir,
-                  subjects=subjects_sessions,
-                  screenshots=args.qc_screenshots,
-                  surfaces=args.qc_surfaces,
-                  skullstrip=args.qc_skullstrip,
-                  fornix=args.qc_fornix,
-                  hypothalamus=args.qc_hypothalamus,
-                  hippocampus=args.qc_hippocampus,
-                  # shape=args.qc_screenshots,  # Runs a specific freesurfer commands not compatible with container
-                  outlier=args.qc_outlier,  # Outliers are recomputed later after normalization by ETIV
-                  skip_existing=args.qc_skip_existing
-                  )
-
-    # path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
-    # generate_slurm_script(args, subjects_sessions, path_to_script, job_ids)
-    #
-    # cmd = f"nohup sh {path_to_script} > {args.derivatives}/qc/fsqc/stdout/fsqc.out 2>&1 &"
-    # print(f"[FSQC] Submitting task in background: {cmd}")
-    # os.system(cmd)
+    # # Run FSQC on a list of subjects
+    # print("Running FSQC on subjects")
+    # fsqc.run_fsqc(subjects_dir=freesurfer_dir,
+    #               output_dir=fsqc_dir,
+    #               subjects=subjects_sessions,
+    #               screenshots=args.qc_screenshots,
+    #               surfaces=args.qc_surfaces,
+    #               skullstrip=args.qc_skullstrip,
+    #               fornix=args.qc_fornix,
+    #               hypothalamus=args.qc_hypothalamus,
+    #               hippocampus=args.qc_hippocampus,
+    #               # shape=args.qc_screenshots,  # Runs a specific freesurfer commands not compatible with container
+    #               outlier=args.qc_outlier,  # Outliers are recomputed later after normalization by ETIV
+    #               skip_existing=args.qc_skip_existing
+    #               )
 
     print("\n---------------------------------------")
     print("Running log verification")
@@ -361,14 +277,124 @@ def qc_freesurfer(args, subjects_sessions, job_ids=None):
     return None
 
 
-if __name__ == "__main__":
-    import sys
-    args_json = sys.argv[1]
-    args_dict = json.loads(args_json)
-    args = SimpleNamespace(**args_dict)
+def generate_bash_script(args, subjects_sessions, path_to_script, job_ids=None):
+    if job_ids is None:
+        job_ids = []
 
-    subjects_sessions = sys.argv[2].split(",")
-    freesurfer_job_ids = sys.argv[3].split(",") if len(sys.argv) > 3 else []
+    module_export = (
+        f'\nmodule purge\n'
+        f'module load userspace/all\n'
+        f'module load singularity\n'
+        f'module load python3/3.12.0\n'
+    )
 
-    # Appeler la fonction qc_freesurfer
-    qc_freesurfer(args, subjects_sessions, freesurfer_job_ids)
+    subjects_sessions_str = " ".join(subjects_sessions)
+
+    singularity_command = (
+        f'\napptainer run \\\n'
+        f'    --writable-tmpfs --cleanenv \\\n'
+        f'    -B {args.derivatives}/freesurfer:/data \\\n'
+        f'    -B {args.derivatives}/qc/fsqc:/out \\\n'
+        f'    {args.fsqc_container} \\\n'
+        f'      --subjects_dir /data \\\n'
+        f'      --output_dir /out \\\n'
+        f'      --subjects {subjects_sessions_str}  \\\n'
+    )
+    if args.qc_screenshots:
+        singularity_command += (
+            f'      --screenshots \\\n'
+        )
+    if args.qc_surfaces:
+        singularity_command += (
+            f'      --surfaces \\\n'
+        )
+    if args.qc_skullstrip:
+        singularity_command += (
+            f'      --skullstrip \\\n'
+        )
+    if args.qc_fornix:
+        singularity_command += (
+            f'      --fornix \\\n'
+        )
+    if args.qc_hypothalamus:
+        singularity_command += (
+            f'      --hypothalamus \\\n'
+        )
+    if args.qc_hippocampus:
+        singularity_command += (
+            f'      --hippocampus \\\n'
+        )
+    if args.qc_skip_existing:
+        singularity_command += (
+            f'      --skip-existing \\\n'
+        )
+    if args.qc_outlier:
+        singularity_command += (
+            f'      --outlier \\\n'
+        )
+
+    python_command = (f'srun --job-name=fsqc --ntasks=1 '
+                      f'--partition={args.partition} '
+                      f'--mem={args.requested_mem}gb '
+                      f'--time={args.requested_time}:00:00 '
+                      f'--out={args.derivatives}/qc/fsqc/stdout/fsqc.out '
+                      f'--err={args.derivatives}/qc/fsqc/stdout/fsqc.err '
+                      f'--dependency={job_ids} '
+                      f'python3 anat/qc_freesurfer.py '
+                      f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)} &")
+
+    # Add permissions for shared ownership of the output directory
+    ownership_sharing = f'\nchmod -Rf 771 {args.derivatives}/qc/fsqc\n'
+
+    # Write the complete BASH script to the specified file
+    with open(path_to_script, 'w') as f:
+        f.write(module_export + singularity_command + python_command + ownership_sharing)
+
+
+def run(args, subjects_sessions, job_ids=None):
+    """
+    Run the QSIrecon for a given subject and session.
+
+    Parameters
+    ----------
+    job_ids
+    args : Namespace
+        Configuration arguments.
+    subject : str
+        Subject identifier.
+    session : str
+        Session identifier.
+
+    Returns
+    -------
+    str or None
+        SLURM job ID if the job is submitted successfully, None otherwise.
+    """
+
+    # Create output (derivatives) directories
+    os.makedirs(f"{args.derivatives}/qc/fsqc", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qc/fsqc/stdout", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qc/fsqc/scripts", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qc/fsqc/outliers", exist_ok=True)
+
+    path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
+    generate_bash_script(args, subjects_sessions, path_to_script, job_ids)
+
+    cmd = f"sh {path_to_script}"
+    os.system(cmd)
+    print(f"[FSQC] Submitting (background) task on interactive node")
+    return
+
+
+# if __name__ == "__main__":
+#     import sys
+#
+#     args_json = sys.argv[1]
+#     args_dict = json.loads(args_json)
+#     args = SimpleNamespace(**args_dict)
+#
+#     subjects_sessions = sys.argv[2].split(",")
+#     freesurfer_job_ids = sys.argv[3].split(",") if len(sys.argv) > 3 else []
+#
+#     # Appeler la fonction qc_freesurfer
+#     qc_freesurfer(args, subjects_sessions, freesurfer_job_ids)
