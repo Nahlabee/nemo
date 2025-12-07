@@ -367,7 +367,6 @@ def run(args, subjects_sessions, job_ids=None):
     if job_ids is None:
         job_ids = []
 
-    print(job_ids)
     # Create output (derivatives) directories
     os.makedirs(f"{args.derivatives}/qc/fsqc", exist_ok=True)
     os.makedirs(f"{args.derivatives}/qc/fsqc/stdout", exist_ok=True)
@@ -388,7 +387,7 @@ def run(args, subjects_sessions, job_ids=None):
     if job_ids:
         cmd += f'--dependency=afterok:{":".join(job_ids)} '
 
-    cmd += f'sh {path_to_script}'
+    cmd += f'sh {path_to_script} &'
 
     os.system(cmd)
     print(f"[FSQC] Submitting (background) task on interactive node")
