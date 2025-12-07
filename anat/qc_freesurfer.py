@@ -277,9 +277,7 @@ def qc_freesurfer(args, subjects_sessions):
     return None
 
 
-def generate_bash_script(args, subjects_sessions, path_to_script, job_ids=None):
-    if job_ids is None:
-        job_ids = []
+def generate_bash_script(args, subjects_sessions, path_to_script):
 
     module_export = (
         f'\nmodule purge\n'
@@ -365,6 +363,9 @@ def run(args, subjects_sessions, job_ids=None):
     str or None
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
+
+    if job_ids is None:
+        job_ids = []
 
     # Create output (derivatives) directories
     os.makedirs(f"{args.derivatives}/qc/fsqc", exist_ok=True)
