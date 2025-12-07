@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import sys
 
 from anat import qc_freesurfer
+from legacy.workflow_diffusion import run_qsirecon
 
 sys.path.append(str(Path(__file__).resolve().parent))
 import utils
