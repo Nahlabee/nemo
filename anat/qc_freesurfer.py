@@ -332,7 +332,7 @@ def generate_bash_script(args, subjects_sessions, path_to_script):
         )
 
     python_command = (
-        f'python3 anat/qc_freesurfer.py '
+        f'\npython3 anat/qc_freesurfer.py '
         f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)}"
     )
 
@@ -367,6 +367,7 @@ def run(args, subjects_sessions, job_ids=None):
     if job_ids is None:
         job_ids = []
 
+    print(job_ids)
     # Create output (derivatives) directories
     os.makedirs(f"{args.derivatives}/qc/fsqc", exist_ok=True)
     os.makedirs(f"{args.derivatives}/qc/fsqc/stdout", exist_ok=True)
