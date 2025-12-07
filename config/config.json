@@ -2,7 +2,7 @@
   "common": {
     "input_dir": "/scratch/lhashimoto/nemo_database/imaging_data",
     "derivatives": "/scratch/lhashimoto/nemo_derivatives",
-    "subjects": ["1054001"],
+    "subjects": ["1054004"],
     "sessions": ["01"],
     "freesurfer_license": "/scratch/lhashimoto/freesurfer/license",
     "run_freesurfer": false,
@@ -37,7 +37,7 @@
   },
 
   "qsirecon": {
-    "qsirecon_container": "/scratch/lhashimoto/qsirecon-1.1.0.sif",
+    "qsirecon_container": "/scratch/lhashimoto/qsirecon-1.1.1.sif",
     "qsirecon_config": "/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml",
     "partition": "kepler",
     "gpu_per_node": 2,
