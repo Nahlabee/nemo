@@ -84,7 +84,7 @@ def main(config_file=None):
         for key, value in step_config.items():
             setattr(args, key, value)
         dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
-        fsqc_job_id = qc_freesurfer.run(args, subjects_sessions, dependencies)
+        qc_freesurfer.run(args, subjects_sessions, dependencies)
 
 
 if __name__ == "__main__":

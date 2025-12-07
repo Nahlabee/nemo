@@ -9,59 +9,59 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 
 
-def check_preprocessing_completion(args, subject, session):
-    """
-    Check that FreeSurfer recon-all finished successfully.
-    Check that QSIprep finished successfully.
-
-    Parameters
-    ----------
-    args : Namespace
-        Configuration arguments.
-    subject : str
-        Subject identifier (e.g., "sub-01").
-    session : str
-        Session identifier (e.g., "ses-01").
-
-    Returns
-    -------
-    bool
-        True if all requirements are met, False otherwise.
-    """
-
-    # Check that FreeSurfer finished without error
-    if not os.path.exists(f"{args.derivatives}/freesurfer/{subject}_{session}"):
-        print(f"[QSIRECON] Please run FreeSurfer recon-all command before QSIrecon.")
-        return False
-
-    logs = f"{args.derivatives}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
-    with open(logs, 'r') as f:
-        lines = f.readlines()
-    for l in lines:
-        if not 'finished without error' in l:
-            print(f"[QSIRECON] FreeSurfer did not terminate.")
-            return False
-
-    # Check that QSIprep finished without error
-    stdout_dir = f"{args.derivatives}/qsiprep/stdout"
-    if not os.path.exists(stdout_dir):
-        print(f"[QSIRECON] Could not read standard outputs from QSIprep.")
-        return False
-
-    prefix = f"qsiprep_{subject}_{session}"
-    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-    if not stdout_files:
-        print(f"[QSIRECON] Could not read standard outputs from QSIprep.")
-        return False
-
-    for file in stdout_files:
-        file_path = os.path.join(stdout_dir, file)
-        with open(file_path, 'r') as f:
-            if 'QSIPrep finished successfully!' in f.read():
-                return True
-
-    print("[QSIRECON] QSIprep did not terminate. Please run QSIprep command before QSIrecon.")
-    return False
+# def check_preprocessing_completion(args, subject, session):
+#     """
+#     Check that FreeSurfer recon-all finished successfully.
+#     Check that QSIprep finished successfully.
+#
+#     Parameters
+#     ----------
+#     args : Namespace
+#         Configuration arguments.
+#     subject : str
+#         Subject identifier (e.g., "sub-01").
+#     session : str
+#         Session identifier (e.g., "ses-01").
+#
+#     Returns
+#     -------
+#     bool
+#         True if all requirements are met, False otherwise.
+#     """
+#
+#     # Check that FreeSurfer finished without error
+#     if not os.path.exists(f"{args.derivatives}/freesurfer/{subject}_{session}"):
+#         print(f"[QSIRECON] Please run FreeSurfer recon-all command before QSIrecon.")
+#         return False
+#
+#     logs = f"{args.derivatives}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
+#     with open(logs, 'r') as f:
+#         lines = f.readlines()
+#     for l in lines:
+#         if not 'finished without error' in l:
+#             print(f"[QSIRECON] FreeSurfer did not terminate.")
+#             return False
+#
+#     # Check that QSIprep finished without error
+#     stdout_dir = f"{args.derivatives}/qsiprep/stdout"
+#     if not os.path.exists(stdout_dir):
+#         print(f"[QSIRECON] Could not read standard outputs from QSIprep.")
+#         return False
+#
+#     prefix = f"qsiprep_{subject}_{session}"
+#     stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+#     if not stdout_files:
+#         print(f"[QSIRECON] Could not read standard outputs from QSIprep.")
+#         return False
+#
+#     for file in stdout_files:
+#         file_path = os.path.join(stdout_dir, file)
+#         with open(file_path, 'r') as f:
+#             if 'QSIPrep finished successfully!' in f.read():
+#                 return True
+#
+#     print("[QSIRECON] QSIprep did not terminate. Please run QSIprep command before QSIrecon.")
+#     return False
 
 
 def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
@@ -201,13 +201,8 @@ def run_qsirecon(args, subject, session, job_ids=None):
 
     # QSIrecon manages already processed subjects.
     # No need to remove existing folder or skip subjects.
-
-    if job_ids is None:
-        # Check if preprocessing are terminated only outside a workflow submission. Otherwise, the job is never
-        # submitted.
-        if not check_preprocessing_completion(args, subject, session):
-            return None
-        job_ids = []
+    # if not check_preprocessing_completion(args, subject, session):
+    #     return None
 
     # Create output (derivatives) directories
     os.makedirs(f"{args.derivatives}/qsirecon", exist_ok=True)
