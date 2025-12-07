@@ -1,7 +1,7 @@
 [environment]
 
 [execution]
-atlases = [ "AAL116","AICHA384Ext"]
+atlases = ["4S156Parcels"]
 #bids_database_dir = ""
 boilerplate_only = false
 sloppy = false
@@ -20,7 +20,7 @@ infant = false
 input_type = "qsiprep"
 recon_spec = "mrtrix_multishell_msmt_ACT-hsvs"
 output_resolution = 1.8
-qsirecon_suffixes = [ "MRtrix3_act-HSVS",]
+qsirecon_suffixes = ["MRtrix3_act-HSVS"]
 spaces = "MNI152NLin2009cAsym"
 
 [nipype]
@@ -31,4 +31,4 @@ omp_nthreads = 20
 plugin = "MultiProc"
 remove_unnecessary_outputs = true
 resource_monitor = false
-stop_on_first_crash = false
+stop_on_first_crash = true
