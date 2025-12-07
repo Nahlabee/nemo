@@ -383,7 +383,7 @@ def run(args, subjects_sessions, job_ids=None):
            f'--time={args.requested_time}:00:00 '
            f'--out={args.derivatives}/qc/fsqc/stdout/fsqc.out '
            f'--err={args.derivatives}/qc/fsqc/stdout/fsqc.err '
-           f'--dependency={job_ids} '
+           f'--dependency=afterok:{":".join(job_ids)} '
            f'sh {path_to_script}')
 
     os.system(cmd)
