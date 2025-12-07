@@ -55,6 +55,51 @@ def get_sessions(input_dir, subject, specified_sessions=None):
         if d.startswith("ses-") and os.path.isdir(os.path.join(subject_path, d))
     ]
 
+def subject_exists(input_dir, subject):
+    """
+    Check if the subject directory exists in the input directory.
+    
+    :param input_dir: Description
+    :param subject: Description
+    :return: Description
+    
+    """
+
+    return (Path(input_dir) / subject).exists()
+
+def has_anat(input_dir, subject):
+    """
+    Check if the subject has anatomical data.
+    
+    :param input_dir: Description
+    :param subject: Description
+    :return: Description
+    
+    """
+    return any((Path(input_dir)/subject).glob("**/anat/*T1w.nii*"))
+
+def has_dwi(input_dir, subject):
+    """
+    Check if the subject has diffusion-weighted imaging (DWI) data.
+    
+    :param input_dir: Description
+    :param subject: Description
+    :return: Description
+    
+    """
+    return any((Path(input_dir)/subject).glob("**/dwi/*dwi.nii*"))
+
+def has_func_fmap(input_dir, subject):
+    """
+    Check if the subject has functional MRI data along with field maps.
+    
+    :param input_dir: Description
+    :param subject: Description
+    :return: Description
+    
+    """
+    return any((Path(input_dir)/subject).glob("**/func/*bold.nii*")) and any((Path(input_dir)/subject).glob("**/fmap/*"))
+
 
 def submit_job(cmd):
     """

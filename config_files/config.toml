@@ -17,12 +17,14 @@ freesurfer_license = "/scratch/hrasoanandrianina/containers/license.txt"
 # =============================
 [workflow]
 run_freesurfer = false
+run_freesurfer_qc = true
 run_qsiprep = false
 run_qsirecon = false
 run_fmriprep = true
 run_xcp_d = true
 run_mriqc_raw = true
 run_mriqc_derivatives = true
+run_mriqc_group = true
 
 # =============================
 #   PIPELINE: FreeSurfer
@@ -35,6 +37,24 @@ partition = "skylake"
 requested_mem = "16G"
 requested_time = "9:00:00"
 qc = "/scratch/lhashimoto/nemo_database_derivatives/freesurfer/qc"
+
+# =============================
+#   PIPELINE: FreeSurfer
+# =============================
+[fsqc]
+fsqc_container = "/scratch/lhashimoto/fsqc-2.1.4.sif"
+partition = "skylake"
+requested_mem = 16
+requested_time = 1
+qc_screenshots = true
+qc_surfaces = true
+qc_skullstrip = true
+qc_fornix = true
+qc_hypothalamus = false
+qc_hippocampus = false
+qc_hippocampus_label = ""
+qc_outlier = false
+qc_skip_existing = true
 
 # =============================
 #   PIPELINE: QSIPrep

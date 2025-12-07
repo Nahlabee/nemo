@@ -16,7 +16,17 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 import config_files
+from rsfmri.run_fmriprep_slurm import is_already_processed as fmriprep_is_already_processed
 
+
+# -------------------------------
+# Load configuration
+# -------------------------------
+common = config_files.config["common"]
+xcp_d = config_files.config["xcp_d"]
+
+BIDS_DIR = common["input_dir"]
+DERIVATIVES_DIR = common["derivatives"]
 
 # ------------------------------
 # HELPERS
@@ -40,40 +50,33 @@ def is_already_processed(subject, session):
         True if already processed, False otherwise.
     """
 
-    # Check if mriqc already processed without error
-    if not os.path.exists(f"{config_files.config['common']['derivatives']}/fmriprep_25.2.1/{subject}_{session}"):
-        print(f"[XCP-D] Please run fMRIPrep before XCP-D.")
+    # Check if xcp_d already processed without error
+    stdout_dir = f"{DERIVATIVES_DIR}/xcp_d/stdout"
+    if not os.path.exists(stdout_dir):    
         return False
 
-    # elif not is_already_processed(subject, session):
-    #     print(f"[XCP-D] FMRIPrep did not terminate successfully. \n Please re-run fMRIPrep before XCP-D.")
-    #     return False
+        
+    prefix = f"xcp_d_{subject}_{session}"
+    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+    if not stdout_files:
+        return False
 
-    else:
-        # Check if xcp-d already processed without error
-        stdout_dir = f"{config_files.config['common']['derivatives']}/xcp_d/stdout"
-        if not os.path.exists(stdout_dir):
-            return False
-
-        prefix = f"xcp_d_{subject}_{session}"
-        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-        if not stdout_files:
-            return False
-
-        for file in stdout_files:
-            file_path = os.path.join(stdout_dir, file)
-            with open(file_path, 'r') as f:
-                if 'XCP-D finished successfully!' in f.read():
-                    print(f"[XCP-D] Skip already processed subject {subject}_{session}")
-                    return True
-    return False
+    for file in stdout_files:
+        file_path = os.path.join(stdout_dir, file)
+        with open(file_path, 'r') as f:
+            if 'XCP-D finished successfully!' in f.read():
+                print(f"[XCP-D] Skip already processed subject {subject}_{session}")
+                return True
+            else:    
+                return False
+                
 # -----------------------
 
 # -----------------------
 # Generate SLURM job scripts
 # -----------------------
 
-def make_slurm_xcpd_script(subject, session, job_ids=None):
+def generate_slurm_xcpd_script(subject, session, path_to_script, job_ids=None):
     """Generate the SLURM job script.
     Parameters
     ----------
@@ -87,21 +90,15 @@ def make_slurm_xcpd_script(subject, session, job_ids=None):
     job_ids : list, optional
             List of SLURM job IDs to set as dependencies (default is None).
     """
-        
-    # Create output (derivatives) directories
-    os.makedirs(f"{config_files.config['common']['derivatives']}/xcp_d", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/xcp_d/stdout", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/xcp_d/scripts", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/xcp_d/work", exist_ok=True)
-    
+
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH --job-name=xcp_d_{subject}_{session}\n'
-        f'#SBATCH --output={config_files.config["common"]["derivatives"]}/xcp_d/stdout/xcp_d_{subject}_{session}_%j.out\n'
-        f'#SBATCH --error={config_files.config["common"]["derivatives"]}/xcp_d/stdout/xcp_d_{subject}_{session}_%j.err\n'
-        f'#SBATCH --mem={config_files.config["xcp_d"]["requested_mem"]}\n'
-        f'#SBATCH --time={config_files.config["xcp_d"]["requested_time"]}\n'
-        f'#SBATCH --partition={config_files.config["xcp_d"]["partition"]}\n'
+        f'#SBATCH --output={DERIVATIVES_DIR}/xcp_d/stdout/xcp_d_{subject}_{session}_%j.out\n'
+        f'#SBATCH --error={DERIVATIVES_DIR}/xcp_d/stdout/xcp_d_{subject}_{session}_%j.err\n'
+        f'#SBATCH --mem={xcp_d["requested_mem"]}\n'
+        f'#SBATCH --time={xcp_d["requested_time"]}\n'
+        f'#SBATCH --partition={xcp_d["partition"]}\n'
     )
 
     if job_ids:
@@ -111,19 +108,19 @@ def make_slurm_xcpd_script(subject, session, job_ids=None):
             
     if config_files.config["common"].get("email"):
         header += (
-            f'#SBATCH --mail-type={config_files.config["common"]["email_frequency"]}\n'
-            f'#SBATCH --mail-user={config_files.config["common"]["email"]}\n'
+            f'#SBATCH --mail-type={common["email_frequency"]}\n'
+            f'#SBATCH --mail-user={common["email"]}\n'
         )
 
     if config_files.config["common"].get("account"):
-        header += f'#SBATCH --account={config_files.config["common"]["account"]}\n'
+        header += f'#SBATCH --account={common["account"]}\n'
 
     module_export = (
         f'\nmodule purge\n'
         f'module load userspace/all\n'
         f'module load singularity\n'
 
-        f'echo "------ Running {config_files.config["xcp_d"]["xcp_d_container"]} for subject: {subject}, session: {session} --------"\n'
+        f'echo "------ Running {xcp_d["xcp_d_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
     tmp_dir_setup = (
@@ -138,18 +135,18 @@ def make_slurm_xcpd_script(subject, session, job_ids=None):
         f'fi\n'
         f'mkdir -p "$TMP_WORK_DIR"\n'
         f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-        f'echo "Using OUT_XCPD_DIR = {config_files.config["common"]["derivatives"]}/xcp_d"\n'
+        f'echo "Using OUT_XCPD_DIR = {DERIVATIVES_DIR}/xcp_d"\n'
     )
     
     # Define the Singularity command for running FMRIPrep
     singularity_command = (
         f'\napptainer run --cleanenv \\\n'
-        f'    -B {config_files.config["xcp_d"]["xcp_d_input_dir"]}:/data:ro \\\n'
-        f'    -B {config_files.config["common"]["derivatives"]}/xcp_d:/out \\\n'
-        f'    -B {config_files.config["common"]["freesurfer_license"]}:/license.txt \\\n'
-        f'    -B {config_files.config["xcp_d"]["bids_filter_dir"]}:/bids_filter_dir\\\n'
-        f'    -B {config_files.config["xcp_d"]["xcp_d_config"]}:/xcp_d_config.toml \\\n'
-        f'    {config_files.config["xcp_d"]["xcp_d_container"]} /data /out participant \\\n'
+        f'    -B {xcp_d["xcp_d_input_dir"]}:/data:ro \\\n'
+        f'    -B {DERIVATIVES_DIR}/xcp_d/outputs:/out \\\n'
+        f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
+        f'    -B {xcp_d["bids_filter_dir"]}:/bids_filter_dir\\\n'
+        f'    -B {xcp_d["xcp_d_config"]}:/xcp_d_config.toml \\\n'
+        f'    {xcp_d["xcp_d_container"]} /data /out participant \\\n'
         f'      --input-type fmriprep \\\n'
         f'      --participant-label {subject} \\\n'
         f'      --session-id {session} \\\n'
@@ -165,56 +162,55 @@ def make_slurm_xcpd_script(subject, session, job_ids=None):
 
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
-        f'\nchmod -Rf 771 {config_files.config["common"]["derivatives"]}/xcp_d\n'
-        f'\ncp -r $TMP_WORK_DIR/* {config_files.config["common"]["derivatives"]}/xcp_d/work\n'
+        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/xcp_d\n'
+        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/xcp_d/work\n'
         f'echo "Finished XCP-D for subject: {subject}, session: {session}"\n'
     )
 
     # Write the complete SLURM script to the specified file
-    path_to_script = f"{config_files.config['common']['derivatives']}/xcp_d/scripts/{subject}_{session}_xcp_d.slurm"
-
     with open(path_to_script, 'w') as f:
         f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
     print(f"Created xcp_d SLURM job: {path_to_script} for subject {subject}, session {session}")
 
-    return path_to_script
 
-def submit_with_dependencies(input_dir, job_ids=None):
+def run_xcpd(subject, session, job_ids=None):
     
-    subjects = utils.get_subjects(input_dir)
-
+    """
+    Run the XCP-D for a given subject and session.
+    Parameters
+    ----------
+    subject : str
+        Subject identifier.
+    session : str
+        Session identifier.
+    job_ids : list, optional
+        List of SLURM job IDs to set as dependencies (default is None).
+    
+    Returns
+    -------
+    str or None
+        SLURM job ID if the job is submitted successfully, None otherwise.
+    """
+            
+    # Create output (derivatives) directories
+    os.makedirs(f"{DERIVATIVES_DIR}/xcp_d", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/xcp_d/outputs", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/xcp_d/stdout", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/xcp_d/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/xcp_d/work", exist_ok=True)
+    
+    if is_already_processed(subject, session):
+        return None
+    
     if job_ids is None:
         job_ids = []
     
-    for sub in subjects:
-        
-        previous_job_id = None
-        sessions = utils.get_sessions(input_dir, sub)
-        for ses in sessions:
-            # -----------------------
-            # SUBMIT XCP-D JOB IF NEEDED
-            # -----------------------
-            if is_already_processed(sub, ses):
-
-                print(f"✓ Skipping {sub} {ses}: already processed")
-                continue
-            else:
-                print(f"Submitting XCP-D job for {sub} {ses}...")
-
-                # Add dependency if this is not the first job in the chain
-                path_to_script = make_slurm_xcpd_script(sub, ses, job_ids=[previous_job_id])
-                cmd = f"sbatch {path_to_script}"
-
-                # Extract SLURM job ID (last token in "Submitted batch job 12345")
-                job_id = utils.submit_job(cmd)
-                previous_job_id = job_id
-                print(f"✓ Skipping XCP-D for {sub} {ses}: already done")
-
-        print(f"All XCP_D sessions for {sub} queued.\n")
-
-
-def main():
-    submit_with_dependencies(config_files.config["common"]["input_dir"])
-
-if __name__ == "__main__":
-    main()
+    path_to_script = f"{DERIVATIVES_DIR}/xcp_d/scripts/{subject}_{session}_xcp_d.slurm"
+    generate_slurm_xcpd_script(subject, session, path_to_script, job_ids=job_ids)
+                
+    cmd = f"sbatch {path_to_script}"
+                
+    # Extract SLURM job ID (last token in "Submitted batch job 12345")
+    job_id = utils.submit_job(cmd)
+    print(f"[XCP_D] Submitting job {cmd}\n")
+    return job_id
