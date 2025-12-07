@@ -7,9 +7,9 @@
     "freesurfer_license": "/scratch/lhashimoto/freesurfer/license",
     "run_freesurfer": false,
     "run_qsiprep": false,
-    "run_qsirecon": false,
+    "run_qsirecon": true,
     "run_freesurfer_qc": false,
-    "run_qsiprep_qc": true,
+    "run_qsiprep_qc": false,
     "email": null,
     "account": null,
     "tmp": ["1054001","1054002","1054003","1054004","1054010","1054011","1054012","1054013","1054014","1054015"]
