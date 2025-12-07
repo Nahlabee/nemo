@@ -110,7 +110,10 @@ def count_dirs(directory):
     Count the number of directories in a given directory (non-recursively)
 
     """
-    return sum([1 for item in os.listdir(directory) if os.path.isdir(os.path.join(directory, item))])
+    if os.path.isdir(directory):
+        return sum([1 for item in os.listdir(directory) if os.path.isdir(os.path.join(directory, item))])
+    else:
+        return 0
 
 
 def count_files(directory):
@@ -118,4 +121,7 @@ def count_files(directory):
     Count the number of files in a given directory
 
     """
-    return sum([len(files) for _, _, files in os.walk(directory)])
+    if os.path.isdir(directory):
+        return sum([len(files) for _, _, files in os.walk(directory)])
+    else:
+        return 0
