@@ -177,7 +177,8 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + prereq_check + singularity_command + ownership_sharing)
+        # f.write(header + module_export + prereq_check + singularity_command + ownership_sharing)
+        f.write(header + module_export + singularity_command + ownership_sharing)
 
 
 def run_qsirecon(args, subject, session, job_ids=None):
