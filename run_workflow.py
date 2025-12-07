@@ -89,10 +89,10 @@ def main(config_file=None):
         # print(f"[FSQC] Submitting task in background: {cmd}")
 
         cmd = (f'srun --job-name=fsqc --partition=skylake --ntasks=1 --time=0:10:00 '
-               f'--output={args.derivatives}/qc/fsqc/stdout/fsqc.out '
+               f'--output={args.derivatives}/qc/fsqc/stdout/fsqc.out --background '
                f'python3 anat/qc_freesurfer.py '
                f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)}")
-        print(f"[FSQC] Submitting task on interactive node: {cmd}")
+        print(f"[FSQC] Submitting (background) task on interactive node: {cmd}")
 
         os.system(cmd)
         # fsqc_job_id = qc_freesurfer(args, sub_ses, freesurfer_job_ids)
