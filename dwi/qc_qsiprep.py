@@ -63,10 +63,10 @@ def run(args, subjects_sessions, job_ids=None):
         job_ids = []
 
     # Create output (derivatives) directories
-    os.makedirs(f"{args.derivatives}/qc/fsqc", exist_ok=True)
-    os.makedirs(f"{args.derivatives}/qc/fsqc/stdout", exist_ok=True)
-    os.makedirs(f"{args.derivatives}/qc/fsqc/scripts", exist_ok=True)
-    os.makedirs(f"{args.derivatives}/qc/fsqc/outliers", exist_ok=True)
+    os.makedirs(f"{args.derivatives}/qc/qsiprep", exist_ok=True)
+    # os.makedirs(f"{args.derivatives}/qc/qsiprep/stdout", exist_ok=True)
+    # os.makedirs(f"{args.derivatives}/qc/qsiprep/scripts", exist_ok=True)
+    # os.makedirs(f"{args.derivatives}/qc/qsiprep/outliers", exist_ok=True)
 
     cols = ["subject",
             "session",
