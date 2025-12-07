@@ -149,13 +149,14 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'    -B {args.derivatives}/qsirecon:/out \\\n'
         f'    -B {args.derivatives}/freesurfer:/freesurfer \\\n'
         f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
-        f'    -B {args.qsirecon_config}:/config/config-file.toml \\\n'
+        f'    -B {args.qsirecon_config}:/config/qsirecon_config.toml \\\n'
         f'    {args.qsirecon_container} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
-        f'    -v -w /out/temp_wf_qsirecon \\\n'
+        f'    -v -w /out/temp_qsirecon \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --fs-subjects-dir /freesurfer \\\n'
-        f'    --config-file /config/config-file.toml\n'
+        f'    --config-file /config/qsirecon_config.toml \\\n'
+        f'    --bids-database-dir /out/temp_qsirecon/bids_db_dir\n'
     )
     # singularity_command = (
     #     f'\napptainer run \\\n'
