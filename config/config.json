@@ -8,7 +8,8 @@
     "run_freesurfer": false,
     "run_qsiprep": false,
     "run_qsirecon": false,
-    "run_freesurfer_qc": true,
+    "run_freesurfer_qc": false,
+    "run_qsiprep_qc": true,
     "email": null,
     "account": null
   },
@@ -58,6 +59,10 @@
     "qc_hippocampus_label": "",
     "qc_outlier": false,
     "qc_skip_existing": true
+  },
+
+  "qsiprep_qc": {
+
   }
 
 }

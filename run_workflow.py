@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import sys
 
 from anat import qc_freesurfer
+from dwi import qc_qsiprep
 from legacy.workflow_diffusion import run_qsirecon
 
 sys.path.append(str(Path(__file__).resolve().parent))
@@ -37,6 +38,8 @@ def main(config_file=None):
 
     subjects_sessions = []
     freesurfer_job_ids = []
+    qsiprep_job_ids = []
+
     # Loop over subjects and sessions
     subjects = utils.get_subjects(args.input_dir, args.subjects)
     for subject in subjects:
@@ -62,6 +65,7 @@ def main(config_file=None):
                 for key, value in step_config.items():
                     setattr(args, key, value)
                 qsiprep_job_id = run_qsiprep(args, subject, session)
+                qsiprep_job_ids.append(qsiprep_job_id)
                 print(f"[QSIPREP] job IDs: {qsiprep_job_id}\n")
             else:
                 qsiprep_job_id = None
@@ -76,14 +80,19 @@ def main(config_file=None):
             else:
                 qsirecon_job_id = None
 
-            # print("Workflow submitted.")
-
     if args.run_freesurfer_qc and subjects_sessions:
         step_config = config.get('fsqc', {})
         for key, value in step_config.items():
             setattr(args, key, value)
         dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
         qc_freesurfer.run(args, subjects_sessions, dependencies)
+
+    if args.run_qsiprep_qc and subjects_sessions:
+        step_config = config.get('qsiprep_qc', {})
+        for key, value in step_config.items():
+            setattr(args, key, value)
+        dependencies = [job_id for job_id in qsiprep_job_ids if job_id is not None]
+        qc_qsiprep.run(args, subjects_sessions, dependencies)
 
 
 if __name__ == "__main__":
