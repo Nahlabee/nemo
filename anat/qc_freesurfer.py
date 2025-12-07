@@ -333,7 +333,7 @@ def generate_bash_script(args, subjects_sessions, path_to_script, job_ids=None):
             f'      --outlier \\\n'
         )
 
-    python_command = (f'srun --job-name=fsqc --ntasks=1 '
+    python_command = (f'\nsrun --job-name=fsqc --ntasks=1 '
                       f'--partition={args.partition} '
                       f'--mem={args.requested_mem}gb '
                       f'--time={args.requested_time}:00:00 '
