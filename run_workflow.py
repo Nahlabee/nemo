@@ -81,11 +81,19 @@ def main(config_file=None):
         step_config = config.get('fsqc', {})
         for key, value in step_config.items():
             setattr(args, key, value)
-        path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
-        cmd = (f'nohup python3 anat/qc_freesurfer.py '
-               f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)} "
-               f'> {args.derivatives}/qc/fsqc/stdout/fsqc.out 2>&1 &')
-        print(f"[FSQC] Submitting task in background: {cmd}")
+        # path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
+
+        # cmd = (f'nohup python3 anat/qc_freesurfer.py '
+        #        f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)} "
+        #        f'> {args.derivatives}/qc/fsqc/stdout/fsqc.out 2>&1 &')
+        # print(f"[FSQC] Submitting task in background: {cmd}")
+
+        cmd = (f'srun --job-name=fsqc --partition=skylake --ntasks=1 --time=0:10:00 '
+               f'--output={args.derivatives}/qc/fsqc/stdout/fsqc.out '
+               f'python3 anat/qc_freesurfer.py '
+               f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)}")
+        print(f"[FSQC] Submitting task on interactive node: {cmd}")
+
         os.system(cmd)
         # fsqc_job_id = qc_freesurfer(args, sub_ses, freesurfer_job_ids)
 
