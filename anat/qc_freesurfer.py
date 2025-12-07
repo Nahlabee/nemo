@@ -1,8 +1,7 @@
 import json
 import os
-from types import SimpleNamespace
-
-import fsqc
+# from types import SimpleNamespace
+# import fsqc
 import pandas as pd
 from fsqc.outlierDetection import readAsegStats
 from pathlib import Path
@@ -383,7 +382,6 @@ def run(args, subjects_sessions, job_ids=None):
            f'--out={args.derivatives}/qc/fsqc/stdout/fsqc.out '
            f'--err={args.derivatives}/qc/fsqc/stdout/fsqc.err ')
 
-    # Ajout de la dépendance uniquement si job_ids n'est pas vide
     if job_ids:
         cmd += f'--dependency=afterok:{":".join(job_ids)} '
 
