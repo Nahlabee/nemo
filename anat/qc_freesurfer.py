@@ -382,9 +382,13 @@ def run(args, subjects_sessions, job_ids=None):
            f'--mem={args.requested_mem}gb '
            f'--time={args.requested_time}:00:00 '
            f'--out={args.derivatives}/qc/fsqc/stdout/fsqc.out '
-           f'--err={args.derivatives}/qc/fsqc/stdout/fsqc.err '
-           f'--dependency=afterok:{":".join(job_ids)} '
-           f'sh {path_to_script}')
+           f'--err={args.derivatives}/qc/fsqc/stdout/fsqc.err ')
+
+    # Ajout de la dépendance uniquement si job_ids n'est pas vide
+    if job_ids:
+        cmd += f'--dependency=afterok:{":".join(job_ids)} '
+
+    cmd += f'sh {path_to_script}'
 
     os.system(cmd)
     print(f"[FSQC] Submitting (background) task on interactive node")
