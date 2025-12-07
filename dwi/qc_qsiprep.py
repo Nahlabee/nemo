@@ -89,5 +89,5 @@ def run(args, subjects_sessions, job_ids=None):
 
     print(f"QC saved in {path_to_qc}\n")
 
-    print("FreeSurfer Quality Check terminated successfully.")
+    print("QSIprep Quality Check terminated successfully.")
 
