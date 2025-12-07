@@ -1,6 +1,5 @@
 import json
 import os
-# from types import SimpleNamespace
 # import fsqc
 import pandas as pd
 from fsqc.outlierDetection import readAsegStats
@@ -190,8 +189,6 @@ def qc_freesurfer(args, subjects_sessions):
     -------
 
     """
-    # if not check_prerequisites(args, subject, session):
-    #     return None
 
     freesurfer_dir = f"{args.derivatives}/freesurfer"
     fsqc_dir = f"{args.derivatives}/qc/fsqc"
@@ -287,6 +284,7 @@ def generate_bash_script(args, subjects_sessions, path_to_script):
 
     subjects_sessions_str = " ".join(subjects_sessions)
 
+    # Call to FSQC container
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --writable-tmpfs --cleanenv \\\n'
@@ -330,6 +328,7 @@ def generate_bash_script(args, subjects_sessions, path_to_script):
             f'      --outlier \\\n'
         )
 
+    # Call to python scripts for the rest of QC
     python_command = (
         f'\npython3 anat/qc_freesurfer.py '
         f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)}"
@@ -363,6 +362,9 @@ def run(args, subjects_sessions, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
+    # Run FreeSurfer QC
+    # Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
+
     if job_ids is None:
         job_ids = []
 
@@ -390,16 +392,3 @@ def run(args, subjects_sessions, job_ids=None):
     os.system(cmd)
     print(f"[FSQC] Submitting (background) task on interactive node")
     return
-
-# if __name__ == "__main__":
-#     import sys
-#
-#     args_json = sys.argv[1]
-#     args_dict = json.loads(args_json)
-#     args = SimpleNamespace(**args_dict)
-#
-#     subjects_sessions = sys.argv[2].split(",")
-#     freesurfer_job_ids = sys.argv[3].split(",") if len(sys.argv) > 3 else []
-#
-#     # Appeler la fonction qc_freesurfer
-#     qc_freesurfer(args, subjects_sessions, freesurfer_job_ids)

@@ -78,8 +78,6 @@ def main(config_file=None):
             # print("Workflow submitted.")
 
     if args.run_freesurfer_qc and subjects_sessions:
-        # Run FreeSurfer QC
-        # Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
         step_config = config.get('fsqc', {})
         for key, value in step_config.items():
             setattr(args, key, value)
