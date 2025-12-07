@@ -333,15 +333,10 @@ def generate_bash_script(args, subjects_sessions, path_to_script, job_ids=None):
             f'      --outlier \\\n'
         )
 
-    python_command = (f'\nsrun --job-name=fsqc --ntasks=1 '
-                      f'--partition={args.partition} '
-                      f'--mem={args.requested_mem}gb '
-                      f'--time={args.requested_time}:00:00 '
-                      f'--out={args.derivatives}/qc/fsqc/stdout/fsqc.out '
-                      f'--err={args.derivatives}/qc/fsqc/stdout/fsqc.err '
-                      f'--dependency={job_ids} '
-                      f'python3 anat/qc_freesurfer.py '
-                      f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)} &")
+    python_command = (
+        f'python3 anat/qc_freesurfer.py '
+        f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)}"
+    )
 
     # Add permissions for shared ownership of the output directory
     ownership_sharing = f'\nchmod -Rf 771 {args.derivatives}/qc/fsqc\n'
@@ -380,11 +375,18 @@ def run(args, subjects_sessions, job_ids=None):
     path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
     generate_bash_script(args, subjects_sessions, path_to_script, job_ids)
 
-    cmd = f"sh {path_to_script}"
+    cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
+           f'--partition={args.partition} '
+           f'--mem={args.requested_mem}gb '
+           f'--time={args.requested_time}:00:00 '
+           f'--out={args.derivatives}/qc/fsqc/stdout/fsqc.out '
+           f'--err={args.derivatives}/qc/fsqc/stdout/fsqc.err '
+           f'--dependency={job_ids} '
+           f'sh {path_to_script}')
+
     os.system(cmd)
     print(f"[FSQC] Submitting (background) task on interactive node")
     return
-
 
 # if __name__ == "__main__":
 #     import sys
