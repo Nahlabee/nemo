@@ -169,3 +169,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# fmriprep container files
+/rsfmri/containers/
+/rsfmri/work/
+/rsfmri/work_xcpd/

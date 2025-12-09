@@ -1,0 +1,44 @@
+[environment]
+
+
+[execution]
+aggr_ses_reports = 4
+boilerplate_only = false
+debug = []
+log_level = 25
+low_mem = false
+md_only_boilerplate = false
+notrack = false
+output_layout = "auto"
+report_output_level = "root"
+reports_only = false
+write_graph = false
+
+[workflow]
+mode = "abcd"
+file_format = "cifti"
+dummy_scans = "auto"
+input_type = "fmriprep"
+despike = true
+smoothing = 4.0
+output_interpolated = true
+combine_runs = true
+motion_filter_order = 4
+fd_thresh = 0.3
+min_time = 240
+bandpass_filter = true
+high_pass = 0.01
+low_pass = 0.08
+bpf_order = 2
+min_coverage = 0.5
+correlation_lengths = []
+process_surfaces = true
+abcc_qc = true
+linc_qc = true
+
+[nipype]
+crashfile_format = "txt"
+get_linked_libs = false
+plugin = "MultiProc"
+resource_monitor = false
+stop_on_first_crash = true
