@@ -14,15 +14,15 @@ import config_files
 # -------------------------------
 # todo
 common = config_files.config["common"]
-mriqc = config_files.config["mriqc"]
+qsirecon = config_files.config["qsirecon"]
 
 BIDS_DIR = common["input_dir"]
 DERIVATIVES_DIR = common["derivatives"]
 
+
 # --------------------------------------------
 # HELPERS
 # --------------------------------------------
-
 def is_already_processed(subject, session):
     """
     Check if subject_session is already processed successfully.
@@ -82,11 +82,11 @@ def check_preprocessing_completion(subject, session):
     """
 
     # Check that FreeSurfer finished without error
-    if not os.path.exists(f"{config_files.config['common']['derivatives']}/freesurfer/{subject}_{session}"):
+    if not os.path.exists(f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"):
         print(f"[QSIRECON] Please run FreeSurfer recon-all command before QSIrecon.")
         return False
 
-    logs = f"{config_files.config['common']['derivatives']}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
+    logs = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
     with open(logs, 'r') as f:
         lines = f.readlines()
     for l in lines:
@@ -95,7 +95,7 @@ def check_preprocessing_completion(subject, session):
             return False
 
     # Check that QSIprep finished without error
-    stdout_dir = f"{config_files.config['common']['derivatives']}/qsiprep/stdout"
+    stdout_dir = f"{DERIVATIVES_DIR}/qsiprep/stdout"
     if not os.path.exists(stdout_dir):
         print(f"[QSIRECON] Could not read standard outputs from QSIprep.")
         return False
@@ -137,13 +137,13 @@ def generate_slurm_script(subject, session, path_to_script, job_ids=None):
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH -J qsirecon_{subject}_{session}\n'
-        f'#SBATCH -p {config_files.config["qsirecon"]["partition"]}\n'
-        f'#SBATCH --gpus-per-node={config_files.config["qsirecon"]["gpu_per_node"]}\n'
+        f'#SBATCH -p {qsirecon["partition"]}\n'
+        f'#SBATCH --gpus-per-node={qsirecon["gpu_per_node"]}\n'
         f'#SBATCH --nodes=1\n'
-        f'#SBATCH --mem={config_files.config["qsirecon"]["requested_mem"]}gb\n'
-        f'#SBATCH -t {config_files.config["qsirecon"]["requested_time"]}:00:00\n'
-        f'#SBATCH -e {config_files.config["common"]["derivatives"]}/qsirecon/stdout/%x_job-%j.err\n'
-        f'#SBATCH -o {config_files.config["common"]["derivatives"]}/qsirecon/stdout/%x_job-%j.out\n'
+        f'#SBATCH --mem={qsirecon["requested_mem"]}gb\n'
+        f'#SBATCH -t {qsirecon["requested_time"]}:00:00\n'
+        f'#SBATCH -e {DERIVATIVES_DIR}/qsirecon/stdout/%x_job-%j.err\n'
+        f'#SBATCH -o {DERIVATIVES_DIR}/qsirecon/stdout/%x_job-%j.out\n'
     )
 
     if job_ids:
@@ -151,14 +151,14 @@ def generate_slurm_script(subject, session, path_to_script, job_ids=None):
             f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
         )
 
-    if config_files.config["common"].get("email"):
+    if common.get("email"):
         header += (
             f'#SBATCH --mail-type=BEGIN,END\n'
-            f'#SBATCH --mail-user={config_files.config["common"]["email"]}\n'
+            f'#SBATCH --mail-user={common["email"]}\n'
         )
 
-    if config_files.config["common"].get("account"):
-        header += f'#SBATCH --account={config_files.config["common"]["account"]}\n'
+    if common.get("account"):
+        header += f'#SBATCH --account={common["account"]}\n'
 
     module_export = (
         f'\nmodule purge\n'
@@ -168,16 +168,16 @@ def generate_slurm_script(subject, session, path_to_script, job_ids=None):
 
     prereq_check = (
         f'\n# Check that FreeSurfer finished without error\n'
-        f'if [ ! -d "{config_files.config['common']['derivatives']}/freesurfer/{subject}_{session}" ]; then\n'
+        f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/{subject}_{session}" ]; then\n'
         f'    echo "[QSIRECON] Please run FreeSurfer recon-all command before QSIrecon."\n'
         f'    exit 1\n'
         f'fi\n'
-        f'if ! grep -q "finished without error" {config_files.config['common']['derivatives']}/freesurfer/{subject}_{session}/scripts/recon-all.log; then\n'
+        f'if ! grep -q "finished without error" {DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all.log; then\n'
         f'    echo "[QSIRECON] FreeSurfer did not terminate for {subject} {session}."\n'
         f'    exit 1\n'
         f'fi\n'
         f'\n# Check that QSIprep finished without error\n'
-        f'prefix="{config_files.config['common']['derivatives']}/qsiprep/stdout/qsiprep_{subject}_{session}"\n'
+        f'prefix="{DERIVATIVES_DIR}/qsiprep/stdout/qsiprep_{subject}_{session}"\n'
         f'found_success=false\n'
         f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
         f'    if grep -q "QSIPrep finished successfully" $file; then\n'
@@ -195,12 +195,12 @@ def generate_slurm_script(subject, session, path_to_script, job_ids=None):
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --nv --cleanenv\\\n'
-        f'    -B {config_files.config['common']['derivatives']}/qsiprep:/data \\\n'
-        f'    -B {config_files.config["common"]["derivatives"]}/qsirecon:/out \\\n'
-        f'    -B {config_files.config["common"]["derivatives"]}/freesurfer:/freesurfer \\\n'
-        f'    -B {config_files.config["common"]["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
-        f'    -B {config_files.config["qsirecon"]["qsirecon_config"]}:/config/config-file.toml \\\n'
-        f'    {config_files.config["qsirecon"]["qsirecon_container"]} /data /out participant \\\n'
+        f'    -B {DERIVATIVES_DIR}/qsiprep:/data \\\n'
+        f'    -B {DERIVATIVES_DIR}/qsirecon:/out \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer:/freesurfer \\\n'
+        f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
+        f'    -B {qsirecon["qsirecon_config"]}:/config/config-file.toml \\\n'
+        f'    {qsirecon["qsirecon_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    -v -w /out/temp_qsirecon \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
@@ -209,26 +209,12 @@ def generate_slurm_script(subject, session, path_to_script, job_ids=None):
         f'    --config-file /config/qsirecon_config.toml\n'
     )
     #
-        # f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
+    # f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
     # f'    --config-file /config/qsirecon_config.toml \\\n'
     # f'    --bids-database-dir /out/temp_qsirecon/bids_db_dir\n'
 
-    # singularity_command = (
-    #     f'\napptainer run \\\n'
-    #     f'    --nv --cleanenv \\\n'
-    #     f'    -B {config_files.config['common']['derivatives']}:/data \\\n'
-    #     f'    -B {args.freesurfer_license}/license.txt:/opt/freesurfer/license.txt \\\n'
-    #     f'    -B {args.qsirecon_config}:/config/config-file.toml \\\n'
-    #     f'    {args.qsirecon_container} /data/qsiprep /data/qsirecon participant \\\n'
-    #     f'    --participant-label {subject} --session-id {session} \\\n'
-    #     f'    -v -w /data/qsirecon/temp_qsirecon \\\n'
-    #     f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
-    #     f'    --fs-subjects-dir /data/freesurfer \\\n'
-    #     f'    --config-file /config/config-file.toml\n'
-    # )
-
     # Add permissions for shared ownership of the output directory
-    ownership_sharing = f'\nchmod -Rf 771 {config_files.config['common']['derivatives']}/qsirecon\n'
+    ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qsirecon\n'
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
@@ -262,11 +248,11 @@ def run_qsirecon(subject, session, job_ids=None):
     #     return None
 
     # Create output (derivatives) directories
-    os.makedirs(f"{config_files.config['common']['derivatives']}/qsirecon", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/qsirecon/stdout", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/qsirecon/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qsirecon", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qsirecon/stdout", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qsirecon/scripts", exist_ok=True)
 
-    path_to_script = f"{config_files.config['common']['derivatives']}/qsirecon/scripts/{subject}_{session}_qsirecon.slurm"
+    path_to_script = f"{DERIVATIVES_DIR}/qsirecon/scripts/{subject}_{session}_qsirecon.slurm"
     generate_slurm_script(subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"

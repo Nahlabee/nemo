@@ -41,4 +41,5 @@ apptainer run \
     --fs-license-file /opt/freesurfer/license.txt \
     --fs-subjects-dir /freesurfer \
     --config-file /config/qsirecon_config.toml \
+    --atlases AAL116
     --bids-database-dir /out/temp_qsirecon/bids_db_dir
