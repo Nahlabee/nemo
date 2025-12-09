@@ -3,11 +3,11 @@
 # =============================
 # todo: check requested mem G or gb ? +change in all scripts
 [common]
-input_dir = "/scratch/hrasoanandrianina/braint_database"
-derivatives = "/scratch/hrasoanandrianina/derivatives"
+input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
+derivatives = "/scratch/lhashimoto/nemo_derivatives"
 subjects = ["1054004"]
 sessions = ["01"]
-freesurfer_license = "/scratch/hrasoanandrianina/containers/license.txt"
+freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
 account = ""
 email = ""
 email_frequency = "FAIL"
