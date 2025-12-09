@@ -47,14 +47,14 @@ def check_prerequisites(config, subject, session):
 
     # Check if already processed
     # todo: change output directory subject/session or session/subject
-    path_to_output = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"
+    path_to_output = f"{DERIVATIVES_DIR}/freesurfer/{session}/{subject}"
     if os.path.exists(path_to_output):
         logs = os.path.join(path_to_output, 'scripts/recon-all-status.log')
         with open(logs, 'r') as f:
             lines = f.readlines()
         for l in lines:
             if 'finished without error' in l and freesurfer["skip_processed"]:
-                print(f"[FREESURFER] Skip already processed subject {subject}_{session}")
+                print(f"[FREESURFER] Skip already processed {subject} - {session}")
                 return False
         # Remove existing subject folder
         shutil.rmtree(path_to_output)
@@ -114,14 +114,14 @@ def generate_slurm_script(config, subject, session, path_to_script):
         f'\napptainer run \\\n'
         f'    --cleanenv \\\n'
         f'    -B {BIDS_DIR}:/data \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer:/out \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer/{session}:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license \\\n'
         f'    --env FS_LICENSE=/license/license.txt \\\n'
         f'    {freesurfer["freesurfer_container"]} bash -c \\\n'
         f'        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
         f'        recon-all \\\n'
         f'            -all \\\n'
-        f'            -s {subject}_{session} \\\n'
+        f'            -s {subject} \\\n'
         f'            -i /data/{subject}/{session}/anat/{subject}_{session}_T1w.nii.gz \\\n'
         f'            -sd /out'
     )
@@ -167,6 +167,7 @@ def run_freesurfer(config, subject, session):
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/{session}", exist_ok=True)
 
     path_to_script = f"{DERIVATIVES_DIR}/freesurfer/scripts/{subject}_{session}_freesurfer.slurm"
     generate_slurm_script(config, subject, session, path_to_script)
