@@ -3,29 +3,30 @@
 # =============================
 # todo: check requested mem G or gb ? +change in all scripts
 [common]
-account = ""
-email = ""
-email_frequency = "FAIL"
 input_dir = "/scratch/hrasoanandrianina/braint_database"
 derivatives = "/scratch/hrasoanandrianina/derivatives"
 subjects = ""
 sessions = ""
 freesurfer_license = "/scratch/hrasoanandrianina/containers/license.txt"
-
+account = ""
+email = ""
+email_frequency = "FAIL"
 
 # =============================
 #   WORKFLOW SETTINGS
 # =============================
 [workflow]
 run_freesurfer = false
-run_freesurfer_qc = false
 run_qsiprep = false
 run_qsirecon = false
-run_fmriprep = true
-run_xcp_d = true
+run_fmriprep = false
+run_xcp_d = false
 run_mriqc_raw = true
-run_mriqc_derivatives = true
-run_mriqc_group = true
+run_freesurfer_qc = false
+run_qsiprep_qc = false
+run_qsirecon_qc = false
+run_fmriprep_qc = false
+run_xcpd_qc = false
 
 # =============================
 #   PIPELINE: FreeSurfer
@@ -37,16 +38,15 @@ use_t2 = true
 partition = "skylake"
 requested_mem = "16G"
 requested_time = "9:00:00"
-qc = "/scratch/lhashimoto/nemo_database_derivatives/freesurfer/qc"
 
 # =============================
-#   PIPELINE: FreeSurfer
+#   PIPELINE: FSQC
 # =============================
 [fsqc]
 fsqc_container = "/scratch/lhashimoto/fsqc-2.1.4.sif"
 partition = "skylake"
 requested_mem = 16
-requested_time = 1
+requested_time = "0:30:00"
 qc_screenshots = true
 qc_surfaces = true
 qc_skullstrip = true
@@ -69,7 +69,6 @@ partition = "kepler"
 gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
-qc = "/scratch/lhashimoto/nemo_database_derivatives/qsiprep/qc"
 
 # =============================
 #   PIPELINE: QSIRecon
@@ -81,7 +80,6 @@ partition = "kepler"
 gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
-qc = "/scratch/lhashimoto/nemo_database_derivatives/qsirecon/qc"
 
 # =============================
 #   PIPELINE: fMRIPrep
@@ -114,9 +112,9 @@ omp_threads = 4
 #   PIPELINE: MRIQC
 # =============================
 [mriqc]
-mriqc_container = "/scratch/hrasoanandrianina/containers/mriqc_24.0.2.sif"
-mriqc_config = "/scratch/hrasoanandrianina/code/nemo/config_files/mriqc_config.toml"
-bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/rsfmri/bids_filters"
+mriqc_container = "/scratch/lhashimoto/mriqc_24.0.2.sif"
+mriqc_config = "/scratch/lhashimoto/code/nemo/config_files/mriqc_config.toml"
+bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
 requested_time = "3:00:00"

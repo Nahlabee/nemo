@@ -341,22 +341,6 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
 
 def run(config, subjects_sessions, job_ids=None):
     """
-    Run the QSIrecon for a given subject and session.
-
-    Parameters
-    ----------
-    job_ids
-    args : Namespace
-        Configuration arguments.
-    subject : str
-        Subject identifier.
-    session : str
-        Session identifier.
-
-    Returns
-    -------
-    str or None
-        SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
     # Run FreeSurfer QC
