@@ -62,7 +62,7 @@ qc_skip_existing = true
 [qsiprep]
 qsiprep_container = "/scratch/lhashimoto/qsiprep-1.0.2.sif"
 config_eddy = "/scratch/lhashimoto/code/nemo/config/eddy_params.json"
-qsiprep_config = "/scratch/lhashimoto/code/nemo/config_files/qsiprep_config.toml"
+qsiprep_config = "/scratch/lhashimoto/code/nemo/config/qsiprep_config.toml"
 output_resolution = 1.8
 partition = "kepler"
 gpu_per_node = 2
@@ -74,7 +74,7 @@ requested_time = "24:00:00"
 # =============================
 [qsirecon]
 qsirecon_container = "/scratch/lhashimoto/qsirecon-1.1.1.sif"
-qsirecon_config = "/scratch/lhashimoto/code/nemo/config_files/qsirecon_config.toml"
+qsirecon_config = "/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml"
 partition = "kepler"
 gpu_per_node = 2
 requested_mem = "70G"
@@ -86,7 +86,7 @@ atlases = ["4S156Parcels", "Gordon"]
 # =============================
 [fmriprep]
 fmriprep_container = "/scratch/hrasoanandrianina/containers/fmriprep_25.2.1.sif"
-fmriprep_config = "/scratch/hrasoanandrianina/code/nemo/config_files/fmriprep_config.toml"
+fmriprep_config = "/scratch/hrasoanandrianina/code/nemo/config/fmriprep_config.toml"
 bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
@@ -100,7 +100,7 @@ omp_threads = 4
 [xcp_d]
 xcp_d_input_dir = "/scratch/hrasoanandrianina/derivatives/fmriprep/outputs"
 xcp_d_container = "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif"
-xcp_d_config = "/scratch/hrasoanandrianina/code/nemo/config_files/xcp_d_surf_config.toml"
+xcp_d_config = "/scratch/hrasoanandrianina/code/nemo/config/xcp_d_surf_config.toml"
 bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
@@ -113,7 +113,7 @@ omp_threads = 4
 # =============================
 [mriqc]
 mriqc_container = "/scratch/lhashimoto/mriqc-24.0.2.sif"
-mriqc_config = "/scratch/lhashimoto/code/nemo/config_files/mriqc_config.toml"
+mriqc_config = "/scratch/lhashimoto/code/nemo/config/mriqc_config.toml"
 bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
