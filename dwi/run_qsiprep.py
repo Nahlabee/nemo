@@ -1,15 +1,11 @@
-import json
 import os
-from datetime import datetime
-from types import SimpleNamespace
 from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-import config_files
 
 
-def is_already_processed(subject, session):
+def is_already_processed(config, subject, session):
     """
     Check if subject_session is already processed successfully.
     Note: Even if QSIprep put files in cache, some steps are recomputed which require several hours of ressources.
@@ -28,7 +24,8 @@ def is_already_processed(subject, session):
     """
 
     # Check if QSIprep already processed without error
-    stdout_dir = f"{config_files.config['common']['derivatives']}/qsiprep/stdout"
+    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    stdout_dir = f"{DERIVATIVES_DIR}/qsiprep/stdout"
     if not os.path.exists(stdout_dir):
         return False
 
@@ -47,7 +44,7 @@ def is_already_processed(subject, session):
     return False
 
 
-def generate_slurm_script(subject, session, path_to_script, job_ids=None):
+def generate_slurm_script(config, subject, session, path_to_script, job_ids=None):
     """
     Generate the SLURM script for QSIprep processing.
 
@@ -62,19 +59,25 @@ def generate_slurm_script(subject, session, path_to_script, job_ids=None):
     job_ids : list, optional
         List of SLURM job IDs to set as dependencies (default is None).
     """
+
+    common = config.config["common"]
+    qsiprep = config.config["qsiprep"]
+    BIDS_DIR = common["input_dir"]
+    DERIVATIVES_DIR = common["derivatives"]
+
     if job_ids is None:
         job_ids = []
 
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH -J qsiprep_{subject}_{session}\n'
-        f'#SBATCH -p {config_files.config["qsiprep"]["partition"]}\n'
-        f'#SBATCH --gpus-per-node={config_files.config["qsiprep"]["gpu_per_node"]}\n'
+        f'#SBATCH -p {qsiprep["partition"]}\n'
+        f'#SBATCH --gpus-per-node={qsiprep["gpu_per_node"]}\n'
         f'#SBATCH --nodes=1\n'
-        f'#SBATCH --mem={config_files.config["qsiprep"]["requested_mem"]}gb\n'
-        f'#SBATCH -t {config_files.config["qsiprep"]["requested_time"]}:00:00\n'
-        f'#SBATCH -e {config_files.config["common"]["derivatives"]}/qsiprep/stdout/%x_job-%j.err\n'
-        f'#SBATCH -o {config_files.config["common"]["derivatives"]}/qsiprep/stdout/%x_job-%j.out\n'
+        f'#SBATCH --mem={qsiprep["requested_mem"]}gb\n'
+        f'#SBATCH -t {qsiprep["requested_time"]}\n'
+        f'#SBATCH -e {DERIVATIVES_DIR}/qsiprep/stdout/%x_job-%j.err\n'
+        f'#SBATCH -o {DERIVATIVES_DIR}/qsiprep/stdout/%x_job-%j.out\n'
     )
 
     if job_ids:
@@ -82,14 +85,14 @@ def generate_slurm_script(subject, session, path_to_script, job_ids=None):
             f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
         )
 
-    if config_files.config["common"].get("email"):
+    if common.get("email"):
         header += (
             f'#SBATCH --mail-type=BEGIN,END\n'
-            f'#SBATCH --mail-user={config_files.config["common"]["email"]}\n'
+            f'#SBATCH --mail-user={common["email"]}\n'
         )
 
-    if config_files.config["common"].get("account"):
-        header += f'#SBATCH --account={config_files.config["common"]["account"]}\n'
+    if common.get("account"):
+        header += f'#SBATCH --account={common["account"]}\n'
 
     module_export = (
         f'\nmodule purge\n'
@@ -103,30 +106,30 @@ def generate_slurm_script(subject, session, path_to_script, job_ids=None):
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --nv --cleanenv \\\n'
-        f'    -B {config_files.config["common"]["input_dir"]}:/data \\\n'
-        f'    -B {config_files.config["common"]["derivatives"]}/qsiprep:/out \\\n'
-        f'    -B {config_files.config["common"]["freesurfer_license"]}:/license \\\n'
-        f'    -B {config_files.config["qsiprep"]["config_eddy"]}:/config/eddy_params.json \\\n'
-        f'    -B {config_files.config["qsiprep"]["qsiprep_config"]}:/config/config-file.toml \\\n'
+        f'    -B {BIDS_DIR}:/data \\\n'
+        f'    -B {DERIVATIVES_DIR}/qsiprep:/out \\\n'
+        f'    -B {common["freesurfer_license"]}:/license \\\n'
+        f'    -B {qsiprep["config_eddy"]}:/config/eddy_params.json \\\n'
+        f'    -B {qsiprep["qsiprep_config"]}:/config/config-file.toml \\\n'
         f'    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
         f'    --env FREESURFER_HOME=/opt/freesurfer \\\n'
-        f'    {config_files.config["qsiprep"]["qsiprep_container"]} /data /out participant \\\n'
+        f'    {qsiprep["qsiprep_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    --skip-bids-validation -v -w /out/temp_qsiprep \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --eddy-config /config/eddy_params.json \\\n'
         f'    --config-file /config/config-file.toml \\\n'
-        f'    --output-resolution {config_files.config["qsiprep"]["output_resolution"]}\n'
+        f'    --output-resolution {qsiprep["output_resolution"]}\n'
     )
 
     # Add permissions for shared ownership of the output directory
-    ownership_sharing = f'\nchmod -Rf 771 {config_files.config["common"]["derivatives"]}/qsiprep\n'
+    ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qsiprep\n'
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
         f.write(header + module_export + singularity_command + ownership_sharing)
 
 
-def run_qsiprep(args, subject, session, job_ids=None):
+def run_qsiprep(config, subject, session, job_ids=None):
     """
     Run the QSIprep for a given subject and session.
 
@@ -148,19 +151,21 @@ def run_qsiprep(args, subject, session, job_ids=None):
     # QSIprep manages already processed subjects.
     # No need to remove existing folder or skip subjects.
     # Required files are checked inside the process.
-    if is_already_processed(subject, session):
+    if is_already_processed(config, subject, session):
         return None
+
+    DERIVATIVES_DIR = config.config["common"]["derivatives"]
 
     if job_ids is None:
         job_ids = []
 
     # Create output (derivatives) directories
-    os.makedirs(f"{config_files.config['common']['derivatives']}/qsiprep", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/qsiprep/stdout", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/qsiprep/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qsiprep", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qsiprep/stdout", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qsiprep/scripts", exist_ok=True)
 
-    path_to_script = f"{config_files.config['common']['derivatives']}/qsiprep/scripts/{subject}_{session}_qsiprep.slurm"
-    generate_slurm_script(args, subject, session, path_to_script, job_ids)
+    path_to_script = f"{DERIVATIVES_DIR}/qsiprep/scripts/{subject}_{session}_qsiprep.slurm"
+    generate_slurm_script(config, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"
     print(f"[QSIPREP] Submitting job: {cmd}")

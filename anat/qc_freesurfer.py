@@ -174,7 +174,7 @@ def calculate_outliers(freesurfer_dir, subjects_sessions, outlier_dir, outlier_p
     return df_group_stats, df_outliers
 
 
-def qc_freesurfer(args, subjects_sessions):
+def qc_freesurfer(config, subjects_sessions):
     """
     Note : Note that a minimum of 5 supplied subjects is required for running outlier analyses,
     otherwise NaNs will be returned.
@@ -190,8 +190,9 @@ def qc_freesurfer(args, subjects_sessions):
 
     """
 
-    freesurfer_dir = f"{args.derivatives}/freesurfer"
-    fsqc_dir = f"{args.derivatives}/qc/fsqc"
+    common = config.config["common"]
+    fsqc = config.config["fsqc"]
+    DERIVATIVES_DIR = common["derivatives"]
 
     # # Run FSQC on a list of subjects
     # print("Running FSQC on subjects")
@@ -211,7 +212,7 @@ def qc_freesurfer(args, subjects_sessions):
 
     print("\n---------------------------------------")
     print("Running log verification")
-    fsqc_results = pd.read_csv(f"{fsqc_dir}/fsqc-results.csv")
+    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
     cols = ["subject",
             "Number of folders generated",
             "Number of files generated",
@@ -223,14 +224,14 @@ def qc_freesurfer(args, subjects_sessions):
             "Euler number after topo correction RH"]
     frames = []
     for sub_sess in subjects_sessions:
-        log_file = f"{freesurfer_dir}/{sub_sess}/scripts/recon-all.log"
+        log_file = f"{DERIVATIVES_DIR}/freesurfer{sub_sess}/scripts/recon-all.log"
         info = None
         dir_count = 0
         file_count = 0
         if os.path.exists(log_file):
             info = read_log(log_file)
-            dir_count = utils.count_dirs(f"{freesurfer_dir}/{sub_sess}")
-            file_count = utils.count_files(f"{freesurfer_dir}/{sub_sess}")
+            dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
+            file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
         frames.append([sub_sess, dir_count, file_count] + list(info))
     logs = pd.DataFrame(frames, columns=cols)
     qc = pd.merge(logs, fsqc_results, on="subject", how="left")
@@ -244,26 +245,26 @@ def qc_freesurfer(args, subjects_sessions):
     columns_to_extract = ['aseg.EstimatedTotalIntraCranialVol',
                           'aseg.BrainSegVol_to_eTIV', 'aseg.MaskVol_to_eTIV', 'aseg.lhSurfaceHoles',
                           'aseg.rhSurfaceHoles', 'aseg.SurfaceHoles']
-    vols = normalize_aseg_volumes(freesurfer_dir, subjects_sessions, columns_to_extract)
+    vols = normalize_aseg_volumes(f"{DERIVATIVES_DIR}/freesurfer", subjects_sessions, columns_to_extract)
     qc = pd.merge(qc, vols, on="subject", how="left")
 
     # Calculate outliers and save new group aparc/aseg statistics
-    outlier_dir = os.path.join(fsqc_dir, "outliers")
+    outlier_dir = f"{DERIVATIVES_DIR}/qc/fsqc/outliers"
     outlier_params = {
         'min_no_subjects': 5,
-        'hypothalamus': args.qc_hypothalamus,
-        'hippocampus': args.qc_hippocampus,
-        'hippocampus_label': args.qc_hippocampus_label,
+        'hypothalamus': fsqc["qc_hypothalamus"],
+        'hippocampus': fsqc["qc_hippocampus"],
+        'hippocampus_label': fsqc["qc_hippocampus_label"],
         'fastsurfer': False,
         'outlierDict': None
     }
-    df_group_stats, df_outliers = calculate_outliers(freesurfer_dir, subjects_sessions, outlier_dir, outlier_params)
+    df_group_stats, df_outliers = calculate_outliers(f"{DERIVATIVES_DIR}/freesurfer", subjects_sessions, outlier_dir, outlier_params)
     df_group_stats.reset_index(inplace=True)
-    path_to_group_stats = f"{fsqc_dir}/group_aparc-aseg_values.csv"
+    path_to_group_stats = f"{DERIVATIVES_DIR}/qc/fsqc/group_aparc-aseg_values.csv"
     df_group_stats.to_csv(path_to_group_stats, index=False)
 
     qc = pd.merge(qc, df_outliers, on="subject", how="left")
-    path_to_final_fsqc = f"{fsqc_dir}/fsqc-results.csv"
+    path_to_final_fsqc = f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv"
     qc.to_csv(path_to_final_fsqc, index=False)
 
     print(f"QC saved in {path_to_final_fsqc}\n")
@@ -273,7 +274,11 @@ def qc_freesurfer(args, subjects_sessions):
     return None
 
 
-def generate_bash_script(args, subjects_sessions, path_to_script):
+def generate_bash_script(config, subjects_sessions, path_to_script):
+
+    common = config.config["common"]
+    fsqc = config.config["fsqc"]
+    DERIVATIVES_DIR = common["derivatives"]
 
     module_export = (
         f'\nmodule purge\n'
@@ -288,61 +293,53 @@ def generate_bash_script(args, subjects_sessions, path_to_script):
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --writable-tmpfs --cleanenv \\\n'
-        f'    -B {args.derivatives}/freesurfer:/data \\\n'
-        f'    -B {args.derivatives}/qc/fsqc:/out \\\n'
-        f'    {args.fsqc_container} \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer:/data \\\n'
+        f'    -B {DERIVATIVES_DIR}/qc/fsqc:/out \\\n'
+        f'    {fsqc["fsqc_container"]} \\\n'
         f'      --subjects_dir /data \\\n'
         f'      --output_dir /out \\\n'
         f'      --subjects {subjects_sessions_str}  \\\n'
     )
-    if args.qc_screenshots:
-        singularity_command += (
-            f'      --screenshots \\\n'
-        )
-    if args.qc_surfaces:
-        singularity_command += (
-            f'      --surfaces \\\n'
-        )
-    if args.qc_skullstrip:
-        singularity_command += (
-            f'      --skullstrip \\\n'
-        )
-    if args.qc_fornix:
-        singularity_command += (
-            f'      --fornix \\\n'
-        )
-    if args.qc_hypothalamus:
-        singularity_command += (
-            f'      --hypothalamus \\\n'
-        )
-    if args.qc_hippocampus:
-        singularity_command += (
-            f'      --hippocampus \\\n'
-        )
-    if args.qc_skip_existing:
-        singularity_command += (
-            f'      --skip-existing \\\n'
-        )
-    if args.qc_outlier:
-        singularity_command += (
-            f'      --outlier \\\n'
-        )
+    if fsqc["qc_screenshots"]:
+        singularity_command += f'      --screenshots \\\n'
+
+    if fsqc["qc_surfaces"]:
+        singularity_command += f'      --surfaces \\\n'
+
+    if fsqc["qc_skullstrip"]:
+        singularity_command += f'      --skullstrip \\\n'
+
+    if fsqc["qc_fornix"]:
+        singularity_command += f'      --fornix \\\n'
+
+    if fsqc["qc_hypothalamus"]:
+        singularity_command += f'      --hypothalamus \\\n'
+
+    if fsqc["qc_hippocampus"]:
+        singularity_command += f'      --hippocampus \\\n'
+
+    if fsqc["qc_skip_existing"]:
+        singularity_command += f'      --skip-existing \\\n'
+
+    if fsqc["qc_outlier"]:
+        singularity_command += f'      --outlier \\\n'
 
     # Call to python scripts for the rest of QC
+    # todo: test json dump with dict
     python_command = (
         f'\npython3 anat/qc_freesurfer.py '
-        f"'{json.dumps(vars(args))}' {','.join(subjects_sessions)}"
+        f"'{json.dumps(vars(config))}' {','.join(subjects_sessions)}"
     )
 
     # Add permissions for shared ownership of the output directory
-    ownership_sharing = f'\nchmod -Rf 771 {args.derivatives}/qc/fsqc\n'
+    ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/fsqc\n'
 
     # Write the complete BASH script to the specified file
     with open(path_to_script, 'w') as f:
         f.write(module_export + singularity_command + python_command + ownership_sharing)
 
 
-def run(args, subjects_sessions, job_ids=None):
+def run(config, subjects_sessions, job_ids=None):
     """
     Run the QSIrecon for a given subject and session.
 
@@ -368,21 +365,25 @@ def run(args, subjects_sessions, job_ids=None):
     if job_ids is None:
         job_ids = []
 
-    # Create output (derivatives) directories
-    os.makedirs(f"{args.derivatives}/qc/fsqc", exist_ok=True)
-    os.makedirs(f"{args.derivatives}/qc/fsqc/stdout", exist_ok=True)
-    os.makedirs(f"{args.derivatives}/qc/fsqc/scripts", exist_ok=True)
-    os.makedirs(f"{args.derivatives}/qc/fsqc/outliers", exist_ok=True)
+    common = config.config["common"]
+    fsqc = config.config["fsqc"]
+    DERIVATIVES_DIR = common["derivatives"]
 
-    path_to_script = f"{args.derivatives}/qc/fsqc/scripts/fsqc.sh"
-    generate_bash_script(args, subjects_sessions, path_to_script)
+    # Create output (derivatives) directories
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc/stdout", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc/outliers", exist_ok=True)
+
+    path_to_script = f"{DERIVATIVES_DIR}/qc/fsqc/scripts/fsqc.sh"
+    generate_bash_script(config, subjects_sessions, path_to_script)
 
     cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
-           f'--partition={args.partition} '
-           f'--mem={args.requested_mem}gb '
-           f'--time={args.requested_time}:00:00 '
-           f'--out={args.derivatives}/qc/fsqc/stdout/fsqc.out '
-           f'--err={args.derivatives}/qc/fsqc/stdout/fsqc.err ')
+           f'--partition={fsqc["partition"]} '
+           f'--mem={fsqc["requested_mem"]}gb '
+           f'--time={fsqc["requested_time"]} '
+           f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
+           f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
 
     if job_ids:
         cmd += f'--dependency=afterok:{":".join(job_ids)} '

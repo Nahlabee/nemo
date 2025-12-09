@@ -1,26 +1,16 @@
 #!/usr/bin/env python3
-import os, sys
-import subprocess
-from datetime import datetime
-from types import SimpleNamespace
+import os
+import sys
 from pathlib import Path
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-import config_files
 
-# -------------------------------
-# Load configuration
-# -------------------------------
-common = config_files.config["common"]
-fmriprep = config_files.config["fmriprep"]
-
-BIDS_DIR = common["input_dir"]
-DERIVATIVES_DIR = common["derivatives"]
 
 # ------------------------------
 # HELPERS
 # ------------------------------
-def is_already_processed(subject, session):
+def is_already_processed(config, subject, session):
     """
     Check if subject_session is already processed successfully.
     Note: Even if FMRIprep put files in cache, some steps are recomputed which require several hours of ressources.
@@ -39,6 +29,7 @@ def is_already_processed(subject, session):
     """
 
     # Check if fmriprep already processed without error
+    DERIVATIVES_DIR = config.config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/fmriprep/stdout"
     if not os.path.exists(stdout_dir):
         return False
@@ -54,10 +45,11 @@ def is_already_processed(subject, session):
             if 'fMRIPrep finished successfully!' in f.read():
                 print(f"[FMRIPREP] Skip already processed subject {subject}_{session}")
                 return True
-            else: 
+            else:
                 return False
 
-def is_freesurfer_done(subject, session):
+
+def is_freesurfer_done(config, subject, session):
     """
     Check that FreeSurfer recon-all finished successfully.
 
@@ -75,6 +67,7 @@ def is_freesurfer_done(subject, session):
     """
 
     # Check that FreeSurfer finished without error
+    DERIVATIVES_DIR = config.config["common"]["derivatives"]
     if not os.path.exists(f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"):
         print(f"[FMRIPREP] No FreeSurfer outputs found - Running full fmriprep.")
         return False
@@ -87,12 +80,14 @@ def is_freesurfer_done(subject, session):
             if not 'finished without error' in l:
                 print(f"[FMRIPREP] FreeSurfer did not terminate.")
                 return False
-            else: return True
+            else:
+                return True
+
 
 # ------------------------
 # Create SLURM job scripts 
 # ------------------------
-def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=False, job_ids=None):
+def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_done=False, job_ids=None):
     """Generate the SLURM job script.
     Parameters
     ----------
@@ -107,6 +102,10 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
+    common = config.config["common"]
+    fmriprep = config.config["fmriprep"]
+    DERIVATIVES_DIR = common["derivatives"]
+
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH --job-name=fmriprep_{subject}_{session}\n'
@@ -116,12 +115,12 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
         f'#SBATCH --time={fmriprep["requested_time"]}\n'
         f'#SBATCH --partition={fmriprep["partition"]}\n'
     )
-    
+
     if job_ids:
         valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
         if valid_ids:
             header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
-    
+
     if common.get("email"):
         header += (
             f'#SBATCH --mail-type={common["email_frequency"]}\n'
@@ -150,7 +149,8 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
         f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
         f'echo "Using OUT_FMRIPREP_DIR = {common["derivatives"]}/fmriprep"\n'
     )
-    
+
+    # todo: remove options that are in config file !!
     if not fs_done:
         # Define the Singularity command for running FMRIPrep
         singularity_command = (
@@ -173,7 +173,7 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
             f'    --work-dir $TMP_WORK_DIR \\\n'
             f'    --config-file /fmriprep_config.toml \n'
         )
-
+    # todo: remove options that are in config file !!
     else:
         # Define the Singularity command for running FMRIPrep (skip FreeSurfer)
         singularity_command = (
@@ -209,20 +209,18 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
         f'\nrm -rf {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat\n'
         f'echo "Finished fMRIPrep for subject: {subject}, session: {session}"\n'
     )
-    
+
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
         f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
     print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
-def run_fmriprep(input_dir, subject, job_ids=None):
+def run_fmriprep(config, subject, job_ids=None):
     """
     Run the FMRIPrep for a given subject and session.
     Parameters
     ----------
-    input_dir : str
-        Path to the BIDS input directory.
     subject : str
         Subject identifier.
     session : str
@@ -236,35 +234,39 @@ def run_fmriprep(input_dir, subject, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
-    
+    common = config.config["common"]
+    DERIVATIVES_DIR = common["derivatives"]
+    BIDS_DIR = common["input_dir"]
+
     # Create output (derivatives) directories if they do not exist
-    os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/outputs", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/work", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/stdout", exist_ok=True)
-    os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/fmriprep", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/outputs", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/work", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/stdout", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/scripts", exist_ok=True)
 
     previous_job_id = None
     if job_ids is None:
         job_ids = []
+    # todo: loop in run_workflow instead of here
     fmriprep_jobs = []
-    sessions = utils.get_sessions(input_dir,subject)
+    sessions = utils.get_sessions(BIDS_DIR, subject)  # todo: take sessions from config file if exist
     for ses in sessions:
-        if is_already_processed(subject, ses) :
+        if is_already_processed(config, subject, ses):
             print(f"✓ Skipping {subject} {ses}: already processed")
             return None
-    
-        print(f"Submitting fMRIPrep job for {subject} {ses}...")
+
         path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{ses}_fmriprep.slurm"
         job_ids.append(previous_job_id)
 
-        if is_freesurfer_done(subject, ses):
-            generate_slurm_fmriprep_script(subject, ses, path_to_script, fs_done=True, job_ids=job_ids)
+        # todo: do not run fmriprep before freesurfer
+        if is_freesurfer_done(config, subject, ses):
+            generate_slurm_fmriprep_script(config, subject, ses, path_to_script, fs_done=True, job_ids=job_ids)
         else:
-            generate_slurm_fmriprep_script(subject, ses, path_to_script, fs_done=False, job_ids=job_ids)
-                
+            generate_slurm_fmriprep_script(config, subject, ses, path_to_script, fs_done=False, job_ids=job_ids)
+
         cmd = f"sbatch {path_to_script}"
-        # Extract SLURM job ID (last token in "Submitted batch job 12345")
+        print(f"[FMRIPREP] Submitting job: {cmd}")
         job_id = utils.submit_job(cmd)
         previous_job_id = job_id
         fmriprep_jobs.append(job_id)

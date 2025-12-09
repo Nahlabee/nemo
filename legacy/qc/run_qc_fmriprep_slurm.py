@@ -6,14 +6,14 @@ from types import SimpleNamespace
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-import config_files
+import config
 
 
 # -------------------------------
 # Load configuration
 # -------------------------------
-common = config_files.config["common"]
-mriqc = config_files.config["mriqc"]
+common = config.config["common"]
+mriqc = config.config["mriqc"]
 
 BIDS_DIR = common["input_dir"]
 DERIVATIVES_DIR = common["derivatives"]

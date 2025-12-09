@@ -1,6 +1,7 @@
 # =============================
 #   PROJECT-WIDE SETTINGS
 # =============================
+# todo: check requested mem G or gb ? +change in all scripts
 [common]
 account = ""
 email = ""

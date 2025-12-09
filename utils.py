@@ -4,6 +4,14 @@ import subprocess
 from pathlib import Path
 
 
+def load_config(config_file):
+    """Load arguments from a JSON config file."""
+    if not os.path.exists(config_file):
+        return {}
+    with open(config_file, "r") as f:
+        return json.load(f)
+
+
 def get_subjects(input_dir, specified_subjects=None):
     """
     Retrieve the list of subjects from the input directory or use the specified list.

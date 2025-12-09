@@ -1,3 +1,4 @@
+# todo : remove env options that are filled auto (same in all config file of nipype
 [environment]
 cpu_count = 24
 exec_env = "posix"
@@ -11,9 +12,11 @@ version = "0.12.0"
 [execution]
 fmri_dir = "/data"
 aggr_ses_reports = 4
+# todo : following bids options are filled auto
 bids_database_dir = "/work/20251124-114311_6e744c09-9576-4f5d-989e-3e21cbf664bb/bids_db"
 bids_description_hash = "08712e354937d9d24edec8746c0b84ea145ce04c5dca101e5d59f6c520a5874c"
 boilerplate_only = false
+# todo : not python 3.12 ?? option obligatoire ? ou auto set ?
 confounds_config = "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/data/nuisance/36P.yml"
 debug = []
 layout = "BIDS Layout: .../data | Subjects: 1 | Sessions: 2 | Runs: 0"
@@ -23,16 +26,19 @@ low_mem = false
 md_only_boilerplate = false
 notrack = false
 output_layout = "auto"
+#todo
 parameters_hash = "482da588"
 report_output_level = "root"
 reports_only = false
 output_dir = "/out"
+# todo : suggest only one - the same one as qsirecon
 atlases = [ "4S1056Parcels", "4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", "4S956Parcels", "Glasser", "Gordon", "HCP", "MIDB", "MyersLabonte", "Tian",]
+# todo
 run_uuid = "20251124-114311_6e744c09-9576-4f5d-989e-3e21cbf664bb"
-participant_label = [ "002",]
+participant_label = [ "002",]  #todo
 task_id = "rest"
-processing_list = [ "002:01:01", "002:02:02",]
-templateflow_home = "/home/henit/.cache/templateflow"
+processing_list = [ "002:01:01", "002:02:02",] # todo
+templateflow_home = "/home/henit/.cache/templateflow" # todo
 work_dir = "/work"
 write_graph = false
 

@@ -1,9 +1,7 @@
 import os
 import re
 from datetime import datetime
-
 import pandas as pd
-
 import utils
 
 
@@ -27,12 +25,13 @@ def extract_runtime(content):
     return runtime
 
 
-def read_log(args, subject, session):
+def read_log(config, subject, session):
 
     finished_status = "Error"
     runtime = 0
 
-    stdout_dir = f"{args.derivatives}/qsiprep/stdout"
+    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    stdout_dir = f"{DERIVATIVES_DIR}/qsiprep/stdout"
 
     # Check that QSIprep finished without error
     if not os.path.exists(stdout_dir):
@@ -57,16 +56,18 @@ def read_log(args, subject, session):
     return finished_status, runtime
 
 
-def run(args, subjects_sessions, job_ids=None):
+def run(config, subjects_sessions, job_ids=None):
 
     if job_ids is None:
         job_ids = []
 
+    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+
     # Create output (derivatives) directories
-    os.makedirs(f"{args.derivatives}/qc/qsiprep", exist_ok=True)
-    # os.makedirs(f"{args.derivatives}/qc/qsiprep/stdout", exist_ok=True)
-    # os.makedirs(f"{args.derivatives}/qc/qsiprep/scripts", exist_ok=True)
-    # os.makedirs(f"{args.derivatives}/qc/qsiprep/outliers", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep", exist_ok=True)
+    # os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep/stdout", exist_ok=True)
+    # os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep/scripts", exist_ok=True)
+    # os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep/outliers", exist_ok=True)
 
     cols = ["subject",
             "session",
@@ -78,13 +79,13 @@ def run(args, subjects_sessions, job_ids=None):
     for sub_sess in subjects_sessions:
         subject = sub_sess.split('_')[0]
         session = sub_sess.split('_')[1]
-        finished_status, runtime = read_log(args, subject, session)
-        dir_count = utils.count_dirs(f"{args.derivatives}/qsiprep/{subject}/{session}")
-        file_count = utils.count_files(f"{args.derivatives}/qsiprep/{subject}/{session}")
+        finished_status, runtime = read_log(config, subject, session)
+        dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/qsiprep/{subject}/{session}")
+        file_count = utils.count_files(f"{DERIVATIVES_DIR}/qsiprep/{subject}/{session}")
         frames.append([subject, session, finished_status, runtime, dir_count, file_count])
     qc = pd.DataFrame(frames, columns=cols)
 
-    path_to_qc = f"{args.derivatives}/qc/qsiprep/qc.csv"
+    path_to_qc = f"{DERIVATIVES_DIR}/qc/qsiprep/qc.csv"
     qc.to_csv(path_to_qc, index=False)
 
     print(f"QC saved in {path_to_qc}\n")
