@@ -31,8 +31,7 @@ parameters_hash = "482da588"
 report_output_level = "root"
 reports_only = false
 output_dir = "/out"
-# todo : suggest only one - the same one as qsirecon
-atlases = [ "4S1056Parcels", "4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", "4S956Parcels", "Glasser", "Gordon", "HCP", "MIDB", "MyersLabonte", "Tian",]
+atlases = ["4S156Parcels"]
 # todo
 run_uuid = "20251124-114311_6e744c09-9576-4f5d-989e-3e21cbf664bb"
 participant_label = [ "002",]  #todo
