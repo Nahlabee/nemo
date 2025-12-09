@@ -157,6 +157,7 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'    --fs-subjects-dir /freesurfer \\\n'
         f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
         f'    --atlases AAL116 \\\n'
+        f'    --config-file /config/qsirecon_config.toml\n'
     )
     #
     # f'    --config-file /config/qsirecon_config.toml \\\n'
