@@ -112,7 +112,7 @@ def main(config_file=None):
         #     print("⚠️  No functional data found — skipping fMRIPrep")
         #     run_fprep = False
         #
-        # if workflow["run_fmriprep"] and run_fprep:
+        # if workflow.get("run_fmriprep") and run_fprep:
         #     print("🔹 Submitting fMRIPrep")
         #     fmriprep_job_id = run_fmriprep(config, subject=subject)
         #     print(f"[FMRIPREP] job IDs: {fmriprep_job_id}\n")
@@ -135,7 +135,7 @@ def main(config_file=None):
             # -------------------------------------------
             # 0. MRIQC on raw BIDS data
             # -------------------------------------------
-            if workflow["run_mriqc_raw"]:
+            if workflow.get("run_mriqc_raw"):
                 print("🔹 Submitting MRIQC (raw data)")
                 jid_mriqc_raw = run_mriqc(
                     config,
@@ -147,7 +147,7 @@ def main(config_file=None):
             # -------------------------------------------
             # 1. FREESURFER
             # -------------------------------------------
-            if workflow["run_freesurfer"]:
+            if workflow.get("run_freesurfer"):
                 print("🔹 Submitting freesurfer")
                 freesurfer_job_id = run_freesurfer(config, subject, session)
                 freesurfer_job_ids.append(freesurfer_job_id)
@@ -157,7 +157,7 @@ def main(config_file=None):
             # -------------------------------------------
             # 2. QSIprep and QSIrecon
             # -------------------------------------------
-            if workflow["run_qsiprep"]:
+            if workflow.get("run_qsiprep"):
                 print("🔹 Submitting QSIprep")
                 qsiprep_job_id = run_qsiprep(config, subject, session)
                 qsiprep_job_ids.append(qsiprep_job_id)
@@ -165,7 +165,7 @@ def main(config_file=None):
             else:
                 qsiprep_job_id = None
 
-            if workflow["run_qsirecon"]:
+            if workflow.get("run_qsirecon"):
                 print("🔹 Submitting QSIrecon")
                 dependencies = [job_id for job_id in [freesurfer_job_id, qsiprep_job_id] if job_id is not None]
                 qsirecon_job_id = run_qsirecon(config, subject, session, dependencies)
@@ -176,7 +176,7 @@ def main(config_file=None):
             # 4. XCP-D
             # -------------------------------------------
             # todo: jid_fprep doit correspondre au job id du job fmriprep pour la session en question (idem mriqc)
-            if workflow["run_xcp_d"]:
+            if workflow.get("run_xcp_d"):
                 print("🔹 Submitting XCP-D")
                 xcp_d_job_id = run_xcpd(
                     config,
@@ -189,7 +189,7 @@ def main(config_file=None):
             # -------------------------------------------
             # 5. MRIQC on derivatives
             # -------------------------------------------
-            if workflow["run_mriqc_derivatives"]:
+            if workflow.get("run_mriqc_derivatives"):
                 mriqc_fprep_job_id = run_mriqc(
                     config,
                     subject=subject,
@@ -233,7 +233,7 @@ def main(config_file=None):
     # -------------------------------------------
     # 3. QC FREESURFER
     # -------------------------------------------
-    if workflow["run_freesurfer_qc"] and subjects_sessions:
+    if workflow.get("run_freesurfer_qc") and subjects_sessions:
         print("🔹 Submitting FreeSurfer QC")
         dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
         qc_freesurfer.run(config, subjects_sessions, dependencies)
@@ -242,7 +242,7 @@ def main(config_file=None):
     # -------------------------------------------
     # 3. QC QSIPREP
     # -------------------------------------------
-    if workflow["run_qsiprep_qc"] and subjects_sessions:
+    if workflow.get("run_qsiprep_qc") and subjects_sessions:
         print("🔹 Submitting QSIprep QC")
         dependencies = [job_id for job_id in qsiprep_job_ids if job_id is not None]
         qc_qsiprep.run(config, subjects_sessions, dependencies)
