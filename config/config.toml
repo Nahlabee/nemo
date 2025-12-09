@@ -80,6 +80,7 @@ partition = "kepler"
 gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
+atlases = ["4S156Parcels", "Gordon"]
 
 # =============================
 #   PIPELINE: fMRIPrep
@@ -112,7 +113,7 @@ omp_threads = 4
 #   PIPELINE: MRIQC
 # =============================
 [mriqc]
-mriqc_container = "/scratch/lhashimoto/mriqc_24.0.2.sif"
+mriqc_container = "/scratch/lhashimoto/mriqc-24.0.2.sif"
 mriqc_config = "/scratch/lhashimoto/code/nemo/config_files/mriqc_config.toml"
 bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
