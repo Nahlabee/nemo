@@ -91,36 +91,36 @@ def main(config_file=None):
 
         print(f"\n================ {subject} ================")
 
-        fmriprep_sub_job_ids = []
-
-        # Initialize job IDs list for the current subject
-        job_ids = []
-
-        # todo: reorder steps and check job_ids for dependencies
-        # -------------------------------------------
-        # 1. fMRIPrep (only if data exists)
-        # fmriprep requires at least one of func or anat data
-        # the pipeline has to be run on subject level due to
-        # dependencies between the sessions
-        # -------------------------------------------
-        # todo : move in a check_prerequisite function just like run_freesurfer
-        run_fprep = True
-        if not utils.has_anat(BIDS_DIR, subject):
-            print("⚠️  No anatomical data found — skipping fMRIPrep")
-            run_fprep = False
-        if not utils.has_func_fmap(BIDS_DIR, subject):
-            print("⚠️  No functional data found — skipping fMRIPrep")
-            run_fprep = False
-
-        if workflow["run_fmriprep"] and run_fprep:
-            print("🔹 Submitting fMRIPrep")
-            fmriprep_job_id = run_fmriprep(config, subject=subject)
-            print(f"[FMRIPREP] job IDs: {fmriprep_job_id}\n")
-
-            job_ids.append(fmriprep_job_id)  # downstream depends on fMRIPrep only
-
-        else:
-            continue   # cannot run XCP-D nor MRIQC-derivatives
+        # fmriprep_sub_job_ids = []
+        #
+        # # Initialize job IDs list for the current subject
+        # job_ids = []
+        #
+        # # todo: reorder steps and check job_ids for dependencies
+        # # -------------------------------------------
+        # # 1. fMRIPrep (only if data exists)
+        # # fmriprep requires at least one of func or anat data
+        # # the pipeline has to be run on subject level due to
+        # # dependencies between the sessions
+        # # -------------------------------------------
+        # # todo : move in a check_prerequisite function just like run_freesurfer
+        # run_fprep = True
+        # if not utils.has_anat(BIDS_DIR, subject):
+        #     print("⚠️  No anatomical data found — skipping fMRIPrep")
+        #     run_fprep = False
+        # if not utils.has_func_fmap(BIDS_DIR, subject):
+        #     print("⚠️  No functional data found — skipping fMRIPrep")
+        #     run_fprep = False
+        #
+        # if workflow["run_fmriprep"] and run_fprep:
+        #     print("🔹 Submitting fMRIPrep")
+        #     fmriprep_job_id = run_fmriprep(config, subject=subject)
+        #     print(f"[FMRIPREP] job IDs: {fmriprep_job_id}\n")
+        #
+        #     job_ids.append(fmriprep_job_id)  # downstream depends on fMRIPrep only
+        #
+        # else:
+        #     continue   # cannot run XCP-D nor MRIQC-derivatives
 
         # -------------------------------------------
         # Loop over sessions
