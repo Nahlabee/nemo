@@ -44,25 +44,25 @@ def main(config_file=None):
     # Load configuration
     # -------------------------------
     if not config_file:
-        config_file = f"{Path(__file__).parent}/config/config.json"
+        config_file = f"{Path(__file__).parent}/config/config.toml"
     config = utils.load_config(config_file)
 
-    common = config.config["common"]
-    workflow = config.config["workflow"]
-    freesurfer = config.config["freesurfer"]
-    qsiprep = config.config["qsiprep"]
-    qsirecon = config.config["qsirecon"]
-    fmriprep = config.config["fmriprep"]
-    mriqc = config.config["mriqc"]
-    xcpd = config.config["xcp_d"]
-    fsqc = config.config["fsqc"]
+    common = config["common"]
+    workflow = config["workflow"]
+    freesurfer = config["freesurfer"]
+    qsiprep = config["qsiprep"]
+    qsirecon = config["qsirecon"]
+    fmriprep = config["fmriprep"]
+    mriqc = config["mriqc"]
+    xcpd = config["xcp_d"]
+    fsqc = config["fsqc"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # Save config with datetime
-    filename = f"{DERIVATIVES_DIR}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    filename = f"{DERIVATIVES_DIR}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.toml"
     with open(filename, "w") as f:
-        toml.dump(config.config, f)
+        toml.dump(config, f)
 
     # -------------------------------------------------------
     # Sanity checks
