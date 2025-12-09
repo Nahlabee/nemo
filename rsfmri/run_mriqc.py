@@ -34,30 +34,25 @@ def is_already_processed(config, subject, session, data_type="raw"):
     """
 
     # Check if mriqc already processed without error
-    # todo: move to previous function
-    if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
-        raise ValueError(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
 
     DERIVATIVES_DIR = config.config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout"
     if not os.path.exists(stdout_dir):
-        print(f"[MRIQC] Could not read standard outputs from MRIQC, recomputing ....")
         return False
 
-    else:
-        prefix = f"mriqc_{subject}_{session}"
-        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-        if not stdout_files:
-            return False
+    prefix = f"mriqc_{subject}_{session}"
+    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+    if not stdout_files:
+        return False
 
-        for file in stdout_files:
-            file_path = os.path.join(stdout_dir, file)
-            with open(file_path, 'r') as f:
-                if 'MRIQC completed' in f.read():
-                    print(f"[MRIQC] Skip already processed subject {subject}_{session}")
-                    return True
-                else:
-                    return False
+    for file in stdout_files:
+        file_path = os.path.join(stdout_dir, file)
+        with open(file_path, 'r') as f:
+            if 'MRIQC completed' in f.read():
+                print(f"[MRIQC] Skip already processed subject {subject}_{session}")
+                return True
+
+    return False
 
 
 def derivatives_datatype_exists(config, subject, session, data_type="raw"):
@@ -126,11 +121,6 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
-    # todo: redundant, move to another place
-    if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
-        raise ValueError(
-            f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', 'xcp_d', 'qsiprep' or 'qsirecon'.")
-
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH --job-name=mriqc_{data_type}_{subject}_{session}\n'
@@ -166,72 +156,62 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         f'echo "------ Running {mriqc["mriqc_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
-    tmp_dir_setup = (
-        f'\nhostname\n'
-        f'# Choose writable scratch directory\n'
-        f'if [ -n "$SLURM_TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
-        f'elif [ -n "$TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$TMPDIR"\n'
-        f'else\n'
-        f'    TMP_WORK_DIR=$(mktemp -d /tmp/mriqc_{subject}_{session})\n'
-        f'fi\n'
-
-        f'mkdir -p $TMP_WORK_DIR\n'
-        f'chmod -Rf 771 $TMP_WORK_DIR\n'
-        f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-        f'echo "Using OUT_MRIQC_DIR = {DERIVATIVES_DIR}/mriqc_{data_type}"\n'
-    )
+    # tmp_dir_setup = (
+    #     f'\nhostname\n'
+    #     f'# Choose writable scratch directory\n'
+    #     f'if [ -n "$SLURM_TMPDIR" ]; then\n'
+    #     f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
+    #     f'elif [ -n "$TMPDIR" ]; then\n'
+    #     f'    TMP_WORK_DIR="$TMPDIR"\n'
+    #     f'else\n'
+    #     f'    TMP_WORK_DIR=$(mktemp -d /tmp/mriqc_{subject}_{session})\n'
+    #     f'fi\n'
+    #
+    #     f'mkdir -p $TMP_WORK_DIR\n'
+    #     f'chmod -Rf 771 $TMP_WORK_DIR\n'
+    #     f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
+    #     f'echo "Using OUT_MRIQC_DIR = {DERIVATIVES_DIR}/mriqc_{data_type}"\n'
+    # )
 
     # Define the Singularity command for running MRIQC
     # Note: Unlike fmriprep, no config file is used here, the option doesn't exist for mriqc
+    #todo: just a line to define INPUT variable as BIDS_DIR or DERIVTIVES
+
     if data_type == "raw":
-        singularity_cmd = (
-            f'\napptainer run \\\n'
-            f'    --cleanenv \\\n'
-            f'    -B {BIDS_DIR}:/data:ro \\\n'
-            f'    -B {DERIVATIVES_DIR}/mriqc_{data_type}/outputs:/out \\\n'
-            f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {mriqc["mriqc_container"]} /data /out participant \\\n'
-            f'    --participant_label {subject} \\\n'
-            f'    --session-id {session} \\\n'
-            f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-            f'    --mem {mriqc["requested_mem"]} \\\n'
-            f'    -w $TMP_WORK_DIR \\\n'
-            f'    --fd_thres 0.5 \\\n'
-            f'    --verbose-reports \\\n'
-            f'    --verbose \\\n'
-            f'    --no-sub --notrack\n'
-        )
+        MRIQC_INPUT = BIDS_DIR
     else:
-        singularity_cmd = (
-            f'\napptainer run \\\n'
-            f'    --cleanenv \\\n'
-            f'    -B {DERIVATIVES_DIR}/{data_type}/outputs:/data:ro \\\n'
-            f'    -B {DERIVATIVES_DIR}/mriqc_{data_type}/outputs:/out \\\n'
-            f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {mriqc["mriqc_container"]} /data /out participant \\\n'
-            f'    --participant_label {subject} \\\n'
-            f'    --session-id {session} \\\n'
-            f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-            f'    --mem {mriqc["requested_mem"]} \\\n'
-            f'    -w $TMP_WORK_DIR \\\n'
-            f'    --fd_thres 0.5 \\\n'
-            f'    --verbose-reports \\\n'
-            f'    --verbose \\\n'
-            f'    --no-sub --notrack\n'
-        )
+        MRIQC_INPUT = f"{DERIVATIVES_DIR}/{data_type}/outputs"
+
+    singularity_cmd = (
+        f'\napptainer run \\\n'
+        f'    --cleanenv \\\n'
+        f'    -B {MRIQC_INPUT}:/data:ro \\\n'
+        f'    -B {DERIVATIVES_DIR}/mriqc_{data_type}/outputs:/out \\\n'
+        f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
+        f'    {mriqc["mriqc_container"]} /data /out participant \\\n'
+        f'    --participant_label {subject} \\\n'
+        f'    --session-id {session} \\\n'
+        f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
+        f'    --mem {mriqc["requested_mem"]} \\\n'
+        f'    -w /out/work \\\n'
+        f'    --fd_thres 0.5 \\\n'
+        f'    --verbose-reports \\\n'
+        f'    --verbose \\\n'
+        f'    --no-sub --notrack\n'
+    )
 
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/mriqc_{data_type}\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/mriqc_{data_type}/work\n'
+        # f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/mriqc_{data_type}/work\n'
         f'echo "Finished MRIQC for subject: {subject}, session: {session}"\n'
     )
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + tmp_dir_setup + singularity_cmd + save_work)
+        # todo
+        # f.write(header + module_export + tmp_dir_setup + singularity_cmd + save_work)
+        f.write(header + module_export + singularity_cmd + save_work)
     print(f"Created MRIQC SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
@@ -253,6 +233,12 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
+    if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
+        raise ValueError(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
+
+    if is_already_processed(config, subject, session):
+        return None
+
     DERIVATIVES_DIR = config.config["common"]["derivatives"]
 
     # Create output (derivatives) directories
@@ -261,10 +247,6 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/work", exist_ok=True)
-
-    if is_already_processed(config, subject, session):
-        print(f"[MRIQC] Subject {subject}_{session} already processed. Skipping MRIQC submission.\n")
-        return None
 
     if job_ids is None:
         # todo : move prerequisite check into slurm script like in run_qsirecon.
