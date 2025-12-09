@@ -1,7 +1,6 @@
 # =============================
 #   PROJECT-WIDE SETTINGS
 # =============================
-# todo: check requested mem G or gb ? +change in all scripts
 [common]
 input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
 derivatives = "/scratch/lhashimoto/nemo_derivatives"
