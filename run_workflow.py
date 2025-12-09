@@ -252,7 +252,7 @@ def main(config_file=None):
     # -------------------------------------------------------
     # GROUP-LEVEL MRIQC JOBS
     # -------------------------------------------------------
-    if workflow["run_mriqc_group"]:
+    if workflow.get("run_mriqc_group"):
         print("🔹 Submitting MRIQC group-level jobs")
         # MRIQC group-level for raw data
         jid_mriqc_raw_group = run_mriqc_group(
