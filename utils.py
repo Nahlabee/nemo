@@ -22,10 +22,8 @@ def get_subjects(input_dir, specified_subjects=None):
     if specified_subjects:
         return [f"sub-{sub}" if not sub.startswith("sub-") else sub for sub in specified_subjects]
 
-    return [
-        d for d in os.listdir(input_dir)
-        if d.startswith("sub-") and os.path.isdir(os.path.join(input_dir, d))
-    ]
+    return sorted(d for d in os.listdir(input_dir) if d.startswith("sub-") and os.path.isdir(os.path.join(input_dir, d)))
+    
 
 
 def get_sessions(input_dir, subject, specified_sessions=None):
@@ -50,10 +48,7 @@ def get_sessions(input_dir, subject, specified_sessions=None):
     if specified_sessions:
         return [f"ses-{ses}" if not ses.startswith("ses-") else ses for ses in specified_sessions]
 
-    return [
-        d for d in os.listdir(subject_path)
-        if d.startswith("ses-") and os.path.isdir(os.path.join(subject_path, d))
-    ]
+    return sorted(d for d in os.listdir(subject_path) if d.startswith("ses-") and os.path.isdir(os.path.join(subject_path, d)))
 
 def subject_exists(input_dir, subject):
     """

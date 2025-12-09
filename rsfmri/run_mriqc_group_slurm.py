@@ -49,7 +49,7 @@ def is_already_processed(input_dir, data_type="raw"):
         return False
 
     else: 
-        prefix = f"mriqc_{input_dir}"
+        prefix = f"group_mriqc_{data_type}"
         stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
         if not stdout_files:
             return False
@@ -81,19 +81,17 @@ def generate_slurm_mriqc_script(input_dir, path_to_script, data_type="raw", job_
 
     header = (
         f'#!/bin/bash\n'
-        f'#SBATCH --job-name=mriqc_{input_dir}\n'
-        f'#SBATCH --output={DERIVATIVES_DIR}/mriqc_{data_type}/stdout/mriqc_{input_dir}_%j.out\n'
-        f'#SBATCH --error={DERIVATIVES_DIR}/mriqc_{data_type}/stdout/mriqc_{input_dir}_%j.err\n'
+        f'#SBATCH --job-name=group_mriqc_{data_type}\n'
+        f'#SBATCH --output={DERIVATIVES_DIR}/mriqc_{data_type}/stdout/group_mriqc_{data_type}_%j.out\n'
+        f'#SBATCH --error={DERIVATIVES_DIR}/mriqc_{data_type}/stdout/group_mriqc_{data_type}_%j.err\n'
         f'#SBATCH --mem={mriqc["requested_mem"]}\n'
         f'#SBATCH --time={mriqc["requested_time"]}\n'
         f'#SBATCH --partition={mriqc["partition"]}\n'
     )
 
-    if job_ids is None:
-        job_ids = []
-    else :
-          valid_ids = [jid for jid in job_ids if jid]
-          if valid_ids:
+    if job_ids:
+        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
+        if valid_ids:
             header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
 
     if common.get("email"):
@@ -121,7 +119,7 @@ def generate_slurm_mriqc_script(input_dir, path_to_script, data_type="raw", job_
         f'elif [ -n "$TMPDIR" ]; then\n'
         f'    TMP_WORK_DIR="$TMPDIR"\n'
         f'else\n'
-        f'    TMP_WORK_DIR=$(mktemp -d /tmp/mriqc_{input_dir})\n'
+        f'    TMP_WORK_DIR=$(mktemp -d /tmp/group_mriqc_{data_type})\n'
         f'fi\n'
 
         f'mkdir -p $TMP_WORK_DIR\n'
@@ -193,8 +191,8 @@ def run_mriqc_group(input_dir, data_type="raw", job_ids=None):
         return None
         
     # Add dependency if this is not the first job in the chain
-    path_to_script = f"{DERIVATIVES_DIR}/mriqc_group_{data_type}/scripts/{input_dir}_mriqc.slurm"
-    generate_slurm_mriqc_script(input_dir, data_type=data_type, job_ids=job_ids)
+    path_to_script = f"{DERIVATIVES_DIR}/mriqc_group_{data_type}/scripts/group_mriqc_{data_type}.slurm"
+    generate_slurm_mriqc_script(input_dir, data_type=data_type, path_to_script=path_to_script, job_ids=job_ids)
     
     cmd = f"sbatch {path_to_script}"
     job_id = utils.submit_job(cmd)

@@ -12,7 +12,6 @@ notrack = false
 output_layout = "auto"
 report_output_level = "root"
 reports_only = false
-atlases = [ "4S1056Parcels", "4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", "4S956Parcels", "Glasser", "Gordon", "HCP", "MIDB", "MyersLabonte", "Tian",]
 write_graph = false
 
 [workflow]

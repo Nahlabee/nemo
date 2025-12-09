@@ -118,8 +118,8 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
     )
     
     if job_ids:
-          valid_ids = [jid for jid in job_ids if jid]
-          if valid_ids:
+        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
+        if valid_ids:
             header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
     
     if common.get("email"):
@@ -166,6 +166,7 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
             f'    --fs-license-file /license.txt \\\n'
             f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
             f'    --project-goodvoxels \\\n'
+            f'    --cifti-output 91k \\\n'
             f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
             f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
             f'    --skip-bids-validation \\\n'
@@ -190,6 +191,7 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
             f'    --fs-license-file /license.txt \\\n'
             f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
             f'    --project-goodvoxels \\\n'
+            f'    ----cifti-output 91k \\\n'
             f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
             f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
             f'    --skip-bids-validation \\\n'
@@ -243,8 +245,9 @@ def run_fmriprep(input_dir, subject, job_ids=None):
     os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/scripts", exist_ok=True)
 
     previous_job_id = None
-    job_ids = []
-
+    if job_ids is None:
+        job_ids = []
+    fmriprep_jobs = []
     sessions = utils.get_sessions(input_dir,subject)
     for ses in sessions:
         if is_already_processed(subject, ses) :
@@ -256,12 +259,13 @@ def run_fmriprep(input_dir, subject, job_ids=None):
         job_ids.append(previous_job_id)
 
         if is_freesurfer_done(subject, ses):
-            generate_slurm_fmriprep_script(subject, ses, path_to_script, fs_done=True, job_ids=[job_ids])
+            generate_slurm_fmriprep_script(subject, ses, path_to_script, fs_done=True, job_ids=job_ids)
         else:
-            generate_slurm_fmriprep_script(subject, ses, path_to_script, fs_done=False, job_ids=[job_ids])
+            generate_slurm_fmriprep_script(subject, ses, path_to_script, fs_done=False, job_ids=job_ids)
                 
         cmd = f"sbatch {path_to_script}"
         # Extract SLURM job ID (last token in "Submitted batch job 12345")
         job_id = utils.submit_job(cmd)
         previous_job_id = job_id
-    return job_id
+        fmriprep_jobs.append(job_id)
+    return fmriprep_jobs

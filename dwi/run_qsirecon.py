@@ -9,7 +9,59 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 import config_files
 
+# -------------------------------
+# Load configuration
+# -------------------------------
+common = config_files.config["common"]
+mriqc = config_files.config["mriqc"]
 
+BIDS_DIR = common["input_dir"]
+DERIVATIVES_DIR = common["derivatives"]
+
+# --------------------------------------------
+# HELPERS
+# --------------------------------------------  
+
+def is_already_processed(subject, session):
+    """
+    Check if subject_session is already processed successfully.
+
+    Parameters
+    ----------
+    subject : str
+        Subject identifier (e.g., "sub-01").
+    session : str
+        Session identifier (e.g., "ses-01").
+
+    Returns
+    -------
+    bool
+        True if already processed, False otherwise.
+    """
+
+    # Check if mriqc already processed without error
+    
+    stdout_dir = f"{DERIVATIVES_DIR}/qsirecon/stdout"
+    if not os.path.exists(stdout_dir):
+        print(f"[QSIRECON] Could not read standard outputs from QSIRECON, recomputing ....")
+        return False
+
+    else: 
+        prefix = f"qsirecon_{subject}_{session}"
+        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+        if not stdout_files:
+            return False
+
+        for file in stdout_files:
+            file_path = os.path.join(stdout_dir, file)
+            with open(file_path, 'r') as f:
+                if 'QSIRECON completed' in f.read():
+                    print(f"[QSIRECON] Skip already processed subject {subject}_{session}")
+                    return True
+                else:
+                    return False
+                    
+                    
 def check_preprocessing_completion(subject, session):
     """
     Check that FreeSurfer recon-all finished successfully.
