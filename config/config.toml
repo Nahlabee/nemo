@@ -5,8 +5,8 @@
 [common]
 input_dir = "/scratch/hrasoanandrianina/braint_database"
 derivatives = "/scratch/hrasoanandrianina/derivatives"
-subjects = ""
-sessions = ""
+subjects = ["1054004"]
+sessions = ["01"]
 freesurfer_license = "/scratch/hrasoanandrianina/containers/license.txt"
 account = ""
 email = ""
