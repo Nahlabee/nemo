@@ -204,6 +204,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --atlases {" ".join(qsirecon["atlases"])} \\\n'
         f'    --config-file /config/qsirecon_config.toml\n'
     )
+    # todo: multi atlas separator tested : "," and " "
     #
     # f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
     # f'    --config-file /config/qsirecon_config.toml \\\n'

@@ -79,7 +79,7 @@ partition = "kepler"
 gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
-atlases = ["4S156Parcels", "Gordon"]
+atlases = ["4S156Parcels", "4S356Parcels"]
 
 # =============================
 #   PIPELINE: fMRIPrep
