@@ -29,7 +29,7 @@ def is_already_processed(config, subject, session):
     """
 
     # Check if fmriprep already processed without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/fmriprep/stdout"
     if not os.path.exists(stdout_dir):
         return False
@@ -67,7 +67,7 @@ def is_freesurfer_done(config, subject, session):
     """
 
     # Check that FreeSurfer finished without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     if not os.path.exists(f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"):
         print(f"[FMRIPREP] No FreeSurfer outputs found - Running full fmriprep.")
         return False
@@ -102,8 +102,8 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    common = config.config["common"]
-    fmriprep = config.config["fmriprep"]
+    common = config["common"]
+    fmriprep = config["fmriprep"]
     DERIVATIVES_DIR = common["derivatives"]
 
     header = (
@@ -234,7 +234,7 @@ def run_fmriprep(config, subject, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
-    common = config.config["common"]
+    common = config["common"]
     DERIVATIVES_DIR = common["derivatives"]
     BIDS_DIR = common["input_dir"]
 

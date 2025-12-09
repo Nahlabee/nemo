@@ -24,7 +24,7 @@ def is_already_processed(config, subject, session):
     """
 
     # Check if QSIprep already processed without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/qsiprep/stdout"
     if not os.path.exists(stdout_dir):
         return False
@@ -60,8 +60,8 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    common = config.config["common"]
-    qsiprep = config.config["qsiprep"]
+    common = config["common"]
+    qsiprep = config["qsiprep"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
@@ -110,7 +110,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    -B {DERIVATIVES_DIR}/qsiprep:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license \\\n'
         f'    -B {qsiprep["config_eddy"]}:/config/eddy_params.json \\\n'
-        f'    -B {qsiprep["qsiprep_config"]}:/config/config-file.toml \\\n'
+        f'    -B {qsiprep["qsiprep_config"]}:/config/qsiprep_config.toml \\\n'
         f'    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
         f'    --env FREESURFER_HOME=/opt/freesurfer \\\n'
         f'    {qsiprep["qsiprep_container"]} /data /out participant \\\n'
@@ -118,7 +118,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --skip-bids-validation -v -w /out/temp_qsiprep \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --eddy-config /config/eddy_params.json \\\n'
-        f'    --config-file /config/config-file.toml \\\n'
+        f'    --config-file /config/qsiprep_config.toml \\\n'
         f'    --output-resolution {qsiprep["output_resolution"]}\n'
     )
 
@@ -154,7 +154,7 @@ def run_qsiprep(config, subject, session, job_ids=None):
     if is_already_processed(config, subject, session):
         return None
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     if job_ids is None:
         job_ids = []

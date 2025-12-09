@@ -35,7 +35,7 @@ def is_already_processed(config, subject, session, data_type="raw"):
 
     # Check if mriqc already processed without error
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout"
     if not os.path.exists(stdout_dir):
         return False
@@ -73,7 +73,7 @@ def derivatives_datatype_exists(config, subject, session, data_type="raw"):
     bool
         True if derivatives data type directory exists, False otherwise.
     """
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     deriv_dir = f"{DERIVATIVES_DIR}/{data_type}/outputs/{subject}/{session}"
     stdout_dir = f"{DERIVATIVES_DIR}/{data_type}/stdout"
     # Check if derivatives data type directory exists
@@ -116,8 +116,8 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    common = config.config["common"]
-    mriqc = config.config["mriqc"]
+    common = config["common"]
+    mriqc = config["mriqc"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
@@ -239,7 +239,7 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
     if is_already_processed(config, subject, session):
         return None
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}", exist_ok=True)

@@ -27,8 +27,8 @@ def check_prerequisites(config, subject, session):
         True if all requirements are met, False otherwise.
     """
 
-    common = config.config["common"]
-    freesurfer = config.config["freesurfer"]
+    common = config["common"]
+    freesurfer = config["freesurfer"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
@@ -78,8 +78,8 @@ def generate_slurm_script(config, subject, session, path_to_script):
         Path where the SLURM script will be saved.
     """
 
-    common = config.config["common"]
-    freesurfer = config.config["freesurfer"]
+    common = config["common"]
+    freesurfer = config["freesurfer"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
@@ -163,7 +163,7 @@ def run_freesurfer(config, subject, session):
         return None
 
     # Create output (derivatives) directories
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/scripts", exist_ok=True)

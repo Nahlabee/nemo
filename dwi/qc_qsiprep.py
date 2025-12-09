@@ -30,7 +30,7 @@ def read_log(config, subject, session):
     finished_status = "Error"
     runtime = 0
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/qsiprep/stdout"
 
     # Check that QSIprep finished without error
@@ -61,7 +61,7 @@ def run(config, subjects_sessions, job_ids=None):
     if job_ids is None:
         job_ids = []
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep", exist_ok=True)
