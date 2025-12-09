@@ -151,7 +151,7 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
         f'echo "Using OUT_FMRIPREP_DIR = {common["derivatives"]}/fmriprep"\n'
     )
     
-    if not fs_done:
+    if fs_done == False:
         # Define the Singularity command for running FMRIPrep
         singularity_command = (
             f'\napptainer run --cleanenv \\\n'
@@ -216,7 +216,7 @@ def generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=Fal
     print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
-def run_fmriprep(input_dir, subject, job_ids=None):
+def run_fmriprep(subject, session, job_ids=None):
     """
     Run the FMRIPrep for a given subject and session.
     Parameters
@@ -244,28 +244,19 @@ def run_fmriprep(input_dir, subject, job_ids=None):
     os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/stdout", exist_ok=True)
     os.makedirs(f"{config_files.config['common']['derivatives']}/fmriprep/scripts", exist_ok=True)
 
-    previous_job_id = None
-    if job_ids is None:
-        job_ids = []
-    fmriprep_jobs = []
-    sessions = utils.get_sessions(input_dir,subject)
-    for ses in sessions:
-        if is_already_processed(subject, ses) :
-            print(f"✓ Skipping {subject} {ses}: already processed")
-            return None
-    
-        print(f"Submitting fMRIPrep job for {subject} {ses}...")
-        path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{ses}_fmriprep.slurm"
-        job_ids.append(previous_job_id)
+    if is_already_processed(subject, session) :
+        print(f"[FMRIPREP] Subject {subject} {session}: already processed. Skipping FMRIPrep submission.\n")
+        return None
 
-        if is_freesurfer_done(subject, ses):
-            generate_slurm_fmriprep_script(subject, ses, path_to_script, fs_done=True, job_ids=job_ids)
-        else:
-            generate_slurm_fmriprep_script(subject, ses, path_to_script, fs_done=False, job_ids=job_ids)
+    print(f"Submitting fMRIPrep job for {subject} {session}...")
+    path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{session}_fmriprep.slurm"
+
+    if is_freesurfer_done(subject, session):
+        generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=True, job_ids=job_ids)
+    else:
+        generate_slurm_fmriprep_script(subject, session, path_to_script, fs_done=False, job_ids=job_ids)
                 
         cmd = f"sbatch {path_to_script}"
         # Extract SLURM job ID (last token in "Submitted batch job 12345")
         job_id = utils.submit_job(cmd)
-        previous_job_id = job_id
-        fmriprep_jobs.append(job_id)
-    return fmriprep_jobs
+    return job_id
