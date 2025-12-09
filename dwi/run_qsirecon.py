@@ -155,11 +155,11 @@ def generate_slurm_script(args, subject, session, path_to_script, job_ids=None):
         f'    -v -w /out/temp_qsirecon \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --fs-subjects-dir /freesurfer \\\n'
-        f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
         f'    --atlases AAL116 \\\n'
         f'    --config-file /config/qsirecon_config.toml\n'
     )
     #
+        # f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
     # f'    --config-file /config/qsirecon_config.toml \\\n'
     # f'    --bids-database-dir /out/temp_qsirecon/bids_db_dir\n'
 
