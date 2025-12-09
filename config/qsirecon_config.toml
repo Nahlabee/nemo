@@ -1,7 +1,7 @@
 [environment]
 
 [execution]
-atlases = [ "AAL116",]
+atlases = [ "4S156Parcels",]
 #bids_database_dir = ""
 boilerplate_only = false
 sloppy = false
