@@ -172,6 +172,5 @@ def run_freesurfer(config, subject, session):
     generate_slurm_script(config, subject, session, path_to_script)
 
     cmd = f"sbatch {path_to_script}"
-    print(f"[FREESURFER] Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id

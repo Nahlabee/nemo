@@ -193,5 +193,4 @@ def run_mriqc_group(config, input_dir, data_type="raw", job_ids=None):
 
     cmd = f"sbatch {path_to_script}"
     job_id = utils.submit_job(cmd)
-    print(f"[MRIQC] Submitting job {cmd}\n")
     return job_id

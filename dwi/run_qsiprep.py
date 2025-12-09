@@ -168,6 +168,5 @@ def run_qsiprep(config, subject, session, job_ids=None):
     generate_slurm_script(config, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"
-    print(f"[QSIPREP] Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id

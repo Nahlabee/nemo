@@ -210,5 +210,4 @@ def run_xcpd(config, subject, session, job_ids=None):
                     
         # Extract SLURM job ID (last token in "Submitted batch job 12345")
         job_id = utils.submit_job(cmd)
-        print(f"[XCP_D] Submitting job {cmd}\n")
         return job_id

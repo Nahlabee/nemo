@@ -201,7 +201,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    -v -w /out/temp_qsirecon \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --fs-subjects-dir /freesurfer \\\n'
-        f'    --atlases AAL116 \\\n'
+        f'    --atlases {",".join(qsirecon["atlases"])} \\\n'
         f'    --config-file /config/qsirecon_config.toml\n'
     )
     #
@@ -255,6 +255,5 @@ def run_qsirecon(config, subject, session, job_ids=None):
     generate_slurm_script(config, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"
-    print(f"[QSIRECON] Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id

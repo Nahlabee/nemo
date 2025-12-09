@@ -212,7 +212,6 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         # todo
         # f.write(header + module_export + tmp_dir_setup + singularity_cmd + save_work)
         f.write(header + module_export + singularity_cmd + save_work)
-    print(f"Created MRIQC SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
 # ------------------------------
@@ -279,5 +278,4 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
 
     cmd = f"sbatch {path_to_script}"
     job_id = utils.submit_job(cmd)
-    print(f"[MRIQC] Submitting job {cmd}\n")
     return job_id

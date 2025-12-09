@@ -266,7 +266,6 @@ def run_fmriprep(config, subject, job_ids=None):
             generate_slurm_fmriprep_script(config, subject, ses, path_to_script, fs_done=False, job_ids=job_ids)
 
         cmd = f"sbatch {path_to_script}"
-        print(f"[FMRIPREP] Submitting job: {cmd}")
         job_id = utils.submit_job(cmd)
         previous_job_id = job_id
         fmriprep_jobs.append(job_id)
