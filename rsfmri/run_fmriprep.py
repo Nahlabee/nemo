@@ -10,13 +10,15 @@ import utils
 # ------------------------------
 # HELPERS
 # ------------------------------
-def is_already_processed(config, subject, session):
+def check_prerequisites(config, subject, session):
     """
     Check if subject_session is already processed successfully.
     Note: Even if FMRIprep put files in cache, some steps are recomputed which require several hours of ressources.
 
     Parameters
     ----------
+    args : Namespace
+        Configuration arguments.
     subject : str
         Subject identifier (e.g., "sub-01").
     session : str
@@ -28,60 +30,63 @@ def is_already_processed(config, subject, session):
         True if already processed, False otherwise.
     """
 
+    # Check required files
+    BIDS_DIR = config.config["common"]["input_dir"]
+    if not utils.has_anat(BIDS_DIR, subject, session):
+        print(f"[FMRIPREP] ERROR - No anatomical data found for {subject} {session}.")
+        return False
+    
+    if not utils.has_func_fmap(BIDS_DIR, subject, session):
+        print(f"[FMRIPREP] ERROR - No functional data found for {subject} {session}.")
+        return False
+        
     # Check if fmriprep already processed without error
     DERIVATIVES_DIR = config.config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/fmriprep/stdout"
-    if not os.path.exists(stdout_dir):
-        return False
-
     prefix = f"fmriprep_{subject}_{session}"
-    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-    if not stdout_files:
-        return False
+    if os.path.exists(stdout_dir):
+        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+        for file in stdout_files:
+            file_path = os.path.join(stdout_dir, file)
+            with open(file_path, 'r') as f:
+                if 'fMRIPrep finished successfully!' in f.read():
+                    print(f"[FMRIPREP] Skip already processed subject {subject}_{session}")
+                    return False            
+    return True
 
-    for file in stdout_files:
-        file_path = os.path.join(stdout_dir, file)
-        with open(file_path, 'r') as f:
-            if 'fMRIPrep finished successfully!' in f.read():
-                print(f"[FMRIPREP] Skip already processed subject {subject}_{session}")
-                return True
-            else:
-                return False
+# def is_freesurfer_done(config, subject, session):
+#     """
+#     Check that FreeSurfer recon-all finished successfully.
 
+#     Parameters
+#     ----------
+#     subject : str
+#         Subject identifier (e.g., "sub-01").
+#     session : str
+#         Session identifier (e.g., "ses-01").
 
-def is_freesurfer_done(config, subject, session):
-    """
-    Check that FreeSurfer recon-all finished successfully.
+#     Returns
+#     -------
+#     bool
+#         True if FreeSurfer is done, False otherwise.
+#     """
 
-    Parameters
-    ----------
-    subject : str
-        Subject identifier (e.g., "sub-01").
-    session : str
-        Session identifier (e.g., "ses-01").
+#     # Check that FreeSurfer finished without error
+#     DERIVATIVES_DIR = config.config["common"]["derivatives"]
+#     if not os.path.exists(f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"):
+#         print(f"[FMRIPREP] No FreeSurfer outputs found - Running full fmriprep.")
+#         return False
 
-    Returns
-    -------
-    bool
-        True if FreeSurfer is done, False otherwise.
-    """
-
-    # Check that FreeSurfer finished without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
-    if not os.path.exists(f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"):
-        print(f"[FMRIPREP] No FreeSurfer outputs found - Running full fmriprep.")
-        return False
-
-    else:
-        logs = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
-        with open(logs, 'r') as f:
-            lines = f.readlines()
-        for l in lines:
-            if not 'finished without error' in l:
-                print(f"[FMRIPREP] FreeSurfer did not terminate.")
-                return False
-            else:
-                return True
+#     else:
+#         logs = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
+#         with open(logs, 'r') as f:
+#             lines = f.readlines()
+#         for l in lines:
+#             if not 'finished without error' in l:
+#                 print(f"[FMRIPREP] FreeSurfer did not terminate.")
+#                 return False
+#             else:
+#                 return True
 
 
 # ------------------------
@@ -120,6 +125,8 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
         if valid_ids:
             header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
+    else:
+        job_ids = []
 
     if common.get("email"):
         header += (
@@ -150,55 +157,40 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'echo "Using OUT_FMRIPREP_DIR = {common["derivatives"]}/fmriprep"\n'
     )
 
-    # todo: remove options that are in config file !!
-    if fs_done == False:
-        # Define the Singularity command for running FMRIPrep
-        singularity_command = (
-            f'\napptainer run --cleanenv \\\n'
-            f'    -B {common["input_dir"]}:/data:ro \\\n'
-            f'    -B {common["derivatives"]}/fmriprep/outputs:/out \\\n'
-            f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
-            f'    -B {fmriprep["fmriprep_config"]}:/fmriprep_config.toml \\\n'
-            f'    -B {fmriprep["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {fmriprep["fmriprep_container"]} /data /out participant \\\n'
-            f'    --participant-label {subject} \\\n'
-            f'    --session-label {session} \\\n'
-            f'    --fs-license-file /license.txt \\\n'
-            f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-            f'    --project-goodvoxels \\\n'
-            f'    --cifti-output 91k \\\n'
-            f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
-            f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
-            f'    --skip-bids-validation \\\n'
-            f'    --work-dir $TMP_WORK_DIR \\\n'
-            f'    --config-file /fmriprep_config.toml \n'
-        )
-    # todo: remove options that are in config file !!
-    else:
+    prereq_check = (
+        f'\n# Check that FreeSurfer finished without error\n'
+        f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/{subject}_{session}" ]; then\n'
+        f'    echo "[FMRIPREP] Please run FreeSurfer recon-all command before FMRIPREP."\n'
+        f'    exit 1\n'
+        f'fi\n'
+        f'if ! grep -q "finished without error" {DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all.log; then\n'
+        f'    echo "[FMRIPREP] FreeSurfer did not terminate for {subject} {session}."\n'
+        f'    exit 1\n'
+        f'fi\n'
+    )
         # Define the Singularity command for running FMRIPrep (skip FreeSurfer)
-        singularity_command = (
-            f'\napptainer run --cleanenv \\\n'
-            f'    -B {common["input_dir"]}:/data:ro \\\n'
-            f'    -B {common["derivatives"]}/freesurfer:/fs_dir \\\n'
-            f'    -B {common["derivatives"]}/fmriprep/outputs:/out \\\n'
-            f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
-            f'    -B {fmriprep["fmriprep_config"]}:/fmriprep_config.toml \\\n'
-            f'    -B {fmriprep["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {fmriprep["fmriprep_container"]} /data /out participant \\\n'
-            f'    --participant-label {subject} \\\n'
-            f'    --session-label {session} \\\n'
-            f'    --fs-subjects-dir /fs_dir \\\n'
-            f'    --fs-license-file /license.txt \\\n'
-            f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-            f'    --project-goodvoxels \\\n'
-            f'    ----cifti-output 91k \\\n'
-            f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
-            f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
-            f'    --skip-bids-validation \\\n'
-            f'    --work-dir $TMP_WORK_DIR \\\n'
-            f'    --config-file /fmriprep_config.toml \\\n'
-            f'    --skip-bids-validation \\\n'
-            f'    --fs-no-reconall\n'
+    singularity_command = (
+        f'\napptainer run --cleanenv \\\n'
+        f'    -B {common["input_dir"]}:/data:ro \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer:/fs_dir \\\n'
+        f'    -B {DERIVATIVES_DIR}/fmriprep/outputs:/out \\\n'
+        f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
+        f'    -B {fmriprep["fmriprep_config"]}:/fmriprep_config.toml \\\n'
+        f'    -B {fmriprep["bids_filter_dir"]}:/bids_filter_dir \\\n'
+        f'    {fmriprep["fmriprep_container"]} /data /out participant \\\n'
+        f'    --participant-label {subject} \\\n'
+        f'    --session-label {session} \\\n'
+        f'    --fs-subjects-dir /fs_dir \\\n'
+        f'    --fs-license-file /license.txt \\\n'
+        f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
+        f'    --cifti-output 91k \\\n'
+        f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
+        f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
+        f'    --skip-bids-validation \\\n'
+        f'    --work-dir $TMP_WORK_DIR \\\n'
+        f'    --config-file /fmriprep_config.toml \\\n'
+        f'    --skip-bids-validation \\\n'
+        f'    --fs-no-reconall\n'
         )
 
     save_work = (
@@ -212,11 +204,11 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
+        f.write(header + module_export + prereq_check + tmp_dir_setup + singularity_command + save_work)
     print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
-def run_fmriprep(config, subject, job_ids=None):
+def run_fmriprep(config, subject, session, job_ids=None):
     """
     Run the FMRIPrep for a given subject and session.
     Parameters
@@ -236,7 +228,6 @@ def run_fmriprep(config, subject, job_ids=None):
 
     common = config.config["common"]
     DERIVATIVES_DIR = common["derivatives"]
-    BIDS_DIR = common["input_dir"]
 
     # Create output (derivatives) directories if they do not exist
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep", exist_ok=True)
@@ -245,20 +236,14 @@ def run_fmriprep(config, subject, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/scripts", exist_ok=True)
 
-    if is_already_processed(subject, session) :
-        print(f"[FMRIPREP] Subject {subject} {session}: already processed. Skipping FMRIPrep submission.\n")
+    if not check_prerequisites(config, subject, session) :
         return None
-
-    print(f"Submitting fMRIPrep job for {subject} {session}...")
-    path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{session}_fmriprep.slurm"
-
-        # todo: do not run fmriprep before freesurfer
-    if is_freesurfer_done(config, subject, session):
-        generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_done=True, job_ids=job_ids)
     else:
-        generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_done=False, job_ids=job_ids)
-
+        print(f"Submitting fMRIPrep job for {subject} {session}...")
+        path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{session}_fmriprep.slurm"
+        generate_slurm_fmriprep_script(config, subject, session, path_to_script, job_ids=job_ids)
+        
         cmd = f"sbatch {path_to_script}"
         print(f"[FMRIPREP] Submitting job: {cmd}")
         job_id = utils.submit_job(cmd)
-    return job_id
+        return job_id

@@ -13,8 +13,6 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-from rsfmri.run_fmriprep import is_already_processed as is_fmriprep_done
-
 
 # ------------------------------
 # HELPERS
@@ -115,6 +113,22 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
         f'echo "------ Running {xcpd["xcpd_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
+    prereq_check = (
+        f'\n# Check that FMRIPREP finished without error\n'
+        f'prefix="{DERIVATIVES_DIR}/fmriprep/stdout/fmriprep_{subject}_{session}"\n'
+        f'found_success=false\n'
+        f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
+        f'    if grep -q "fMRIPrep finished successfully" $file; then\n'
+        f'        found_success=true\n'
+        f'        break\n'
+        f'    fi\n'
+        f'done\n'
+        f'if [ "$found_success" = false ]; then\n'
+        f'    echo "[XCP-D] fMRIPrep did not terminate for {subject} {session}. Please run fMRIPrep command before XCP-D."\n'
+        f'    exit 1\n'
+        f'fi\n'
+    )
+
     tmp_dir_setup = (
         f'\nhostname\n'
         f'# Choose writable scratch directory\n'
@@ -131,7 +145,6 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
     )
     
     # Define the Singularity command for running FMRIPrep
-    # todo: remove options that are in config file !!
     singularity_command = (
         f'\napptainer run --cleanenv \\\n'
         f'    -B {DERIVATIVES_DIR}/fmriprep/outputs:/data:ro \\\n'
@@ -161,7 +174,7 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
+        f.write(header + module_export + prereq_check + tmp_dir_setup + singularity_command + save_work)
     print(f"Created xcpd SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
@@ -195,20 +208,12 @@ def run_xcpd(config, subject, session, job_ids=None):
     
     if is_already_processed(config, subject, session):
         return None
-
-    #todo: move check in slurm script
-    if is_fmriprep_done(config, subject, session) is False and job_ids is None:
-        print(f"[xcpd] FMRIprep not yet completed for subject {subject}_{session}. Cannot proceed with XCP-D.\n")
-        return None
-    
-    else:
-    
+       
+    else: 
         path_to_script = f"{DERIVATIVES_DIR}/xcpd/scripts/{subject}_{session}_xcpd.slurm"
         generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids=job_ids)
                     
-        cmd = f"sbatch {path_to_script}"
-                    
-        # Extract SLURM job ID (last token in "Submitted batch job 12345")
+        cmd = f"sbatch {path_to_script}"   
         job_id = utils.submit_job(cmd)
         print(f"[xcpd] Submitting job {cmd}\n")
         return job_id
