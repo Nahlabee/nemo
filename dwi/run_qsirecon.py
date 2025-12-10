@@ -127,9 +127,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     qsirecon = config["qsirecon"]
     DERIVATIVES_DIR = common["derivatives"]
 
-    if job_ids is None:
-        job_ids = []
-
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH -J qsirecon_{subject}_{session}\n'
@@ -191,11 +188,13 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --nv --cleanenv --containall --writable-tmpfs \\\n'
+        f'    -B /home/lhashimoto/.cache/templateflow:/opt/templateflow \\\n'
         f'    -B {DERIVATIVES_DIR}/qsiprep:/data \\\n'
         f'    -B {DERIVATIVES_DIR}/qsirecon:/out \\\n'
         f'    -B {DERIVATIVES_DIR}/freesurfer/{session}:/freesurfer \\\n'
         f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
         f'    -B {qsirecon["qsirecon_config"]}:/config/qsirecon_config.toml \\\n'
+        f'    --env TEMPLATEFLOW_HOME=/opt/templateflow \\\n'
         f'    {qsirecon["qsirecon_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    -v -w /out/work \\\n'
@@ -204,7 +203,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --atlases {" ".join(qsirecon["atlases"])} \\\n'
         f'    --config-file /config/qsirecon_config.toml\n'
     )
-    # todo: multi atlas separator tested : "," and " "
     #
     # f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
     # f'    --config-file /config/qsirecon_config.toml \\\n'
