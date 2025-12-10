@@ -4,8 +4,7 @@ from datetime import datetime
 import pandas as pd
 import utils
 
-
-def run(config, subjects_sessions, run_type="qsiprep", job_ids=None):
+def run(config, subjects_sessions,  job_ids=None):
 
     if job_ids is None:
         job_ids = []
@@ -13,7 +12,7 @@ def run(config, subjects_sessions, run_type="qsiprep", job_ids=None):
     DERIVATIVES_DIR = config.config["common"]["derivatives"]
 
     # Create output (derivatives) directories
-    os.makedirs(f"{DERIVATIVES_DIR}/qc/{run_type}", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep", exist_ok=True)
     # os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep/stdout", exist_ok=True)
     # os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep/scripts", exist_ok=True)
     # os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep/outliers", exist_ok=True)

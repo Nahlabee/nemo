@@ -10,6 +10,7 @@ from nilearn.image import mean_img
 import warnings
 import re
 import os
+import utils
 
 warnings.filterwarnings("ignore")
 # -----------------------
@@ -88,15 +89,33 @@ def mutual_information(img1, img2, bins=64):
 # -----------------------
 # Main extraction
 # -----------------------
-def extract_subject_metrics(fmriprep_dir):
-    rows = []
+def run(config, fmriprep_dir):
+    """
+    Extract QC metrics from fMRIPrep outputs.
 
-    for sub_dir in sorted(fmriprep_dir.glob("sub-*")):
-        for ses_dir in sorted(sub_dir.glob("ses-*")):
+    Parameters
+    ----------
+    fmriprep_dir : Path
+        Path to the fMRIPrep derivatives directory. 
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing QC metrics for each subject and session.
+    """
+    
+    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    rows = []
+    for subject in utils.get_subjects(fmriprep_dir):
+        for session in utils.get_sessions(subject):
 
             try:
-                anat = ses_dir / "anat"
-                func = ses_dir / "func"
+
+                finished_status, runtime = utils.read_log(config, subject, session, run_type="fmriprep")
+                dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
+                file_count = utils.count_files(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
+
+                anat = Path(fmriprep_dir / subject / session / "anat")
+                func = Path(fmriprep_dir / subject / session / "func")
 
                 t1w = next(anat.glob("*_desc-preproc_T1w.nii.gz"))
                 t1w_mask = next(anat.glob("*_desc-brain_mask.nii.gz"))
@@ -126,15 +145,17 @@ def extract_subject_metrics(fmriprep_dir):
                 csf_mask = csf_mask > 0.5
 
                 row = dict(
-                    subject=sub_dir.name,
-                    session=ses_dir.name,
+                    subject=subject,
+                    session=session,
+                    Process_Run="fmriprep",
+                    Finished_without_error=finished_status,
+                    Processing_time_hours=runtime,
+                    Number_of_folders_generated=dir_count,
+                    Number_of_files_generated=file_count,
                     brain_voxels=voxel_count(brain_mask),
                     gm_voxels=voxel_count(gm_mask),
                     wm_voxels=voxel_count(wm_mask),
                     csf_voxels=voxel_count(csf_mask),
-                    tSNR=compute_tsnsr(bold_data, brain_mask),
-                    SNR=compute_snr(mean_bold, brain_mask, bg_mask),
-                    CNR=compute_cnr(mean_bold, gm_mask, wm_mask, bg_mask),
                     MI_T1w_BOLD=mutual_information(
                         t1w_data[t1w_mask > 0],
                         mean_bold[brain_mask > 0],
@@ -144,21 +165,10 @@ def extract_subject_metrics(fmriprep_dir):
                 rows.append(row)
 
             except Exception as e:
-                print(f"⚠️ Skipping {sub_dir.name} {ses_dir.name}: {e}")
-    return pd.DataFrame(rows)
+                print(f"⚠️ Skipping {subject} {session}: {e}")
+    qc = pd.DataFrame(rows)
+    path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/qc.csv"
+    qc.to_csv(path_to_qc, index=False)
 
-# -----------------------
-# Entry point
-# -----------------------
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("fmriprep_dir", type=Path)
-    parser.add_argument("--out", default="fmriprep_metrics.csv")
-    args = parser.parse_args()
-
-    df = extract_subject_metrics(args.fmriprep_dir)
-    df.to_csv(args.out, index=False)
-    print(f"✅ Metrics saved to {args.out}")
+    print(f"QC saved in {path_to_qc}\n")
+    print(f"Fmriprep Quality Check terminated successfully.")

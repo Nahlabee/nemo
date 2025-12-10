@@ -15,26 +15,22 @@ reports_only = false
 write_graph = false
 
 [workflow]
-mode = "abcd"
-file_format = "cifti"
+mode = "linc"
+file_format = "auto" # Possible choices: auto, nifti, cifti
 dummy_scans = "auto"
 input_type = "fmriprep"
 despike = true
 smoothing = 4.0
 output_interpolated = true
 combine_runs = true
-motion_filter_order = 4
-fd_thresh = 0.3
-min_time = 240
-bandpass_filter = true
-high_pass = 0.01
-low_pass = 0.08
-bpf_order = 2
-min_coverage = 0.5
 correlation_lengths = []
 process_surfaces = true
 abcc_qc = true
 linc_qc = true
+# watch out for the option --motion-filter-type, which can be set to:
+# Possible choices: lp, notch, none
+motion_filter_type = "none"
+# Type of filter to use for removing respiratory artifact from motion regressors. If not set, no filter will be applied.
 
 [nipype]
 crashfile_format = "txt"
