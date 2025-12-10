@@ -131,13 +131,8 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         f'#SBATCH --partition={mriqc["partition"]}\n'
     )
 
-    # todo: simplify just like qsirecon in run_workflow ?
-    if job_ids is None:
-        valid_ids = []
-    else:
-        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
-        if valid_ids:
-            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
+    if job_ids:
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
 
     if common.get("email"):
         header += (
@@ -156,27 +151,8 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         f'echo "------ Running {mriqc["mriqc_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
-    # tmp_dir_setup = (
-    #     f'\nhostname\n'
-    #     f'# Choose writable scratch directory\n'
-    #     f'if [ -n "$SLURM_TMPDIR" ]; then\n'
-    #     f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
-    #     f'elif [ -n "$TMPDIR" ]; then\n'
-    #     f'    TMP_WORK_DIR="$TMPDIR"\n'
-    #     f'else\n'
-    #     f'    TMP_WORK_DIR=$(mktemp -d /tmp/mriqc_{subject}_{session})\n'
-    #     f'fi\n'
-    #
-    #     f'mkdir -p $TMP_WORK_DIR\n'
-    #     f'chmod -Rf 771 $TMP_WORK_DIR\n'
-    #     f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-    #     f'echo "Using OUT_MRIQC_DIR = {DERIVATIVES_DIR}/mriqc_{data_type}"\n'
-    # )
-
     # Define the Singularity command for running MRIQC
     # Note: Unlike fmriprep, no config file is used here, the option doesn't exist for mriqc
-    #todo: just a line to define INPUT variable as BIDS_DIR or DERIVTIVES
-
     if data_type == "raw":
         MRIQC_INPUT = BIDS_DIR
     else:
@@ -209,8 +185,6 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        # todo
-        # f.write(header + module_export + tmp_dir_setup + singularity_cmd + save_work)
         f.write(header + module_export + singularity_cmd + save_work)
 
 
