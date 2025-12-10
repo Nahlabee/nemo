@@ -1,15 +1,18 @@
 {
   "common": {
     "input_dir": "/scratch/lhashimoto/nemo_database/imaging_data",
-    "derivatives": "/scratch/lhashimoto/nemo_database_derivatives",
+    "derivatives": "/scratch/lhashimoto/nemo_derivatives",
     "subjects": ["1054004"],
     "sessions": ["01"],
     "freesurfer_license": "/scratch/lhashimoto/freesurfer/license",
     "run_freesurfer": false,
     "run_qsiprep": false,
     "run_qsirecon": true,
+    "run_freesurfer_qc": false,
+    "run_qsiprep_qc": false,
     "email": null,
-    "account": null
+    "account": null,
+    "tmp": ["1054001","1054002","1054003","1054004","1054010","1054011","1054012","1054013","1054014","1054015"]
   },
 
   "freesurfer": {
@@ -18,8 +21,7 @@
     "use_t2": true,
     "partition": "skylake",
     "requested_mem": 16,
-    "requested_time": 9,
-    "qc": "/scratch/lhashimoto/nemo_database_derivatives/freesurfer/qc"
+    "requested_time": 9
   },
 
   "qsiprep": {
@@ -42,7 +44,26 @@
     "requested_mem": 70,
     "requested_time": 24,
     "qc": "/scratch/lhashimoto/nemo_database_derivatives/qsirecon/qc"
-  }
+  },
 
+  "fsqc": {
+    "fsqc_container": "/scratch/lhashimoto/fsqc-2.1.4.sif",
+    "partition": "skylake",
+    "requested_mem": 16,
+    "requested_time": 1,
+    "qc_screenshots": true,
+    "qc_surfaces": true,
+    "qc_skullstrip": true,
+    "qc_fornix": true,
+    "qc_hypothalamus": false,
+    "qc_hippocampus": false,
+    "qc_hippocampus_label": "",
+    "qc_outlier": false,
+    "qc_skip_existing": true
+  },
+
+  "qsiprep_qc": {
+
+  }
 
 }

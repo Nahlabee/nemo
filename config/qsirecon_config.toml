@@ -1,12 +1,12 @@
 [environment]
 
 [execution]
-atlases = [ "AAL116",]
-bids_database_dir = ""
+# atlases = [ "4S156Parcels",]
+#bids_database_dir = ""
 boilerplate_only = false
 sloppy = false
 debug = []
-log_level = 20
+log_level = 25
 low_mem = false
 notrack = false
 reports_only = false
@@ -26,9 +26,9 @@ spaces = "MNI152NLin2009cAsym"
 [nipype]
 crashfile_format = "txt"
 get_linked_libs = false
-#nprocs = 24
-#omp_nthreads = 8
+nprocs = 24
+omp_nthreads = 24
 plugin = "MultiProc"
 remove_unnecessary_outputs = true
 resource_monitor = false
-stop_on_first_crash = false
+stop_on_first_crash = true

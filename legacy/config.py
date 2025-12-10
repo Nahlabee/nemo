@@ -19,7 +19,7 @@ QSIRECON_CONTAINER = "/scratch/lhashimoto/qsirecon-1.1.1.sif"
 CONFIG_EDDY = f"{os.path.dirname(__file__)}/dwi/eddy_params.json"
 CONFIG_QSIPREP = f"{os.path.dirname(__file__)}/dwi/config_qsiprep.json"
 
-SUBJECTS = ['1054001']
+SUBJECTS = ['1054004']
 SESSIONS = ['01']
 
 EMAIL=None
@@ -35,10 +35,8 @@ def print_paths():
         "FREESURFER_CONTAINER": FREESURFER_CONTAINER,
         "FREESURFER_LICENSE": FREESURFER_LICENSE,
         "FREESURFER_DIR": FREESURFER_DIR,
-        "FREESURFER_STDOUT": FREESURFER_STDOUT,
         "QSIPREP_CONTAINER": QSIPREP_CONTAINER,
-        "QSIRECON_CONTAINER": QSIRECON_CONTAINER,
-        "CODE_DIR": CODE_DIR
+        "QSIRECON_CONTAINER": QSIRECON_CONTAINER
     }
     for key, value in paths.items():
         print(f"{key}={value}")

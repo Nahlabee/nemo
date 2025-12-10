@@ -5,8 +5,7 @@ import subprocess
 import shutil
 import config_loader
 import pandas as pd
-from datetime import datetime
-from qc_generator import generate_qc_pdf
+from legacy.qc.qc_generator import generate_qc_pdf
 
 
 # Create necessary directories
