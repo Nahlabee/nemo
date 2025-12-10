@@ -168,3 +168,64 @@ def count_files(directory):
         return sum([len(files) for _, _, files in os.walk(directory)])
     else:
         return 0
+
+def extract_runtime(content):
+    # Expression régulière pour capturer les timestamps
+    timestamp_pattern = r"\d{6}-\d{2}:\d{2}:\d{2}"
+
+    # Trouver tous les timestamps dans le fichier
+    timestamps = re.findall(timestamp_pattern, content)
+
+    if not timestamps:
+        return 0
+
+    # Convertir les timestamps en objets datetime
+    first_timestamp = datetime.strptime(timestamps[0], "%y%m%d-%H:%M:%S")
+    last_timestamp = datetime.strptime(timestamps[-1], "%y%m%d-%H:%M:%S")
+
+    # Calculer le runtime
+    runtime = last_timestamp - first_timestamp
+
+    return runtime
+
+
+def read_log(config, subject, session, runtype="qsiprep"):
+
+    finished_status = "Error"
+    runtime = 0
+
+    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    stdout_dir = f"{DERIVATIVES_DIR}/{runtype}/stdout"
+
+    # Check that QSIprep finished without error
+    if not os.path.exists(stdout_dir):
+        return finished_status, runtime
+
+    prefix = f"{runtype}_{subject}_{session}"
+    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+    if not stdout_files:
+        return finished_status, runtime
+
+    if [{runtype} == "fmriprep"]:
+        success_string="fMRIPrep finished successfully"
+    elif [{runtype} == "xcpd"]:
+        success_string="XCP-D finished successfully"
+    elif [{runtype} == "qsiprep"]:
+        success_string="QSIPrep finished successfully"
+    elif [{runtype} == "qsirecon"]:
+        success_string="QSIRecon finished successfully"
+    elif [{runtype} == "mriqc"]:
+        success_string="MRIQC finished successfully"
+
+    for file in stdout_files:
+        file_path = os.path.join(stdout_dir, file)
+        with open(file_path, 'r') as f:
+            content = f.read()
+            if success_string in content:
+                finished_status = "Success"
+                try:
+                    runtime = extract_runtime(content)
+                except ValueError as e:
+                    print(e)
+
+    return finished_status, runtime

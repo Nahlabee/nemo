@@ -8,11 +8,10 @@ from pathlib import Path
 from sklearn.metrics import mutual_info_score
 from nilearn.image import mean_img
 import warnings
+import re
+import os
 
 warnings.filterwarnings("ignore")
-
-# -----------------------
-# Helper functions
 # -----------------------
 
 def load_any_image(path: Path) -> np.ndarray:
@@ -55,6 +54,7 @@ def voxel_count(mask):
 
     return np.unique(mask, return_counts=True)
 
+
 def dice(a, b):
     """
     Compute dice similarity coefficient between two binary masks.
@@ -88,7 +88,6 @@ def mutual_information(img1, img2, bins=64):
 # -----------------------
 # Main extraction
 # -----------------------
-
 def extract_subject_metrics(fmriprep_dir):
     rows = []
 
@@ -109,19 +108,22 @@ def extract_subject_metrics(fmriprep_dir):
                 bold_mask = next(func.glob("*_desc-brain_mask.nii.gz"))
 
                 # Load data
-                t1w_data = load_nii(t1w)
-                bold_img = nib.load(bold)
-                bold_data = bold_img.get_fdata()
+                t1w_data, t1w_affine = load_any_image(t1w)
+                bold_data, bold_affine = load_any_image(bold)
 
-                mean_bold_img = mean_img(bold_img)
+                mean_bold_img = mean_img(bold_data)
                 mean_bold = mean_bold_img.get_fdata()
 
-                brain_mask = load_nii(bold_mask) > 0
+                brain_mask, _ = load_any_image(bold_mask)
+                brain_mask = brain_mask > 0
                 bg_mask = ~brain_mask
 
-                gm_mask = load_nii(gm) > 0.5
-                wm_mask = load_nii(wm) > 0.5
-                csf_mask = load_nii(csf) > 0.5
+                gm_mask, _ = load_any_image(gm)
+                gm_mask = gm_mask > 0.5
+                wm_mask, _ = load_any_image(wm)
+                wm_mask = wm_mask > 0.5
+                csf_mask, _ = load_any_image(csf)
+                csf_mask = csf_mask > 0.5
 
                 row = dict(
                     subject=sub_dir.name,
@@ -143,7 +145,6 @@ def extract_subject_metrics(fmriprep_dir):
 
             except Exception as e:
                 print(f"⚠️ Skipping {sub_dir.name} {ses_dir.name}: {e}")
-
     return pd.DataFrame(rows)
 
 # -----------------------
