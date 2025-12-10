@@ -54,7 +54,7 @@ def main(config_file=None):
     qsirecon = config.config["qsirecon"]
     fmriprep = config.config["fmriprep"]
     mriqc = config.config["mriqc"]
-    xcpd = config.config["xcp_d"]
+    xcpd = config.config["xcpd"]
     fsqc = config.config["fsqc"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
@@ -176,15 +176,15 @@ def main(config_file=None):
             # 4. XCP-D
             # -------------------------------------------
             # todo: jid_fprep doit correspondre au job id du job fmriprep pour la session en question (idem mriqc)
-            if workflow["run_xcp_d"]:
+            if workflow["run_xcpd"]:
                 print("🔹 Submitting XCP-D")
-                xcp_d_job_id = run_xcpd(
+                xcpd_job_id = run_xcpd(
                     config,
                     subject=subject,
                     session=session,
                     job_ids=jid_fprep
                 )
-                print(f"[XCP-D] job IDs: {xcp_d_job_id}\n")
+                print(f"[XCP-D] job IDs: {xcpd_job_id}\n")
 
             # -------------------------------------------
             # 5. MRIQC on derivatives
@@ -217,12 +217,12 @@ def main(config_file=None):
                 )
                 print(f"[MRIQC-QSIRECON] job IDs: {mriqc_qsirecon_job_id}\n")
 
-                dependencies = [job_id for job_id in [jid_fprep, xcp_d_job_id] if job_id is not None]
+                dependencies = [job_id for job_id in [jid_fprep, xcpd_job_id] if job_id is not None]
                 mriqc_xcpd_job_id = run_mriqc(
                     config,
                     subject=subject,
                     session=session,
-                    data_type="xcp_d",
+                    data_type="xcpd",
                     job_ids=dependencies
                 )
                 print(f"[MRIQC-XCPD] job IDs: {mriqc_xcpd_job_id}\n")
@@ -286,11 +286,11 @@ def main(config_file=None):
         )
         print(f"[MRIQC-QSIRECON-GROUP] job IDs: {jid_mriqc_qsirecon_group}\n")
 
-        # MRIQC group-level for xcp_d data
+        # MRIQC group-level for xcpd data
         jid_mriqc_xcpd_group = run_mriqc_group(
             config,
-            data_type="xcp_d",
-            input_dir=f"{DERIVATIVES_DIR}/xcp_d/outputs"
+            data_type="xcpd",
+            input_dir=f"{DERIVATIVES_DIR}/xcpd/outputs"
         )
         print(f"[MRIQC-XCPD-GROUP] job IDs: {jid_mriqc_xcpd_group}\n")
     else:

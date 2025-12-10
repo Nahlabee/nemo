@@ -22,7 +22,7 @@ run_freesurfer_qc = true
 run_qsiprep = false
 run_qsirecon = false
 run_fmriprep = true
-run_xcp_d = true
+run_xcpd = true
 run_mriqc_raw = true
 run_mriqc_derivatives = true
 run_mriqc_group = true
@@ -99,10 +99,10 @@ omp_threads = 4
 # =============================
 #   PIPELINE: XCP-D
 # =============================
-[xcp_d]
-xcp_d_input_dir = "/scratch/hrasoanandrianina/derivatives/fmriprep"
-xcp_d_container = "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif"
-xcp_d_config = "/scratch/hrasoanandrianina/code/nemo/config_files/xcp_d_surf_config.toml"
+[xcpd]
+xcpd_input_dir = "/scratch/hrasoanandrianina/derivatives/fmriprep"
+xcpd_container = "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif"
+xcpd_config = "/scratch/hrasoanandrianina/code/nemo/config_files/xcpd_surf_config.toml"
 bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"

@@ -25,7 +25,7 @@ def is_already_processed(config, subject, session, data_type="raw"):
     session : str
         Session identifier (e.g., "ses-01").
     data_type : str
-        Type of data to process (possible choices: "raw", "fmriprep", "xcp_d", "qsirecon" or "qsiprep").
+        Type of data to process (possible choices: "raw", "fmriprep", "xcpd", "qsirecon" or "qsiprep").
 
     Returns
     -------
@@ -35,7 +35,7 @@ def is_already_processed(config, subject, session, data_type="raw"):
 
     # Check if mriqc already processed without error
     # todo: move to previous function
-    if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
+    if data_type not in ["raw", "fmriprep", "xcpd", "qsiprep", "qsirecon"]:
         raise ValueError(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
 
     DERIVATIVES_DIR = config.config["common"]["derivatives"]
@@ -71,7 +71,7 @@ def derivatives_datatype_exists(config, subject, session, data_type="raw"):
     session : str
         Session identifier (e.g., "ses-01").
     data_type : str
-        Type of data to process (possible choices: "raw", "fmriprep", "xcp_d", "qsirecon" or "qsiprep").
+        Type of data to process (possible choices: "raw", "fmriprep", "xcpd", "qsirecon" or "qsiprep").
 
     Returns
     -------
@@ -127,9 +127,9 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
     DERIVATIVES_DIR = common["derivatives"]
 
     # todo: redundant, move to another place
-    if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
+    if data_type not in ["raw", "fmriprep", "xcpd", "qsiprep", "qsirecon"]:
         raise ValueError(
-            f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', 'xcp_d', 'qsiprep' or 'qsirecon'.")
+            f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', 'xcpd', 'qsiprep' or 'qsirecon'.")
 
     header = (
         f'#!/bin/bash\n'
@@ -248,7 +248,7 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
     session : str
         Session identifier.
     data_type : str
-        Type of data to process (possible choices: "raw", "fmriprep", "xcp_d", "qsirecon" or "qsiprep").
+        Type of data to process (possible choices: "raw", "fmriprep", "xcpd", "qsirecon" or "qsiprep").
     job_ids : list, optional
         List of SLURM job IDs to set as dependencies (default is None).
     """
@@ -274,7 +274,7 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
                 print(
                     f"[MRIQC] FMRIprep not yet completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
                 return None
-        elif data_type == "xcp_d":
+        elif data_type == "xcpd":
             if is_xcpd_done(config, subject, session) is False:
                 print(f"[MRIQC] XCP-D not yet completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
                 return None
