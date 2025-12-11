@@ -91,41 +91,13 @@ def main(config_file=None):
 
         print(f"\n================ {subject} ================")
 
-        # fmriprep_sub_job_ids = []
-        #
-        # # Initialize job IDs list for the current subject
-        # job_ids = []
-        #
-        # # todo: reorder steps and check job_ids for dependencies
-        # # -------------------------------------------
-        # # 1. fMRIPrep (only if data exists)
-        # # fmriprep requires at least one of func or anat data
-        # # the pipeline has to be run on subject level due to
-        # # dependencies between the sessions
-        # # -------------------------------------------
-        # # todo : move in a check_prerequisite function just like run_freesurfer
-        # run_fprep = True
-        # if not utils.has_anat(BIDS_DIR, subject):
-        #     print("⚠️  No anatomical data found — skipping fMRIPrep")
-        #     run_fprep = False
-        # if not utils.has_func_fmap(BIDS_DIR, subject):
-        #     print("⚠️  No functional data found — skipping fMRIPrep")
-        #     run_fprep = False
-        #
-        # if workflow.get("run_fmriprep") and run_fprep:
-        #     print("🔹 Submitting fMRIPrep")
-        #     fmriprep_job_id = run_fmriprep(config, subject=subject)
-        #     print(f"[FMRIPREP] job IDs: {fmriprep_job_id}\n")
-        #
-        #     job_ids.append(fmriprep_job_id)  # downstream depends on fMRIPrep only
-        #
-        # else:
-        #     continue   # cannot run XCP-D nor MRIQC-derivatives
-
         # -------------------------------------------
         # Loop over sessions
         # -------------------------------------------
         sessions = utils.get_sessions(BIDS_DIR, subject, common.get('sessions'))
+
+        # FMRIprep must wait for a session to be finished before running the next one
+        fmriprep_sub_job_ids = []
 
         for session in sessions:
 
@@ -172,20 +144,30 @@ def main(config_file=None):
                 print(f"[QSIRECON] job IDs: {qsirecon_job_id}\n")
             else:
                 qsirecon_job_id = None
+
+            # todo: reorder steps and check job_ids for dependencies
+            # -------------------------------------------
+            # 1. fMRIPrep
+            # -------------------------------------------
+            if workflow.get("run_fmriprep"):
+                print("🔹 Submitting fMRIPrep")
+                dependencies = [job_id for job_id in [freesurfer_job_id] + fmriprep_sub_job_ids if job_id is not None]
+                fmriprep_job_id = run_fmriprep(config, subject, session, dependencies)
+                print(f"[FMRIPREP] job IDs: {fmriprep_job_id}\n")
+                fmriprep_sub_job_ids.append(fmriprep_job_id)
+            else:
+                fmriprep_job_id = None
+
             # -------------------------------------------
             # 4. XCP-D
             # -------------------------------------------
-            # todo: jid_fprep doit correspondre au job id du job fmriprep pour la session en question (idem mriqc)
             if workflow.get("run_xcp_d"):
                 print("🔹 Submitting XCP-D")
-                xcp_d_job_id = run_xcpd(
-                    config,
-                    subject=subject,
-                    session=session,
-                    job_ids=jid_fprep
-                )
-                print(f"[XCP-D] job IDs: {xcp_d_job_id}\n")
-
+                dependencies = [job_id for job_id in fmriprep_job_id if job_id is not None]
+                xcpd_job_id = run_xcpd(config, subject, session, dependencies)
+                print(f"[XCP-D] job IDs: {xcpd_job_id}\n")
+            else:
+                xcpd_job_id = None
             # -------------------------------------------
             # 5. MRIQC on derivatives
             # -------------------------------------------

@@ -87,7 +87,7 @@ def is_freesurfer_done(config, subject, session):
 # ------------------------
 # Create SLURM job scripts 
 # ------------------------
-def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_done=False, job_ids=None):
+def generate_slurm_script(config, subject, session, path_to_script, job_ids=None):
     """Generate the SLURM job script.
     Parameters
     ----------
@@ -150,56 +150,30 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'echo "Using OUT_FMRIPREP_DIR = {common["derivatives"]}/fmriprep"\n'
     )
 
-    # todo: remove options that are in config file !!
-    if not fs_done:
-        # Define the Singularity command for running FMRIPrep
-        singularity_command = (
-            f'\napptainer run --cleanenv \\\n'
-            f'    -B {common["input_dir"]}:/data:ro \\\n'
-            f'    -B {common["derivatives"]}/fmriprep/outputs:/out \\\n'
-            f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
-            f'    -B {fmriprep["fmriprep_config"]}:/fmriprep_config.toml \\\n'
-            f'    -B {fmriprep["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {fmriprep["fmriprep_container"]} /data /out participant \\\n'
-            f'    --participant-label {subject} \\\n'
-            f'    --session-label {session} \\\n'
-            f'    --fs-license-file /license.txt \\\n'
-            f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-            f'    --project-goodvoxels \\\n'
-            f'    --cifti-output 91k \\\n'
-            f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
-            f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
-            f'    --skip-bids-validation \\\n'
-            f'    --work-dir $TMP_WORK_DIR \\\n'
-            f'    --config-file /fmriprep_config.toml \n'
-        )
-    # todo: remove options that are in config file !!
-    else:
-        # Define the Singularity command for running FMRIPrep (skip FreeSurfer)
-        singularity_command = (
-            f'\napptainer run --cleanenv \\\n'
-            f'    -B {common["input_dir"]}:/data:ro \\\n'
-            f'    -B {common["derivatives"]}/freesurfer:/fs_dir \\\n'
-            f'    -B {common["derivatives"]}/fmriprep/outputs:/out \\\n'
-            f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
-            f'    -B {fmriprep["fmriprep_config"]}:/fmriprep_config.toml \\\n'
-            f'    -B {fmriprep["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {fmriprep["fmriprep_container"]} /data /out participant \\\n'
-            f'    --participant-label {subject} \\\n'
-            f'    --session-label {session} \\\n'
-            f'    --fs-subjects-dir /fs_dir \\\n'
-            f'    --fs-license-file /license.txt \\\n'
-            f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-            f'    --project-goodvoxels \\\n'
-            f'    ----cifti-output 91k \\\n'
-            f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
-            f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
-            f'    --skip-bids-validation \\\n'
-            f'    --work-dir $TMP_WORK_DIR \\\n'
-            f'    --config-file /fmriprep_config.toml \\\n'
-            f'    --skip-bids-validation \\\n'
-            f'    --fs-no-reconall\n'
-        )
+    # Define the Singularity command for running FMRIPrep (skip FreeSurfer)
+    singularity_command = (
+        f'\napptainer run --cleanenv \\\n'
+        f'    -B {common["input_dir"]}:/data:ro \\\n'
+        f'    -B {common["derivatives"]}/freesurfer:/freesurfer \\\n'
+        f'    -B {common["derivatives"]}/fmriprep/outputs:/out \\\n'
+        f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
+        f'    -B {fmriprep["fmriprep_config"]}:/fmriprep_config.toml \\\n'
+        f'    -B {fmriprep["bids_filter_dir"]}:/bids_filter_dir \\\n'
+        f'    {fmriprep["fmriprep_container"]} /data /out participant \\\n'
+        f'    --participant-label {subject} \\\n'
+        f'    --session-label {session} \\\n'
+        f'    --fs-subjects-dir /freesurfer \\\n'
+        f'    --fs-license-file /license.txt \\\n'
+        f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
+        f'    --project-goodvoxels \\\n'
+        f'    ----cifti-output 91k \\\n'
+        f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
+        f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
+        f'    --skip-bids-validation \\\n'
+        f'    --work-dir $TMP_WORK_DIR \\\n'
+        f'    --config-file /fmriprep_config.toml \\\n'
+        f'    --fs-no-reconall\n'
+    )
 
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
@@ -216,7 +190,7 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
     print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
-def run_fmriprep(config, subject, job_ids=None):
+def run_fmriprep(config, subject, session, job_ids=None):
     """
     Run the FMRIPrep for a given subject and session.
     Parameters
@@ -234,9 +208,19 @@ def run_fmriprep(config, subject, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
+    # # todo : move in a check_prerequisite function just like run_freesurfer
+    # if not utils.has_anat(BIDS_DIR, subject):
+    #     print("⚠️  No anatomical data found — skipping fMRIPrep")
+    #     return None
+    # if not utils.has_func_fmap(BIDS_DIR, subject):
+    #     print("⚠️  No functional data found — skipping fMRIPrep")
+    #     return None
+
+    if is_already_processed(config, subject, session):
+        return None
+
     common = config["common"]
     DERIVATIVES_DIR = common["derivatives"]
-    BIDS_DIR = common["input_dir"]
 
     # Create output (derivatives) directories if they do not exist
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep", exist_ok=True)
@@ -245,28 +229,9 @@ def run_fmriprep(config, subject, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/scripts", exist_ok=True)
 
-    previous_job_id = None
-    if job_ids is None:
-        job_ids = []
-    # todo: loop in run_workflow instead of here
-    fmriprep_jobs = []
-    sessions = utils.get_sessions(BIDS_DIR, subject)  # todo: take sessions from config file if exist
-    for ses in sessions:
-        if is_already_processed(config, subject, ses):
-            print(f"✓ Skipping {subject} {ses}: already processed")
-            return None
+    path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{session}_fmriprep.slurm"
+    generate_slurm_script(config, subject, session, path_to_script, job_ids)
 
-        path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{ses}_fmriprep.slurm"
-        job_ids.append(previous_job_id)
-
-        # todo: do not run fmriprep before freesurfer
-        if is_freesurfer_done(config, subject, ses):
-            generate_slurm_fmriprep_script(config, subject, ses, path_to_script, fs_done=True, job_ids=job_ids)
-        else:
-            generate_slurm_fmriprep_script(config, subject, ses, path_to_script, fs_done=False, job_ids=job_ids)
-
-        cmd = f"sbatch {path_to_script}"
-        job_id = utils.submit_job(cmd)
-        previous_job_id = job_id
-        fmriprep_jobs.append(job_id)
-    return fmriprep_jobs
+    cmd = f"sbatch {path_to_script}"
+    job_id = utils.submit_job(cmd)
+    return job_id
