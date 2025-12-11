@@ -238,12 +238,12 @@ def main(config_file=None):
     # -------------------------------------------
     # 7. QC QSIPREP
     # -------------------------------------------
-    if workflow["run_qsiprep_qc"] and subjects_sessions:
-        print("🔹 Submitting QSIprep QC")
-        dependencies = [job_id for job_id in qsiprep_job_ids if job_id is not None]
-        qc_qsiprep.run(config, subjects_sessions, dependencies)
-    else:
-        print("⚠️  QSIprep QC skipped")
+#    if workflow["run_qsiprep_qc"] and subjects_sessions:
+#        print("🔹 Submitting QSIprep QC")
+#        dependencies = [job_id for job_id in qsiprep_job_ids if job_id is not None]
+#        qc_qsiprep.run(config, subjects_sessions, dependencies)
+#    else:
+#        print("⚠️  QSIprep QC skipped")
 
     # -------------------------------------------------------
     # GROUP-LEVEL MRIQC JOBS

@@ -88,7 +88,7 @@ def generate_slurm_script(config, subject, session, path_to_script):
         f'#SBATCH -J freesurfer_{subject}_{session}\n'
         f'#SBATCH -p {freesurfer["partition"]}\n'
         f'#SBATCH --nodes=1\n'
-        f'#SBATCH --mem={freesurfer["requested_mem"]}gb\n'
+        f'#SBATCH --mem={freesurfer["requested_mem"]}\n'
         f'#SBATCH -t {freesurfer["requested_time"]}\n'
         f'#SBATCH -e {DERIVATIVES_DIR}/freesurfer/stdout/%x_job-%j.err\n'
         f'#SBATCH -o {DERIVATIVES_DIR}/freesurfer/stdout/%x_job-%j.out\n'
@@ -123,7 +123,7 @@ def generate_slurm_script(config, subject, session, path_to_script):
         f'            -all \\\n'
         f'            -s {subject}_{session} \\\n'
         f'            -i /data/{subject}/{session}/anat/{subject}_{session}_T1w.nii.gz \\\n'
-        f'            -sd /out'
+        f'            -sd /out\\\n'
     )
 
     if common.get("use_t2"):
@@ -132,7 +132,7 @@ def generate_slurm_script(config, subject, session, path_to_script):
             f'            -T2pial'
         )
 
-    singularity_command += '"\n'  # terminate the command pipe
+    singularity_command += '\n'  # terminate the command pipe
 
     ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/freesurfer\n'
 
