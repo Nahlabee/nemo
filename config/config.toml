@@ -7,6 +7,7 @@ derivatives = "/scratch/lhashimoto/nemo_derivatives"
 subjects = ["1054001","1054002","1054003","1054004","1054010"]
 sessions = ["01"]
 freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
+python_env = "/scratch/lhashimoto/python/env/nemo"
 account = ""
 email = ""
 email_frequency = "FAIL"

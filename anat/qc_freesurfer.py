@@ -301,21 +301,12 @@ def generate_bash_script(config, subjects_sessions, path_to_script, job_ids=None
     fsqc = config["fsqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
-    header = (f'\nsrun --job-name=fsqc --ntasks=1 '
-              f'--partition={fsqc["partition"]} '
-              f'--mem={fsqc["requested_mem"]}gb '
-              f'--time={fsqc["requested_time"]} '
-              f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
-              f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
-
-    if job_ids:
-        header += f'--dependency=afterok:{":".join(job_ids)} '
-
     module_export = (
         f'\nmodule purge\n'
         f'module load userspace/all\n'
         f'module load singularity\n'
         f'module load python3/3.12.0\n'
+        f'source {common["python_env"]}/bin/activate\n'
     )
 
     # Call to python scripts for the rest of QC
@@ -332,7 +323,7 @@ def generate_bash_script(config, subjects_sessions, path_to_script, job_ids=None
     # Write the complete BASH script to the specified file
     with open(path_to_script, 'w') as f:
         # f.write(module_export + singularity_command + python_command + ownership_sharing)
-        f.write(header + module_export + python_command + ownership_sharing)
+        f.write(module_export + python_command + ownership_sharing)
 
 
 def run(config, subjects_sessions, job_ids=None):
@@ -354,7 +345,18 @@ def run(config, subjects_sessions, job_ids=None):
     path_to_script = f"{DERIVATIVES_DIR}/qc/fsqc/scripts/fsqc.sh"
     generate_bash_script(config, subjects_sessions, path_to_script)
 
-    cmd = f"sh {path_to_script} &"
+    cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
+              f'--partition={fsqc["partition"]} '
+              f'--mem={fsqc["requested_mem"]}gb '
+              f'--time={fsqc["requested_time"]} '
+              f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
+              f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
+
+    if job_ids:
+        cmd += f'--dependency=afterok:{":".join(job_ids)} '
+
+    cmd += f"sh {path_to_script} &"
+
     os.system(cmd)
     print(f"[FSQC] Submitting (background) task on interactive node")
     return
