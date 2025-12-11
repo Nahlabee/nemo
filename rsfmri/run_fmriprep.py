@@ -32,11 +32,11 @@ def check_prerequisites(config, subject, session):
 
     # Check required files
     BIDS_DIR = config["common"]["input_dir"]
-    if not utils.has_anat(BIDS_DIR, subject, session):
+    if not utils.has_anat(BIDS_DIR, subject):
         print(f"[FMRIPREP] ERROR - No anatomical data found for {subject} {session}.")
         return False
     
-    if not utils.has_func_fmap(BIDS_DIR, subject, session):
+    if not utils.has_func_fmap(BIDS_DIR, subject):
         print(f"[FMRIPREP] ERROR - No functional data found for {subject} {session}.")
         return False
         
