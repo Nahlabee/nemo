@@ -328,10 +328,10 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
 
     # Call to python scripts for the rest of QC
     # todo: test json dump with dict
-    python_command = (
-        f'\npython3 anat/qc_freesurfer.py '
-        f"'{json.dumps(config)}' {','.join(subjects_sessions)}"
-    )
+    # python_command = (
+    #     f'\npython3 anat/qc_freesurfer.py '
+    #     f"'{json.dumps(config)}' {','.join(subjects_sessions)}"
+    # )
 
     # Add permissions for shared ownership of the output directory
     ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/fsqc\n'
