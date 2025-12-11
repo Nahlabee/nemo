@@ -31,7 +31,7 @@ def check_prerequisites(config, subject, session):
     """
 
     # Check required files
-    BIDS_DIR = config.config["common"]["input_dir"]
+    BIDS_DIR = config["common"]["input_dir"]
     if not utils.has_anat(BIDS_DIR, subject, session):
         print(f"[FMRIPREP] ERROR - No anatomical data found for {subject} {session}.")
         return False
@@ -41,7 +41,7 @@ def check_prerequisites(config, subject, session):
         return False
         
     # Check if fmriprep already processed without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/fmriprep/stdout"
     prefix = f"fmriprep_{subject}_{session}"
     if os.path.exists(stdout_dir):
@@ -72,7 +72,7 @@ def check_prerequisites(config, subject, session):
 #     """
 
 #     # Check that FreeSurfer finished without error
-#     DERIVATIVES_DIR = config.config["common"]["derivatives"]
+#     DERIVATIVES_DIR = config["common"]["derivatives"]
 #     if not os.path.exists(f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"):
 #         print(f"[FMRIPREP] No FreeSurfer outputs found - Running full fmriprep.")
 #         return False
@@ -107,8 +107,8 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    common = config.config["common"]
-    fmriprep = config.config["fmriprep"]
+    common = config["common"]
+    fmriprep = config["fmriprep"]
     DERIVATIVES_DIR = common["derivatives"]
 
     header = (
@@ -226,7 +226,7 @@ def run_fmriprep(config, subject, session, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
-    common = config.config["common"]
+    common = config["common"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # Create output (derivatives) directories if they do not exist

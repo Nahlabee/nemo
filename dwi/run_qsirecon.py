@@ -30,7 +30,7 @@ def is_already_processed(config, subject, session):
     """
     # todo: verifier sur un cas
     # Check if qsirecon already processed without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/qsirecon/stdout"
     if not os.path.exists(stdout_dir):
         print(f"[QSIRECON] Could not read standard outputs from QSIRECON, recomputing ....")
@@ -123,8 +123,8 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    common = config.config["common"]
-    qsirecon = config.config["qsirecon"]
+    common = config["common"]
+    qsirecon = config["qsirecon"]
     DERIVATIVES_DIR = common["derivatives"]
 
     if job_ids is None:
@@ -244,7 +244,7 @@ def run_qsirecon(config, subject, session, job_ids=None):
     #     return None
     # todo: check if is_already_processed
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/qsirecon", exist_ok=True)

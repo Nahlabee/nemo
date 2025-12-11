@@ -1,5 +1,4 @@
-import json
-import os
+import os, toml
 import subprocess
 from pathlib import Path
 
@@ -9,7 +8,7 @@ def load_config(config_file):
     if not os.path.exists(config_file):
         return {}
     with open(config_file, "r") as f:
-        return json.load(f)
+        return toml.load(f)
 
 
 def get_subjects(input_dir, specified_subjects=None):

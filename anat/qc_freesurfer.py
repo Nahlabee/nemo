@@ -190,8 +190,8 @@ def qc_freesurfer(config, subjects_sessions):
 
     """
 
-    common = config.config["common"]
-    fsqc = config.config["fsqc"]
+    common = config["common"]
+    fsqc = config["fsqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # # Run FSQC on a list of subjects
@@ -276,8 +276,8 @@ def qc_freesurfer(config, subjects_sessions):
 
 def generate_bash_script(config, subjects_sessions, path_to_script):
 
-    common = config.config["common"]
-    fsqc = config.config["fsqc"]
+    common = config["common"]
+    fsqc = config["fsqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
     module_export = (
@@ -365,8 +365,8 @@ def run(config, subjects_sessions, job_ids=None):
     if job_ids is None:
         job_ids = []
 
-    common = config.config["common"]
-    fsqc = config.config["fsqc"]
+    common = config["common"]
+    fsqc = config["fsqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # Create output (derivatives) directories

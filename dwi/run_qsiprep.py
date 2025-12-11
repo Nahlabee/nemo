@@ -24,7 +24,7 @@ def is_already_processed(config, subject, session):
     """
 
     # Check if QSIprep already processed without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/qsiprep/stdout"
     if not os.path.exists(stdout_dir):
         return False
@@ -60,8 +60,8 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    common = config.config["common"]
-    qsiprep = config.config["qsiprep"]
+    common = config["common"]
+    qsiprep = config["qsiprep"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
@@ -154,7 +154,7 @@ def run_qsiprep(config, subject, session, job_ids=None):
     if is_already_processed(config, subject, session):
         return None
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     if job_ids is None:
         job_ids = []

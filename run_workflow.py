@@ -15,7 +15,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 import sys
-from anat import qc_freesurfer
 from dwi import qc_qsiprep
 #from anat import qc_freesurfer
 import toml
@@ -30,7 +29,6 @@ from rsfmri.run_mriqc import run_mriqc
 from rsfmri.run_xcpd import run_xcpd
 from rsfmri.run_mriqc_group import run_mriqc_group
 
-
 def main(config_file=None):
     """
     Main function to execute the workflow steps based on the configuration file.
@@ -44,25 +42,25 @@ def main(config_file=None):
     # Load configuration
     # -------------------------------
     if not config_file:
-        config_file = f"{Path(__file__).parent}/config/config.json"
+        config_file = f"{Path(__file__).parent}/config/config.toml"
     config = utils.load_config(config_file)
 
-    common = config.config["common"]
-    workflow = config.config["workflow"]
-    freesurfer = config.config["freesurfer"]
-    qsiprep = config.config["qsiprep"]
-    qsirecon = config.config["qsirecon"]
-    fmriprep = config.config["fmriprep"]
-    mriqc = config.config["mriqc"]
-    xcpd = config.config["xcpd"]
-    fsqc = config.config["fsqc"]
+    common = config["common"]
+    workflow = config["workflow"]
+    freesurfer = config["freesurfer"]
+    qsiprep = config["qsiprep"]
+    qsirecon = config["qsirecon"]
+    fmriprep = config["fmriprep"]
+    mriqc = config["mriqc"]
+    xcpd = config["xcpd"]
+    fsqc = config["fsqc"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # Save config with datetime
     filename = f"{DERIVATIVES_DIR}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
     with open(filename, "w") as f:
-        toml.dump(config.config, f)
+        toml.dump(config, f)
 
     # -------------------------------------------------------
     # Sanity checks

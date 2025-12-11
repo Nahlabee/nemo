@@ -5,10 +5,10 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-from rsfmri.run_fmriprep import is_already_processed as is_fmriprep_done
-from rsfmri.run_xcpd import is_already_processed as is_xcpd_done
-from dwi.run_qsiprep import is_already_processed as is_qsiprep_done
-from dwi.run_qsirecon import is_already_processed as is_qsirecon_done
+#from rsfmri.run_fmriprep import  check_prerequisites
+#from rsfmri.run_xcpd import is_already_processed as is_xcpd_done
+#from dwi.run_qsiprep import is_already_processed as is_qsiprep_done
+#from dwi.run_qsirecon import is_already_processed as is_qsirecon_done
 
 
 # --------------------------------------------
@@ -34,7 +34,7 @@ def is_already_processed(config, subject, session, data_type="raw"):
     """
 
     # Check if mriqc already processed without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout"
     if not os.path.exists(stdout_dir):
         print(f"[MRIQC] Could not read standard outputs from MRIQC, recomputing ....")
@@ -74,7 +74,7 @@ def derivatives_datatype_exists(config, subject, session, data_type="raw"):
     bool
         True if derivatives data type directory exists, False otherwise.
     """
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     deriv_dir = f"{DERIVATIVES_DIR}/{data_type}/outputs/{subject}/{session}"
     stdout_dir = f"{DERIVATIVES_DIR}/{data_type}/stdout"
     # Check if derivatives data type directory exists
@@ -117,8 +117,8 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    common = config.config["common"]
-    mriqc = config.config["mriqc"]
+    common = config["common"]
+    mriqc = config["mriqc"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
@@ -155,32 +155,6 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         f'module load singularity\n'
 
         f'echo "------ Running {mriqc["mriqc_container"]} for subject: {subject}, session: {session} --------"\n'
-    )
-
-    prereq_check = (
-        f'\n# Check that {data_type} finished without error\n'
-        f'if [ ! -d "{DERIVATIVES_DIR}/{data_type}/{subject}/{session}" ]; then\n'
-        f'    echo "[MRIQC] Please run {data_type} command before MRIQC."\n'
-        f'    exit 1\n'
-        f'fi\n'
-        f'if ! grep -q "finished without error" {DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all.log; then\n'
-        f'    echo "[MRIQC] FreeSurfer did not terminate for {subject} {session}."\n'
-        f'    exit 1\n'
-        f'fi\n'
-        f'\n# Check that QSIprep finished without error\n'
-        f'prefix="{DERIVATIVES_DIR}/qsiprep/stdout/qsiprep_{subject}_{session}"\n'
-        f'found_success=false\n'
-        f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
-        f'    if grep -q "QSIPrep finished successfully" $file; then\n'
-        f'        found_success=true\n'
-        f'        break\n'
-        f'    fi\n'
-        f'done\n'
-        f'if [ "$found_success" = false ]; then\n'
-        f'    echo "[QSIRECON] QSIprep did not terminate for {subject} {session}. Please run QSIprep command before '
-        f'QSIrecon."\n'
-        f'    exit 1\n'
-        f'fi\n'
     )
 
     tmp_dir_setup = (
@@ -291,7 +265,7 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     if data_type not in ["raw", "fmriprep", "xcpd", "qsiprep", "qsirecon"]:
         print(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")

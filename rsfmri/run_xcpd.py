@@ -36,7 +36,7 @@ def is_already_processed(config, subject, session):
     """
 
     # Check if xcpd already processed without error
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/xcpd/stdout"
     if not os.path.exists(stdout_dir):    
         print(f"[XCP-D] Could not read standard outputs from xcpd, XCP-D cannot proceed.")
@@ -76,8 +76,8 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
             List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    common = config.config["common"]
-    xcpd = config.config["xcpd"]
+    common = config["common"]
+    xcpd = config["xcpd"]
     DERIVATIVES_DIR = common["derivatives"]
 
     header = (
@@ -197,7 +197,7 @@ def run_xcpd(config, subject, session, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/xcpd", exist_ok=True)

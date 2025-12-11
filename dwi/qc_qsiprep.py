@@ -9,7 +9,7 @@ def run(config, subjects_sessions,  job_ids=None):
     if job_ids is None:
         job_ids = []
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep", exist_ok=True)
