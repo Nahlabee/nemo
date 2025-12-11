@@ -307,6 +307,7 @@ def generate_bash_script(config, subjects_sessions, path_to_script, job_ids=None
         f'module load singularity\n'
         f'module load python3/3.12.0\n'
         f'source {common["python_env"]}/bin/activate\n'
+        f'cd /scratch/lhashimoto/code/nemo'
     )
 
     # Call to python scripts for the rest of QC
