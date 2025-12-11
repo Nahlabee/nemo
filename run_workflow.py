@@ -213,7 +213,7 @@ def main(config_file=None):
                 )
                 print(f"[MRIQC-QSIRECON] job IDs: {mriqc_qsirecon_job_id}\n")
 
-                dependencies = [job_id for job_id in [jid_fprep, xcpd_job_id] if job_id is not None]
+                dependencies = [job_id for job_id in [fmriprep_job_id, xcpd_job_id] if job_id is not None]
                 mriqc_xcpd_job_id = run_mriqc(
                     config,
                     subject=subject,

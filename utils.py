@@ -53,7 +53,7 @@ def get_sessions(input_dir, subject, specified_sessions=None):
     """
     subject_path = os.path.join(input_dir, subject)
     if specified_sessions:
-        return [f"ses-{ses}" if not ses.startswith("ses-") else ses for ses in specified_sessions]
+        return [f"{ses}" if not ses.startswith("ses-") else ses for ses in specified_sessions]
 
     return sorted(d for d in os.listdir(subject_path) if d.startswith("ses-") and os.path.isdir(os.path.join(subject_path, d)))
 
