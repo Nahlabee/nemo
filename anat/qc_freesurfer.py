@@ -288,7 +288,8 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
     )
 
     # subjects_sessions_str = " ".join(subjects_sessions)
-    subjects_sessions_str = [f"ses-{ses}/sub-{sub}" for (sub, ses) in subjects_sessions]
+    subjects_sessions_str = [f"{ses}/{sub}" for (sub, ses) in subjects_sessions]
+    subjects_sessions_str = " ".join(subjects_sessions_str)
 
     # Call to FSQC container
     singularity_command = (
@@ -327,10 +328,10 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
 
     # Call to python scripts for the rest of QC
     # todo: test json dump with dict
-    # python_command = (
-    #     f'\npython3 anat/qc_freesurfer.py '
-    #     f"'{json.dumps(vars(config))}' {','.join(subjects_sessions)}"
-    # )
+    python_command = (
+        f'\npython3 anat/qc_freesurfer.py '
+        f"'{json.dumps(config)}' {','.join(subjects_sessions)}"
+    )
 
     # Add permissions for shared ownership of the output directory
     ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/fsqc\n'
