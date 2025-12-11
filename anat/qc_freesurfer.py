@@ -1,6 +1,5 @@
 import json
 import os
-# import fsqc
 import pandas as pd
 from fsqc.outlierDetection import readAsegStats
 from pathlib import Path
@@ -13,6 +12,7 @@ import utils
 import re
 import csv
 import numpy as np
+# import fsqc
 
 
 def read_log(log_file):
@@ -224,7 +224,7 @@ def qc_freesurfer(config, subjects_sessions):
             "Euler number after topo correction RH"]
     frames = []
     for sub_sess in subjects_sessions:
-        log_file = f"{DERIVATIVES_DIR}/freesurfer{sub_sess}/scripts/recon-all.log"
+        log_file = f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}/scripts/recon-all.log"
         info = None
         dir_count = 0
         file_count = 0
@@ -287,7 +287,8 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
         f'module load python3/3.12.0\n'
     )
 
-    subjects_sessions_str = " ".join(subjects_sessions)
+    # subjects_sessions_str = " ".join(subjects_sessions)
+    subjects_sessions_str = [f"ses-{ses}/sub-{sub}" for (sub, ses) in subjects_sessions]
 
     # Call to FSQC container
     singularity_command = (
@@ -336,18 +337,15 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
 
     # Write the complete BASH script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(module_export + singularity_command + python_command + ownership_sharing)
+        # f.write(module_export + singularity_command + python_command + ownership_sharing)
+        f.write(module_export + singularity_command + ownership_sharing)
 
 
 def run(config, subjects_sessions, job_ids=None):
     """
+    Run FreeSurfer QC
+    Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
     """
-
-    # Run FreeSurfer QC
-    # Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
-
-    if job_ids is None:
-        job_ids = []
 
     common = config["common"]
     fsqc = config["fsqc"]

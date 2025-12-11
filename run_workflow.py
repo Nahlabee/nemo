@@ -102,7 +102,7 @@ def main(config_file=None):
         for session in sessions:
 
             print('\n', subject, ' - ', session, '\n')
-            subjects_sessions.append(f"{subject}_{session}")
+            subjects_sessions.append((subject, session))
 
             # -------------------------------------------
             # 0. MRIQC on raw BIDS data
@@ -145,7 +145,6 @@ def main(config_file=None):
             else:
                 qsirecon_job_id = None
 
-            # todo: reorder steps and check job_ids for dependencies
             # -------------------------------------------
             # 1. fMRIPrep
             # -------------------------------------------
@@ -177,7 +176,7 @@ def main(config_file=None):
                     subject=subject,
                     session=session,
                     data_type="fmriprep",
-                    job_ids=jid_fprep
+                    job_ids=fmriprep_job_id
                 )
                 print(f"[MRIQC-FMRIPREP] job IDs: {mriqc_fprep_job_id}\n")
 
@@ -199,7 +198,7 @@ def main(config_file=None):
                 )
                 print(f"[MRIQC-QSIRECON] job IDs: {mriqc_qsirecon_job_id}\n")
 
-                dependencies = [job_id for job_id in [jid_fprep, xcp_d_job_id] if job_id is not None]
+                dependencies = [job_id for job_id in [fmriprep_job_id, xcpd_job_id] if job_id is not None]
                 mriqc_xcpd_job_id = run_mriqc(
                     config,
                     subject=subject,
