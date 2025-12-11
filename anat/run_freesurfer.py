@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-
+from config import config
 
 # todo: separate is_already_processed part
 def check_prerequisites(config, subject, session):

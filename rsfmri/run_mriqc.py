@@ -2,7 +2,7 @@
 import os
 import sys
 from pathlib import Path
-
+from config import config
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 #from rsfmri.run_fmriprep import  check_prerequisites
