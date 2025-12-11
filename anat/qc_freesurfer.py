@@ -346,16 +346,16 @@ def run(config, subjects_sessions, job_ids=None):
     generate_bash_script(config, subjects_sessions, path_to_script)
 
     cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
-              f'--partition={fsqc["partition"]} '
-              f'--mem={fsqc["requested_mem"]}gb '
-              f'--time={fsqc["requested_time"]} '
-              f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
-              f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
+           f'--partition={fsqc["partition"]} '
+           f'--mem={fsqc["requested_mem"]}gb '
+           f'--time={fsqc["requested_time"]} '
+           f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
+           f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
 
     if job_ids:
         cmd += f'--dependency=afterok:{":".join(job_ids)} '
 
-    cmd += f"sh {path_to_script} &"
+    cmd += f"sh {path_to_script}"
 
     os.system(cmd)
     print(f"[FSQC] Submitting (background) task on interactive node")
