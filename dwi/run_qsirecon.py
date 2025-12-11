@@ -187,7 +187,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
 
     singularity_command = (
         f'\napptainer run \\\n'
-        f'    --nv --cleanenv --containall --writable-tmpfs \\\n'
+        f'    --nv --cleanenv --writable-tmpfs \\\n'
         f'    -B {DERIVATIVES_DIR}/qsiprep:/data \\\n'
         f'    -B {DERIVATIVES_DIR}/qsirecon:/out \\\n'
         f'    -B {DERIVATIVES_DIR}/freesurfer/{session}:/freesurfer \\\n'
