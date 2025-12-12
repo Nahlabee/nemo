@@ -194,15 +194,13 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
         f'    -B {qsirecon["qsirecon_config"]}:/config/qsirecon_config.toml \\\n'
         f'    --env TEMPLATEFLOW_HOME=/opt/templateflow \\\n'
-        f'    {qsirecon["qsirecon_container"]} \\\n'
-        f'    --participant-label {subject} \\\n'
-        f'    --session-id {session} \\\n'
+        f'    {qsirecon["qsirecon_container"]} /data /out participant \\\n'
+        f'    --participant-label {subject} --session-id "01" "02" \\\n'
         f'    -v -w /out/work \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --fs-subjects-dir /freesurfer \\\n'
         f'    --atlases {" ".join(qsirecon["atlases"])} \\\n'
-        f'    --config-file /config/qsirecon_config.toml \\\n'
-        f'    /data /out participant\n'
+        f'    --config-file /config/qsirecon_config.toml\n'
     )
     #
     # f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
