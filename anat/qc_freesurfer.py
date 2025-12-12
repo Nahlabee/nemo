@@ -197,12 +197,13 @@ def qc_freesurfer(config, subjects_sessions):
     frames = []
     for ss in subjects_sessions:
         subject, session = ss.split("/")
+        print(subject, session)
 
         # Run FSQC on a list of subjects
         print("Running FSQC on subject")
         os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc/{session}", exist_ok=True)
         fsqc_toolbox.run_fsqc(subjects_dir=f"{DERIVATIVES_DIR}/freesurfer/{session}",
-                              output_dir=f"{DERIVATIVES_DIR}/qc/fsqc/{session}",
+                              output_dir=f"{DERIVATIVES_DIR}/qc/fsqc/{session}/{subject}",
                               subjects=subject,
                               screenshots=fsqc["qc_screenshots"],
                               surfaces=fsqc["qc_surfaces"],
@@ -244,7 +245,7 @@ def qc_freesurfer(config, subjects_sessions):
                           skip_existing=fsqc["qc_skip_existing"]
                           )
     # Merge statistics
-    cols = ["subject",
+    cols = ["subject", "session",
             "Number of folders generated",
             "Number of files generated",
             "Finished without error",
