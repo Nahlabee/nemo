@@ -190,7 +190,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --nv --cleanenv --writable-tmpfs \\\n'
         f'    -B {DERIVATIVES_DIR}/qsiprep:/data \\\n'
         f'    -B {DERIVATIVES_DIR}/qsirecon:/out \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer/{session}:/freesurfer \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer:/freesurfer \\\n'
         f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
         f'    -B {qsirecon["qsirecon_config"]}:/config/qsirecon_config.toml \\\n'
         f'    --env TEMPLATEFLOW_HOME=/opt/templateflow \\\n'

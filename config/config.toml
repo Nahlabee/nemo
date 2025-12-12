@@ -4,13 +4,14 @@
 [common]
 input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
 derivatives = "/scratch/lhashimoto/nemo_derivatives"
-subjects = ["1054001","1054002","1054003","1054004","1054010"]
+subjects = ["1054001"]
 sessions = ["01"]
 freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
 python_env = "/scratch/lhashimoto/python/env/nemo"
 account = ""
 email = ""
 email_frequency = "FAIL"
+tmp = ["1054001","1054002","1054003","1054004","1054010"]
 
 # =============================
 #   WORKFLOW SETTINGS
@@ -80,7 +81,7 @@ partition = "kepler"
 gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
-atlases = ["4S156Parcels", "4S356Parcels"]
+atlases = ["4S156Parcels"] #, "4S356Parcels"]
 
 # =============================
 #   PIPELINE: fMRIPrep
