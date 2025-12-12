@@ -29,7 +29,8 @@ abcc_qc = true
 linc_qc = true
 # watch out for the option --motion-filter-type, which can be set to:
 # Possible choices: lp, notch, none
-motion_filter_type = "none"
+motion_filter_type = "lp"
+band_stop_min = 6.0
 # Type of filter to use for removing respiratory artifact from motion regressors. If not set, no filter will be applied.
 
 [nipype]

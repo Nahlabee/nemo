@@ -93,20 +93,40 @@ def check_prerequisites(config, subject, session):
 # Create SLURM job scripts 
 # ------------------------
 def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_done=False, job_ids=None):
-    """Generate the SLURM job script.
-    Parameters
-    ----------
-   
-    subject : str
-        Subject identifier.
-    session : str
-        Session identifier.
-    path_to_script : str
-        Path where the SLURM script will be saved.
-    job_ids : list, optional
-        List of SLURM job IDs to set as dependencies (default is None).
+    """Generate a SLURM job script for fMRIPrep processing.
+    This function creates a SLURM submission script that runs fMRIPrep via Singularity/Apptainer
+    container. The script includes setup for temporary directories, FreeSurfer dependency checking,
+    module loading, and cleanup procedures.
+    config : dict
+        Configuration dictionary containing 'common' and 'fmriprep' sections with settings for
+        input/output directories, container paths, SLURM parameters, and resource requirements.
+        Subject identifier (e.g., 'sub-001').
+        Session identifier (e.g., 'ses-01').
+        File path where the generated SLURM script will be saved.
+    fs_done : bool, optional
+        Deprecated parameter indicating FreeSurfer completion status (default is False).
+        Currently unused but retained for backward compatibility.
+    job_ids : list of str, optional
+        List of SLURM job IDs to set as dependencies using 'afterok' constraint.
+        If provided, this job will wait for those jobs to complete successfully (default is None).
+    Returns
+    -------
+    None
+        Writes the SLURM script directly to the file specified by path_to_script and prints
+        a confirmation message.
+    Raises
+    ------
+    IOError
+        If the script cannot be written to path_to_script.
+    Notes
+    -----
+    The generated script performs the following steps:
+    - Loads required modules (Singularity/Apptainer)
+    - Checks FreeSurfer preprocessing completion before starting fMRIPrep
+    - Sets up a temporary work directory (using SLURM_TMPDIR or TMPDIR)
+    - Runs fMRIPrep container with specified output spaces and configurations
+    - Handles output directory permissions and work file consolidation
     """
-
     common = config["common"]
     fmriprep = config["fmriprep"]
     DERIVATIVES_DIR = common["derivatives"]
@@ -120,13 +140,6 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'#SBATCH --time={fmriprep["requested_time"]}\n'
         f'#SBATCH --partition={fmriprep["partition"]}\n'
     )
-
-    if job_ids:
-        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
-        if valid_ids:
-            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
-    else:
-        job_ids = []
 
     if common.get("email"):
         header += (
@@ -157,7 +170,15 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'echo "Using OUT_FMRIPREP_DIR = {common["derivatives"]}/fmriprep"\n'
     )
 
+    if job_ids:
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
+        
+    else:
+        job_ids = []
+    
+        
     prereq_check = (
+    
         f'\n# Check that FreeSurfer finished without error\n'
         f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/{subject}_{session}" ]; then\n'
         f'    echo "[FMRIPREP] Please run FreeSurfer recon-all command before FMRIPREP."\n'
@@ -168,6 +189,7 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'    exit 1\n'
         f'fi\n'
     )
+
         # Define the Singularity command for running FMRIPrep (skip FreeSurfer)
     singularity_command = (
         f'\napptainer run --cleanenv \\\n'
@@ -184,13 +206,12 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'    --fs-license-file /license.txt \\\n'
         f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
         f'    --cifti-output 91k \\\n'
-        f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
+        f'    --mem {fmriprep["requested_mem"]} \\\n'
         f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
         f'    --skip-bids-validation \\\n'
         f'    --work-dir $TMP_WORK_DIR \\\n'
-        f'    --config-file /fmriprep_config.toml \\\n'
-        f'    --skip-bids-validation \\\n'
-        f'    --fs-no-reconall\n'
+        f'    --config-file /fmriprep_config.toml \n'
+
         )
 
     save_work = (

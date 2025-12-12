@@ -144,9 +144,9 @@ def extract_qc_metrics(config, xcpd_dir):
     print(f"XCP-D Quality Check terminated successfully.")
 # ------------------------------
 
-def generate_slurm_script(config, path_to_script, job_ids=None):
+def generate_slurm_mriqc_script(config, path_to_script, job_ids=None):
     """
-    Generate the SLURM script for QC XCPD processing for the group.
+    Generate the SLURM script for MRIQC XCPD processing for the group.
 
     Parameters
     ----------

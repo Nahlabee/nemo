@@ -37,26 +37,18 @@ def is_already_processed(config, subject, session):
 
     # Check if xcpd already processed without error
     DERIVATIVES_DIR = config["common"]["derivatives"]
-    stdout_dir = f"{DERIVATIVES_DIR}/xcpd/stdout"
-    if not os.path.exists(stdout_dir):    
-        print(f"[XCP-D] Could not read standard outputs from xcpd, XCP-D cannot proceed.")
-        return False
-        
     prefix = f"xcpd_{subject}_{session}"
-    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-    if not stdout_files:
-        print(f"[XCP-D] Could not read standard outputs from xcpd, XCP-D cannot proceed.")
-        return False
-
-    for file in stdout_files:
-        file_path = os.path.join(stdout_dir, file)
-        with open(file_path, 'r') as f:
-            if 'XCP-D finished successfully!' in f.read():
-                print(f"[XCP-D] Skip already processed subject {subject}_{session}")
-                return True
-            else:    
-                return False
-
+    stdout_dir = f"{DERIVATIVES_DIR}/xcpd/stdout"
+    if os.path.exists(stdout_dir):
+        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+        for file in stdout_files:
+            file_path = os.path.join(stdout_dir, file)
+            with open(file_path, 'r') as f:
+                if 'XCP-D finished successfully!' in f.read():
+                    print(f"[XCP-D] Skip already processed subject {subject}_{session}")
+                    return True
+                else:    
+                    return False
 
 # -----------------------
 # Generate SLURM job scripts
@@ -90,12 +82,12 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
         f'#SBATCH --partition={xcpd["partition"]}\n'
     )
 
-    # todo : do it in run_workflow
     if job_ids:
-        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
-        if valid_ids:
-            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
-            
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
+        
+    else:
+        job_ids = []
+                    
     if common.get("email"):
         header += (
             f'#SBATCH --mail-type={common["email_frequency"]}\n'
@@ -114,13 +106,18 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
     )
 
     prereq_check = (
+        f'\n# Check that FMRIPREP outputs exists\n'
+        f'if [ ! -d "{DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}" ]; then\n'
+        f'    echo "[XCP-D] Please run Fmriprep command before XCP-D."\n'
+        f'    exit 1\n'
+        f'fi\n'
+        
         f'\n# Check that FMRIPREP finished without error\n'
         f'prefix="{DERIVATIVES_DIR}/fmriprep/stdout/fmriprep_{subject}_{session}"\n'
         f'found_success=false\n'
         f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
         f'    if grep -q "fMRIPrep finished successfully" $file; then\n'
         f'        found_success=true\n'
-        f'        break\n'
         f'    fi\n'
         f'done\n'
         f'if [ "$found_success" = false ]; then\n'
@@ -157,8 +154,7 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
         f'      --participant-label {subject} \\\n'
         f'      --session-id {session} \\\n'
         f'      --fs-license-file /license.txt \\\n'
-        f'      --mode abcd\\\n'
-        f'      --motion-filter-type none\\\n'
+        f'      --mode linc \\\n'
         f'      --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
         f'      --nuisance-regressors 36P \\\n'
         f'      --work-dir $TMP_WORK_DIR \\\n'

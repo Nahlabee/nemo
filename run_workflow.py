@@ -28,6 +28,7 @@ from rsfmri.run_fmriprep import run_fmriprep
 from rsfmri.run_mriqc import run_mriqc
 from rsfmri.run_xcpd import run_xcpd
 from rsfmri.run_mriqc_group import run_mriqc_group
+from config import config
 
 def main(config_file=None):
     """
@@ -171,11 +172,12 @@ def main(config_file=None):
             # -------------------------------------------
             if workflow["run_xcpd"]:
                 print("🔹 Submitting XCP-D")
+                dependencies_xcpd = [job_id for job_id in [freesurfer_job_id, fmriprep_job_id] if job_id is not None]
                 xcpd_job_id = run_xcpd(
                     config,
                     subject=subject,
                     session=session,
-                    job_ids=fmriprep_job_id
+                    job_ids=dependencies_xcpd
                 )
                 print(f"[XCP-D] job IDs: {xcpd_job_id}\n")
                 xcpd_job_ids.append(xcpd_job_id)
