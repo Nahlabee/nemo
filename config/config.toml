@@ -75,7 +75,7 @@ requested_time = "24:00:00"
 #   PIPELINE: QSIRecon
 # =============================
 [qsirecon]
-qsirecon_container = "/scratch/lhashimoto/qsirecon-1.0.1.sif"
+qsirecon_container = "/scratch/lhashimoto/qsirecon-1.1.1.sif"
 qsirecon_config = "/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml"
 partition = "kepler"
 gpu_per_node = 2
