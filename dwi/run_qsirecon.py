@@ -197,6 +197,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    {qsirecon["qsirecon_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    -v -w /out/work \\\n'
+        f'    --bids-database-dir /out/work/bids_db_dir\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --fs-subjects-dir /freesurfer \\\n'
         f'    --atlases {" ".join(qsirecon["atlases"])} \\\n'
