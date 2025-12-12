@@ -120,6 +120,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --eddy-config /config/eddy_params.json \\\n'
         f'    --config-file /config/qsiprep_config.toml \\\n'
         f'    --output-resolution {qsiprep["output_resolution"]}\n'
+        f'    --bids-database-dir /out/work/bids_db_dir\n'
     )
 
     # Add permissions for shared ownership of the output directory

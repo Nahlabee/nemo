@@ -207,9 +207,9 @@ def main(config_file=None):
                     job_ids=dependencies
                 )
                 print(f"[MRIQC-XCPD] job IDs: {mriqc_xcpd_job_id}\n")
-            else:
-                print("⚠️  MRIQC on derivatives skipped")
-        print("\n✅ Workflow submission complete")
+            # else:
+            #     print("⚠️  MRIQC on derivatives skipped")
+        # print("\n✅ Workflow submission complete")
 
     # -------------------------------------------
     # 3. QC FREESURFER
@@ -218,8 +218,8 @@ def main(config_file=None):
         print("🔹 Submitting FreeSurfer QC")
         dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
         qc_freesurfer.run(config, subjects_sessions, dependencies)
-    else:
-        print("⚠️  FreeSurfer QC skipped")
+    # else:
+    #     print("⚠️  FreeSurfer QC skipped")
     # -------------------------------------------
     # 3. QC QSIPREP
     # -------------------------------------------
@@ -227,8 +227,8 @@ def main(config_file=None):
         print("🔹 Submitting QSIprep QC")
         dependencies = [job_id for job_id in qsiprep_job_ids if job_id is not None]
         qc_qsiprep.run(config, subjects_sessions, dependencies)
-    else:
-        print("⚠️  QSIprep QC skipped")
+    # else:
+    #     print("⚠️  QSIprep QC skipped")
 
     # -------------------------------------------------------
     # GROUP-LEVEL MRIQC JOBS
@@ -274,8 +274,8 @@ def main(config_file=None):
             input_dir=f"{DERIVATIVES_DIR}/xcp_d/outputs"
         )
         print(f"[MRIQC-XCPD-GROUP] job IDs: {jid_mriqc_xcpd_group}\n")
-    else:
-        print("⚠️  Group-level MRIQC jobs skipped")
+    # else:
+    #     print("⚠️  Group-level MRIQC jobs skipped")
 
 
 if __name__ == "__main__":
