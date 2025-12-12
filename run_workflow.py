@@ -23,9 +23,9 @@ import utils
 from anat.run_freesurfer import run_freesurfer
 from dwi.run_qsiprep import run_qsiprep
 from dwi.run_qsirecon import run_qsirecon
-#from anat.qc_freesurfer import run as run_freesurfer_qc
+from anat.qc_freesurfer import run as run_freesurfer_qc
 from rsfmri.run_fmriprep import run_fmriprep
-from rsfmri.run_mriqc import run_mriqc
+from rsfmri.run_mriqc_raw import run_mriqc
 from rsfmri.run_xcpd import run_xcpd
 from rsfmri.run_mriqc_group import run_mriqc_group
 from config import config
@@ -234,7 +234,7 @@ def main(config_file=None):
     if workflow["run_freesurfer_qc"] and subjects_sessions:
         print("🔹 Submitting FreeSurfer QC")
         dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
-        qc_freesurfer.run(config, subjects_sessions, dependencies)
+        run_freesurfer_qc(config, subjects_sessions, dependencies)
     else:
         print("⚠️  FreeSurfer QC skipped")
     # -------------------------------------------
