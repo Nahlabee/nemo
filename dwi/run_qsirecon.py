@@ -195,7 +195,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    -B {qsirecon["qsirecon_config"]}:/config/qsirecon_config.toml \\\n'
         f'    --env TEMPLATEFLOW_HOME=/opt/templateflow \\\n'
         f'    {qsirecon["qsirecon_container"]} /data /out participant \\\n'
-        f'    --participant-label {subject} --session-id {session} \\\n'
+        f'    --participant-label 1054001 --session-id 01 \\\n'
         f'    -v -w /out/work \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --fs-subjects-dir /freesurfer \\\n'
