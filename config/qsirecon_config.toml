@@ -4,7 +4,7 @@
 # atlases = [ "4S156Parcels",]
 # bids_database_dir = ""
 boilerplate_only = false
-sloppy = false
+sloppy = true
 debug = []
 log_level = 25
 low_mem = false
