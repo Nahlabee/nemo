@@ -100,7 +100,7 @@ def derivatives_datatype_exists(config, subject, session, data_type="raw"):
 
 
 # ------------------------
-# Create SLURM job scripts 
+# Create SLURM job script for MRIQC 
 # ------------------------
 def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_type="raw", job_ids=None):
     """Generate the SLURM job script.
