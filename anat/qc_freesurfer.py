@@ -19,6 +19,10 @@ def read_log(log_file):
     Uses regex to extract information from the log file such as the runtime, the number of Euler number before and after topological correction
 
     """
+
+    if not os.path.exists(log_file):
+        return None, None, None, None, None, None
+
     finished_pattern = re.compile(r"finished without error")
     runtime_pattern = re.compile(r"#@#%# recon-all-run-time-hours (\d+\.\d+)")
     topo_before_pattern_lh = re.compile(r"#@# Fix Topology lh.*?before topology correction, eno=([^\(]+)", re.DOTALL)
@@ -223,13 +227,9 @@ def qc_freesurfer(config, subjects_sessions):
     frames = []
     for sub_sess in subjects_sessions:
         log_file = f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}/scripts/recon-all.log"
-        info = [None]
-        dir_count = 0
-        file_count = 0
-        if os.path.exists(log_file):
-            info = read_log(log_file)
-            dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
-            file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
+        info = read_log(log_file)
+        dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
+        file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
         frames.append([sub_sess, dir_count, file_count] + list(info))
     logs = pd.DataFrame(frames, columns=cols)
     fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
