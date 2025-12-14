@@ -234,8 +234,11 @@ def qc_freesurfer(config, subjects_sessions):
         file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
         frames.append([sub_sess] + list(info) + [dir_count, file_count])
     logs = pd.DataFrame(frames, columns=cols)
-    # fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
-    # qc = pd.merge(logs, fsqc_results, on="subject", how="left")
+    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
+    qc = pd.merge(logs, fsqc_results, on="subject", how="left")
+
+    # Convert radians to degrees
+    qc = convert_radians_to_degrees(qc)
 
     # Normalize ASEG volumes by ETIV
     print("\n---------------------------------------")
@@ -244,7 +247,7 @@ def qc_freesurfer(config, subjects_sessions):
                           'aseg.BrainSegVol_to_eTIV', 'aseg.MaskVol_to_eTIV', 'aseg.lhSurfaceHoles',
                           'aseg.rhSurfaceHoles', 'aseg.SurfaceHoles']
     vols = normalize_aseg_volumes(f"{DERIVATIVES_DIR}/freesurfer", subjects_sessions, columns_to_extract)
-    # qc = pd.merge(qc, vols, on="subject", how="left")
+    qc = pd.merge(qc, vols, on="subject", how="left")
 
     # Calculate outliers and save new group aparc/aseg statistics
     outlier_dir = f"{DERIVATIVES_DIR}/qc/fsqc/outliers"
@@ -260,12 +263,7 @@ def qc_freesurfer(config, subjects_sessions):
     df_group_stats.reset_index(inplace=True)
     path_to_group_stats = f"{DERIVATIVES_DIR}/qc/fsqc/group_aparc-aseg.csv"
     df_group_stats.to_csv(path_to_group_stats, index=False)
-    # qc = pd.merge(qc, df_outliers, on="subject", how="left")
-
-    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
-    # Convert radians to degrees
-    fsqc_results = convert_radians_to_degrees(fsqc_results)
-    qc = pd.merge(logs, [fsqc_results, vols, df_outliers], on="subject", how="left")
+    qc = pd.merge(qc, df_outliers, on="subject", how="left")
 
     path_to_final_fsqc = f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv"
     qc.to_csv(path_to_final_fsqc, index=False)
