@@ -287,8 +287,8 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
         f'module load python3/3.12.0\n'
     )
 
-    # subjects_sessions_str = " ".join(subjects_sessions)
-    subjects_sessions_str = [f"ses-{ses}/sub-{sub}" for (sub, ses) in subjects_sessions]
+    subjects_sessions_str = " ".join(subjects_sessions)
+    # subjects_sessions_str = [f"ses-{ses}/sub-{sub}" for (sub, ses) in subjects_sessions]
 
     # Call to FSQC container
     singularity_command = (
