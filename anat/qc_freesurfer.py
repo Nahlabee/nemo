@@ -211,7 +211,6 @@ def qc_freesurfer(config, subjects_sessions):
 
     print("\n---------------------------------------")
     print("Running log verification")
-    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
     cols = ["subject",
             "Number of folders generated",
             "Number of files generated",
@@ -224,7 +223,7 @@ def qc_freesurfer(config, subjects_sessions):
     frames = []
     for sub_sess in subjects_sessions:
         log_file = f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}/scripts/recon-all.log"
-        info = None
+        info = [None]
         dir_count = 0
         file_count = 0
         if os.path.exists(log_file):
@@ -233,6 +232,7 @@ def qc_freesurfer(config, subjects_sessions):
             file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
         frames.append([sub_sess, dir_count, file_count] + list(info))
     logs = pd.DataFrame(frames, columns=cols)
+    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
     qc = pd.merge(logs, fsqc_results, on="subject", how="left")
 
     # Convert radians to degrees
