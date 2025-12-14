@@ -102,7 +102,7 @@ def main(config_file=None):
         for session in sessions:
 
             print('\n', subject, ' - ', session, '\n')
-            subjects_sessions.append((subject, session))
+            subjects_sessions.append(f"{subject}_{session}")
 
             # -------------------------------------------
             # 0. MRIQC on raw BIDS data
