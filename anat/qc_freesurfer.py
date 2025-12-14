@@ -225,7 +225,9 @@ def qc_freesurfer(config, subjects_sessions):
             "Euler number before topo correction LH",
             "Euler number after topo correction RH"]
     frames = []
+    print(subjects_sessions)
     for sub_sess in subjects_sessions:
+        print(sub_sess)
         log_file = f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}/scripts/recon-all.log"
         info = read_log(log_file)
         dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
