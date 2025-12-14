@@ -232,7 +232,7 @@ def qc_freesurfer(config, subjects_sessions):
         info = read_log(log_file)
         dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
         file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
-        frames.append([sub_sess] + list(info) + [dir_count, file_count])
+        frames.append([sub_sess, dir_count, file_count] + list(info))
     logs = pd.DataFrame(frames, columns=cols)
     fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
     qc = pd.merge(logs, fsqc_results, on="subject", how="left")
