@@ -1,13 +1,12 @@
 import json
 import os
 import pandas as pd
-from fsqc.outlierDetection import readAsegStats
 from pathlib import Path
 import sys
 
 sys.path.append(str(Path(__file__).resolve().parent))
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from outlierDetection import outlierDetection_normalized, outlierTable
+from _outlierDetection import outlierDetection_normalized, outlierTable, readAsegStats
 import utils
 import re
 import csv
