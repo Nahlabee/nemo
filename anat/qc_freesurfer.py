@@ -284,6 +284,7 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
         f'module load userspace/all\n'
         f'module load singularity\n'
         f'module load python3/3.12.0\n'
+        f'source {common["python_env"]}/bin/activate\n'
     )
 
     subjects_sessions_str = " ".join(subjects_sessions)
