@@ -259,7 +259,7 @@ def qc_freesurfer(config, subjects_sessions):
     }
     df_group_stats, df_outliers = calculate_outliers(f"{DERIVATIVES_DIR}/freesurfer", subjects_sessions, outlier_dir, outlier_params)
     df_group_stats.reset_index(inplace=True)
-    path_to_group_stats = f"{DERIVATIVES_DIR}/qc/fsqc/group_aparc-aseg_values.csv"
+    path_to_group_stats = f"{DERIVATIVES_DIR}/qc/fsqc/group_aparc-aseg.csv"
     df_group_stats.to_csv(path_to_group_stats, index=False)
 
     qc = pd.merge(qc, df_outliers, on="subject", how="left")
@@ -338,7 +338,6 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
     # Write the complete BASH script to the specified file
     with open(path_to_script, 'w') as f:
         f.write(module_export + singularity_command + python_command + ownership_sharing)
-        # f.write(module_export + singularity_command + ownership_sharing)
 
 
 def run(config, subjects_sessions, job_ids=None):
