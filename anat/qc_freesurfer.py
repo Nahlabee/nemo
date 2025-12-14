@@ -265,7 +265,7 @@ def qc_freesurfer(config, subjects_sessions):
     fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
     # Convert radians to degrees
     fsqc_results = convert_radians_to_degrees(fsqc_results)
-    qc = pd.merge([logs, fsqc_results, vols, df_outliers], on="subject", how="left")
+    qc = pd.merge(logs, [fsqc_results, vols, df_outliers], on="subject", how="left")
 
     path_to_final_fsqc = f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv"
     qc.to_csv(path_to_final_fsqc, index=False)
