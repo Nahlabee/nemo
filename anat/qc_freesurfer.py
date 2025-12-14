@@ -388,7 +388,7 @@ if __name__ == "__main__":
 
     # Conversion des arguments
     config = json.loads(sys.argv[1])
-    subjects_sessions = sys.argv[2].split()  # Diviser la chaîne en liste
+    subjects_sessions = sys.argv[2].split(',')  # Diviser la chaîne en liste
 
     # Appel de la fonction qc_freesurfer
     qc_freesurfer(config, subjects_sessions)
