@@ -31,4 +31,4 @@ omp_nthreads = 24
 plugin = "MultiProc"
 remove_unnecessary_outputs = true
 resource_monitor = false
-stop_on_first_crash = true
+stop_on_first_crash = false
