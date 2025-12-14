@@ -319,17 +319,17 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
     if fsqc["qc_hippocampus"]:
         singularity_command += f'      --hippocampus \\\n'
 
-    if fsqc["qc_skip_existing"]:
-        singularity_command += f'      --skip-existing \\\n'
-
     if fsqc["qc_outlier"]:
         singularity_command += f'      --outlier \\\n'
+
+    if fsqc["qc_skip_existing"]:
+        singularity_command += f'      --skip-existing \\\n'
 
     # Call to python scripts for the rest of QC
     # todo: test json dump with dict
     python_command = (
         f'\npython3 anat/qc_freesurfer.py '
-        f"'{json.dumps(vars(config))}' {','.join(subjects_sessions)}"
+        f"'{json.dumps(config)}' {','.join(subjects_sessions)}"
     )
 
     # Add permissions for shared ownership of the output directory
@@ -337,8 +337,8 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
 
     # Write the complete BASH script to the specified file
     with open(path_to_script, 'w') as f:
-        # f.write(module_export + singularity_command + python_command + ownership_sharing)
-        f.write(module_export + singularity_command + ownership_sharing)
+        f.write(module_export + singularity_command + python_command + ownership_sharing)
+        # f.write(module_export + singularity_command + ownership_sharing)
 
 
 def run(config, subjects_sessions, job_ids=None):
