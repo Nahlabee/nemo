@@ -383,10 +383,9 @@ if __name__ == "__main__":
     # parser.add_argument("config", type=str, help="Configuration au format JSON")
     # parser.add_argument("subjects_sessions", type=str, help="Liste des sujets/sessions séparés par des espaces")
     # args = parser.parse_args()
-    print("main")
 
     # Conversion des arguments
-    config = json.load(sys.argv[1])
+    config = json.loads(sys.argv[1])
     subjects_sessions = sys.argv[2].split()  # Diviser la chaîne en liste
 
     # Appel de la fonction qc_freesurfer
