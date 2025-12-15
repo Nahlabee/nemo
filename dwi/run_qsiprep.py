@@ -105,14 +105,12 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     # todo: After PR accepted and new container built, remove bound to local freesurfer 7.4.1 and env variable
     singularity_command = (
         f'\napptainer run \\\n'
-        f'    --nv --cleanenv --writable-tmpfs \\\n'
+        f'    --nv --cleanenv --containall --writable-tmpfs \\\n'
         f'    -B {BIDS_DIR}:/data \\\n'
         f'    -B {DERIVATIVES_DIR}/qsiprep:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license \\\n'
         f'    -B {qsiprep["config_eddy"]}:/config/eddy_params.json \\\n'
         f'    -B {qsiprep["qsiprep_config"]}:/config/qsiprep_config.toml \\\n'
-        f'    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
-        f'    --env FREESURFER_HOME=/opt/freesurfer \\\n'
         f'    {qsiprep["qsiprep_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    --skip-bids-validation -v -w /out/work \\\n'
@@ -122,6 +120,9 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --config-file /config/qsiprep_config.toml \\\n'
         f'    --output-resolution {qsiprep["output_resolution"]}\n'
     )
+
+    # f'    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
+    # f'    --env FREESURFER_HOME=/opt/freesurfer \\\n'
 
     # Add permissions for shared ownership of the output directory
     ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qsiprep\n'
