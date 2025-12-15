@@ -83,7 +83,7 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
     )
 
     if job_ids:
-        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
+        header += f'#SBATCH --dependency=afterok:{":".join([job_ids])}\n'
         
     else:
         job_ids = []

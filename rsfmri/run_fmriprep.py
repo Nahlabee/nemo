@@ -10,7 +10,7 @@ from config import config
 # ------------------------------
 # HELPERS
 # ------------------------------
-def check_prerequisites(config, subject, session):
+def is_already_processed(config, subject, session):
     """
     Check if subject_session is already processed successfully.
     Note: Even if FMRIprep put files in cache, some steps are recomputed which require several hours of ressources.
@@ -171,7 +171,7 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
     )
 
     if job_ids:
-        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
+        header += f'#SBATCH --dependency=afterok:{":".join([job_ids])}\n'
         
     else:
         job_ids = []
