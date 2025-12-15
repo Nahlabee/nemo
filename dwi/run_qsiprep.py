@@ -114,7 +114,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    {qsiprep["qsiprep_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    --skip-bids-validation -v -w /out/work \\\n'
-        f'    --bids-database-dir /out/work/bids_db_dir\n'
+        f'    --bids-database-dir /out/work/bids_db_dir \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --eddy-config /config/eddy_params.json \\\n'
         f'    --config-file /config/qsiprep_config.toml \\\n'
