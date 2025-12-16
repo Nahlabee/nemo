@@ -105,7 +105,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     # todo: After PR accepted and new container built, remove bound to local freesurfer 7.4.1 and env variable
     singularity_command = (
         f'\napptainer run \\\n'
-        f'    --nv --cleanenv --containall --writable-tmpfs \\\n'
+        f'    --nv --cleanenv --containall \\\n'
         f'    -B {BIDS_DIR}:/data \\\n'
         f'    -B {DERIVATIVES_DIR}/qsiprep:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license \\\n'
