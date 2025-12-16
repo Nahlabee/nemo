@@ -4,7 +4,7 @@
 [common]
 input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
 derivatives = "/scratch/lhashimoto/nemo_derivatives"
-subjects = ["1054016"]
+subjects = ["1054003"]
 sessions = ["01"]
 freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
 python_env = "/scratch/lhashimoto/python/env/nemo"
@@ -87,8 +87,8 @@ atlases = ["4S156Parcels"] #, "4S356Parcels"]
 #   PIPELINE: fMRIPrep
 # =============================
 [fmriprep]
-fmriprep_container = "/scratch/hrasoanandrianina/containers/fmriprep_25.2.1.sif"
-fmriprep_config = "/scratch/hrasoanandrianina/code/nemo/config/fmriprep_config.toml"
+fmriprep_container = "/scratch/lhashimoto/fmriprep_25.2.1.sif"
+fmriprep_config = "/scratch/lhashimoto/code/nemo/config/fmriprep_config.toml"
 bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
@@ -100,10 +100,10 @@ omp_threads = 4
 #   PIPELINE: XCP-D
 # =============================
 [xcp_d]
-xcp_d_input_dir = "/scratch/hrasoanandrianina/derivatives/fmriprep/outputs"
-xcp_d_container = "/scratch/hrasoanandrianina/containers/xcp_d_0.12.0.sif"
-xcp_d_config = "/scratch/hrasoanandrianina/code/nemo/config/xcp_d_surf_config.toml"
-bids_filter_dir = "/scratch/hrasoanandrianina/code/nemo/rsfmri/bids_filters"
+xcp_d_input_dir = "/scratch/lhashimoto/nemo_derivatives/fmriprep/outputs"
+xcp_d_container = "/scratch/lhashimoto/xcp_d_0.12.0.sif"
+xcp_d_config = "/scratch/lhashimoto/code/nemo/config/xcp_d_surf_config.toml"
+bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
 requested_time = "8:00:00"
