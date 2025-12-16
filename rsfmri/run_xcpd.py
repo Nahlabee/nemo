@@ -115,31 +115,31 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
         f'echo "------ Running {xcp_d["xcp_d_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
-    tmp_dir_setup = (
-        f'\nhostname\n'
-        f'# Choose writable scratch directory\n'
-        f'if [ -n "$SLURM_TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
-        f'elif [ -n "$TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$TMPDIR"\n'
-        f'else\n'
-        f'    TMP_WORK_DIR=$(mktemp -d /tmp/xcp_d_{subject}_{session})\n'
-        f'fi\n'
-        f'mkdir -p "$TMP_WORK_DIR"\n'
-        f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-        f'echo "Using OUT_XCPD_DIR = {DERIVATIVES_DIR}/xcp_d"\n'
-    )
+    # tmp_dir_setup = (
+    #     f'\nhostname\n'
+    #     f'# Choose writable scratch directory\n'
+    #     f'if [ -n "$SLURM_TMPDIR" ]; then\n'
+    #     f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
+    #     f'elif [ -n "$TMPDIR" ]; then\n'
+    #     f'    TMP_WORK_DIR="$TMPDIR"\n'
+    #     f'else\n'
+    #     f'    TMP_WORK_DIR=$(mktemp -d /tmp/xcp_d_{subject}_{session})\n'
+    #     f'fi\n'
+    #     f'mkdir -p "$TMP_WORK_DIR"\n'
+    #     f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
+    #     f'echo "Using OUT_XCPD_DIR = {DERIVATIVES_DIR}/xcp_d"\n'
+    # )
     
     # Define the Singularity command for running FMRIPrep
     # todo: remove options that are in config file !!
     singularity_command = (
         f'\napptainer run --cleanenv \\\n'
         f'    -B {DERIVATIVES_DIR}/fmriprep/outputs:/data:ro \\\n'
-        f'    -B {DERIVATIVES_DIR}/xcp_d/outputs:/out \\\n'
+        f'    -B {DERIVATIVES_DIR}/xcp_d:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
         f'    -B {xcp_d["bids_filter_dir"]}:/bids_filter_dir\\\n'
         f'    -B {xcp_d["xcp_d_config"]}:/xcp_d_config.toml \\\n'
-        f'    {xcp_d["xcp_d_container"]} /data /out participant \\\n'
+        f'    {xcp_d["xcp_d_container"]} /data /out/outputs participant \\\n'
         f'      --input-type fmriprep \\\n'
         f'      --participant-label {subject} \\\n'
         f'      --session-id {session} \\\n'
@@ -148,20 +148,21 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
         f'      --motion-filter-type none\\\n'
         f'      --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
         f'      --nuisance-regressors 36P \\\n'
-        f'      --work-dir $TMP_WORK_DIR \\\n'
+        f'      --work-dir /out/work \\\n'
         f'      --config-file /xcp_d_config.toml \\\n'
     )
 
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/xcp_d\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/xcp_d/work\n'
+        # f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/xcp_d/work\n'
         f'echo "Finished XCP-D for subject: {subject}, session: {session}"\n'
     )
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
+        # f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
+        f.write(header + module_export + singularity_command + save_work)
     print(f"Created xcp_d SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
