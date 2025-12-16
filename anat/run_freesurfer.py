@@ -112,7 +112,7 @@ def generate_slurm_script(config, subject, session, path_to_script):
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --cleanenv \\\n'
-        f'    -B {BIDS_DIR}:/data \\\n'
+        f'    -B {BIDS_DIR}:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/freesurfer:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license \\\n'
         f'    --env FS_LICENSE=/license/license.txt \\\n'

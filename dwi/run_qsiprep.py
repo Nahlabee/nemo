@@ -106,7 +106,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --nv --cleanenv --writable-tmpfs \\\n'
-        f'    -B {BIDS_DIR}:/data \\\n'
+        f'    -B {BIDS_DIR}:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qsiprep:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license \\\n'
         f'    -B {qsiprep["config_eddy"]}:/config/eddy_params.json \\\n'

@@ -295,7 +295,7 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --writable-tmpfs --cleanenv \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer:/data \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/fsqc:/out \\\n'
         f'    {fsqc["fsqc_container"]} \\\n'
         f'      --subjects_dir /data \\\n'

@@ -84,7 +84,7 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
 
     header = (
         f'#!/bin/bash\n'
-        f'#SBATCH --job-name=xcp_d_{subject}_{session}\n'
+        f'#SBATCH --job-name=xcpd_{subject}_{session}\n'
         f'#SBATCH --output={DERIVATIVES_DIR}/xcp_d/stdout/xcp_d_{subject}_{session}_%j.out\n'
         f'#SBATCH --error={DERIVATIVES_DIR}/xcp_d/stdout/xcp_d_{subject}_{session}_%j.err\n'
         f'#SBATCH --mem={xcp_d["requested_mem"]}\n'
@@ -153,17 +153,17 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
     )
 
     save_work = (
-        f'\necho "Cleaning up temporary work directory..."\n'
+        # f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/xcp_d\n'
         # f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/xcp_d/work\n'
-        f'echo "Finished XCP-D for subject: {subject}, session: {session}"\n'
+        # f'echo "Finished XCP-D for subject: {subject}, session: {session}"\n'
     )
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
         # f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
         f.write(header + module_export + singularity_command + save_work)
-    print(f"Created xcp_d SLURM job: {path_to_script} for subject {subject}, session {session}")
+    # print(f"Created xcp_d SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
 def run_xcpd(config, subject, session, job_ids=None):

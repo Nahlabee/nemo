@@ -165,10 +165,10 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --fs-subjects-dir /freesurfer \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-        f'    --project-goodvoxels \\\n'
-        f'    --cifti-output 91k \\\n'
+        # f'    --project-goodvoxels \\\n'
+        # f'    --cifti-output 91k \\\n'
         f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
-        f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
+        # f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
         f'    --skip-bids-validation \\\n'
         f'    --work-dir /out/work \\\n'
         f'    --config-file /config/fmriprep_config.toml \\\n'
@@ -176,12 +176,12 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     )
 
     save_work = (
-        f'\necho "Cleaning up temporary work directory..."\n'
+        # f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/fmriprep\n'
         # f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/fmriprep/work\n'
         f'\nrsync -av {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat/ {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}/anat/\n'
         f'\nrm -rf {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat\n'
-        f'echo "Finished fMRIPrep for subject: {subject}, session: {session}"\n'
+        # f'echo "Finished fMRIPrep for subject: {subject}, session: {session}"\n'
     )
 
     # Write the complete SLURM script to the specified file
