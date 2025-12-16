@@ -162,8 +162,7 @@ def main(config_file=None):
             # -------------------------------------------
             if workflow.get("run_xcp_d"):
                 print("🔹 Submitting XCP-D")
-                # dependencies = [job_id for job_id in [fmriprep_job_id] if job_id is not None]
-                dependencies = ['9431714', '9431717']
+                dependencies = [job_id for job_id in [fmriprep_job_id] if job_id is not None]
                 xcpd_job_id = run_xcpd(config, subject, session, dependencies)
                 print(f"[XCP-D] job IDs: {xcpd_job_id}\n")
             else:
