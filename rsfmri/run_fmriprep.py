@@ -166,7 +166,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
         f'    --project-goodvoxels \\\n'
-        f'    ----cifti-output 91k \\\n'
+        f'    --cifti-output 91k \\\n'
         f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
         f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
         f'    --skip-bids-validation \\\n'
@@ -188,7 +188,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     with open(path_to_script, 'w') as f:
         # f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
         f.write(header + module_export + singularity_command + save_work)
-    print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
+    # print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
 def run_fmriprep(config, subject, session, job_ids=None):
