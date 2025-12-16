@@ -2,7 +2,7 @@
 #   PROJECT-WIDE SETTINGS
 # =============================
 [common]
-input_dir = " /scratch/hrasoanandrianina/braint_database"  # "/scratch/lhashimoto/nemo_database/imaging_data"
+input_dir = "/scratch/hrasoanandrianina/braint_database"  # "/scratch/lhashimoto/nemo_database/imaging_data"
 derivatives = "/scratch/lhashimoto/braint_derivatives"  # ""/scratch/lhashimoto/nemo_derivatives"
 subjects = ["003"]  # }["1054003"]
 sessions = ["01", "02"]
