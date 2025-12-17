@@ -13,12 +13,9 @@
 #email_frequency = "FAIL" # BEGIN,END
 #tmp = ["1054001","1054002","1054003","1054004","1054010"]
 
-input_dir = "/scratch/hrasoanandrianina/braint_database"  # "/scratch/lhashimoto/nemo_database/imaging_data"
-derivatives = "/scratch/lhashimoto/braint_derivatives"  # ""/scratch/lhashimoto/nemo_derivatives"
-subjects = ["003"]  # }["1054003"]
-sessions = ["01", "02"]
-freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
-python_env = "/scratch/lhashimoto/python/env/nemo"
+# input_dir = "/scratch/hrasoanandrianina/braint_database"  # "/scratch/lhashimoto/nemo_database/imaging_data"
+# derivatives = "/scratch/lhashimoto/braint_derivatives"  # ""/scratch/lhashimoto/nemo_derivatives"
+
 account = ""
 email = ""
 email_frequency = "FAIL"
@@ -40,11 +37,10 @@ run_qsirecon = false
 run_fmriprep = true
 run_xcpd = true
 run_mriqc_raw = false
-run_freesurfer_qc = false
 run_qsiprep_qc = false
 run_qsirecon_qc = false
-run_fmriprep_qc = false
-run_xcpd_qc = false
+run_fmriprep_qc = true
+run_xcpd_qc = true
 
 # =============================
 #   PIPELINE: FreeSurfer
@@ -82,7 +78,6 @@ qc_skip_existing = true
 qsiprep_container = "/scratch/lhashimoto/qsiprep-1.0.2.sif"
 config_eddy = "/scratch/lhashimoto/code/nemo/config/eddy_params.json"
 qsiprep_config = "/scratch/lhashimoto/code/nemo/config/qsiprep_config.toml"
-qsiprep_config = "/scratch/lhashimoto/code/nemo/config/qsiprep_config.toml"
 output_resolution = 1.8
 partition = "kepler"
 gpu_per_node = 2
@@ -94,7 +89,6 @@ requested_time = "24:00:00"
 # =============================
 [qsirecon]
 qsirecon_container = "/scratch/lhashimoto/qsirecon-1.1.1.sif"
-qsirecon_config = "/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml"
 qsirecon_config = "/scratch/lhashimoto/code/nemo/config/qsirecon_config.toml"
 partition = "kepler"
 gpu_per_node = 2

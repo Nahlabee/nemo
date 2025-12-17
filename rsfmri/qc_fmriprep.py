@@ -5,6 +5,7 @@ import os
 
 from config import config
 from rsfmri.qc_fmriprep_metrics_extractions import run as extract_qc_metrics
+import utils
 
 warnings.filterwarnings("ignore")
 # -----------------------
@@ -149,7 +150,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
     print(f"Created MRIQC-FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
-def run_mriqc_fmriprep(config, subject, session, job_ids=None):
+def run_qc_fmriprep(config, subject, session, job_ids=None):
     """
     Run the qc_fmriprep for a given subject and session.
 
@@ -189,18 +190,7 @@ def run_mriqc_fmriprep(config, subject, session, job_ids=None):
     path_to_script = f"{DERIVATIVES_DIR}/qc/fmriprep/scripts/qc_fmriprep_{subject}_{session}.slurm"
     generate_slurm_mriqc_script(config, subject, session, path_to_script)
 
-    cmd = (f'\nsrun --job-name=qc --ntasks=1 '
-           f'--partition={mriqc["partition"]} '
-           f'--mem={mriqc["requested_mem"]}'
-           f'--time={mriqc["requested_time"]} '
-           f'--out={DERIVATIVES_DIR}/qc/fmriprep/stdout/mriqc_fmriprep_{subject}_{session}.out '
-           f'--err={DERIVATIVES_DIR}/qc/fmriprep/stdout/mriqc_fmriprep_{subject}_{session}.err ')
-
-    if job_ids:
-        cmd += f'--dependency=afterok:{":".join(job_ids)} '
-
-    cmd += f'sh {path_to_script} &'
-
-    os.system(cmd)
-    print(f"[MRIQC] Submitting (background) task on interactive node")
-    return
+    cmd = f"sbatch {path_to_script}"
+    print(f"[QC-XCPD] Submitting job: {cmd}")
+    job_id = utils.submit_job(cmd)
+    return job_id

@@ -227,7 +227,6 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
 
 
 def run_fmriprep(config, subject, session, job_ids=None):
-def run_fmriprep(config, subject, session, job_ids=None):
     """
     Run the FMRIPrep for a given subject and session.
     Parameters

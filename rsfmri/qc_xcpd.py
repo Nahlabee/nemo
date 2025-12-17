@@ -170,7 +170,7 @@ def run_qc_xcpd(config, subject, session, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/xcpd/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/xcpd/scripts", exist_ok=True)
 
-    path_to_script = Path(f"{DERIVATIVES_DIR}/qc/xcpd/scripts/qc_xcpd_{subject}_{session}.sh")
+    path_to_script = Path(f"{DERIVATIVES_DIR}/qc/xcpd/scripts/qc_xcpd_{subject}_{session}.slurm")
     generate_slurm_mriqc_script(config, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"

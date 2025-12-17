@@ -170,7 +170,10 @@ def run(config, subject, session):
 
     except Exception as e:
                 print(f"⚠️ Skipping {subject} {session}: {e}")
-
-
     print(f"Fmriprep Quality Check terminated successfully for {subject} {session}.")
-    return row
+    
+    sub_ses = pd.DataFrame([row])
+    # Save outputs to csv file
+    path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/qc_{subject}_{session}.csv"
+    sub_ses.to_csv(path_to_qc, mode='a', header=False, index=False)
+    print(f"QC saved in {path_to_qc}\n")

@@ -131,7 +131,9 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
     )
 
     if job_ids:
-        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
+        header += (
+            f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
+        )
 
     if common.get("email"):
         header += (
