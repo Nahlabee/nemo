@@ -25,7 +25,7 @@ def is_already_processed(config, subject, session, data_type="raw"):
     session : str
         Session identifier (e.g., "ses-01").
     data_type : str
-        Type of data to process (possible choices: "raw", "fmriprep", "xcp_d", "qsirecon" or "qsiprep").
+        Type of data to process (possible choices: "raw", "fmriprep", "xcpd", "qsirecon" or "qsiprep").
 
     Returns
     -------
@@ -34,7 +34,6 @@ def is_already_processed(config, subject, session, data_type="raw"):
     """
 
     # Check if mriqc already processed without error
-
     DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout"
     if not os.path.exists(stdout_dir):
@@ -66,7 +65,7 @@ def derivatives_datatype_exists(config, subject, session, data_type="raw"):
     session : str
         Session identifier (e.g., "ses-01").
     data_type : str
-        Type of data to process (possible choices: "raw", "fmriprep", "xcp_d", "qsirecon" or "qsiprep").
+        Type of data to process (possible choices: "raw", "fmriprep", "xcpd", "qsirecon" or "qsiprep").
 
     Returns
     -------
@@ -99,7 +98,7 @@ def derivatives_datatype_exists(config, subject, session, data_type="raw"):
 
 
 # ------------------------
-# Create SLURM job scripts 
+# Create SLURM job script for MRIQC
 # ------------------------
 def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_type="raw", job_ids=None):
     """Generate the SLURM job script.
@@ -151,6 +150,38 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         f'echo "------ Running {mriqc["mriqc_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
+    prereq_check = (
+        f'\n# Check that {data_type} finished without error\n'
+        f'deriv_data_type_dir="{DERIVATIVES_DIR}/{data_type}/outputs/{subject}/{session}" \n'
+        f'if [ ! -d "$deriv_data_type_dir" ]; then\n'
+        f'    exit 1\n'
+        f'fi\n'
+
+        f'stdout_dir="{DERIVATIVES_DIR}/{data_type}/stdout"\n'
+        f'prefix="{data_type}_{subject}_{session}"\n'
+        f'if [{data_type} == "fmriprep"]; then\n'
+        f'    success_string="fMRIPrep finished successfully"\n'
+        f'elif [{data_type} == "xcpd"]; then\n'
+        f'    success_string="XCP-D finished successfully"\n'
+        f'elif [{data_type} == "qsiprep"]; then\n'
+        f'    success_string="QSIPrep finished successfully"\n'
+        f'elif [{data_type} == "qsirecon"]; then\n'
+        f'    success_string="QSIRecon finished successfully"\n'
+        f'fi\n'
+        f'found_success=false\n'
+        f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
+        f'    if grep -q "$success_string" $file; then\n'
+        f'        found_success=true\n'
+        f'        break\n'
+        f'    fi\n'
+        f'done\n'
+        f'if [ "$found_success" = false ]; then\n'
+        f'    echo "[MRIQC] {data_type} did not terminate for {subject} {session}. Please run {data_type} command before."\n '
+        f'    exit 1\n'
+        f'fi\n'
+
+    )
+
     # Define the Singularity command for running MRIQC
     # Note: Unlike fmriprep, no config file is used here, the option doesn't exist for mriqc
     if data_type == "raw":
@@ -184,9 +215,12 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
     )
 
     # Write the complete SLURM script to the specified file
-    with open(path_to_script, 'w') as f:
-        f.write(header + module_export + singularity_cmd + save_work)
-
+    if data_type == "raw":
+        with open(path_to_script, 'w') as f:
+            f.write(header + module_export + singularity_cmd + save_work)
+    else:
+        with open(path_to_script, 'w') as f:
+            f.write(header + module_export + prereq_check + singularity_cmd + save_work)
 
 # ------------------------------
 # MAIN JOB SUBMISSION LOGIC
@@ -201,18 +235,16 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
     session : str
         Session identifier.
     data_type : str
-        Type of data to process (possible choices: "raw", "fmriprep", "xcp_d", "qsirecon" or "qsiprep").
+        Type of data to process (possible choices: "raw", "fmriprep", "xcpd", "qsirecon" or "qsiprep").
     job_ids : list, optional
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
-        raise ValueError(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
-
-    if is_already_processed(config, subject, session):
-        return None
-
     DERIVATIVES_DIR = config["common"]["derivatives"]
+
+    if data_type not in ["raw", "fmriprep", "xcpd", "qsiprep", "qsirecon"]:
+        print(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
+        return None
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}", exist_ok=True)
@@ -221,31 +253,9 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/work", exist_ok=True)
 
-    if job_ids is None:
-        # todo : move prerequisite check into slurm script like in run_qsirecon.
-        #  This ckeck must be done even if all previous jobs are finished. Because they could finish with errors
-        # To not run MRIQC on erroneous outputs
-        if data_type == "fmriprep":
-            if is_fmriprep_done(config, subject, session) is False:
-                print(
-                    f"[MRIQC] FMRIprep not completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
-                return None
-        elif data_type == "xcp_d":
-            if is_xcpd_done(config, subject, session) is False:
-                print(f"[MRIQC] XCP-D not completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
-                return None
-        elif data_type == "qsiprep":
-            if is_qsiprep_done(config, subject, session) is False:
-                print(
-                    f"[MRIQC] QSIprep not completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
-                return None
-        elif data_type == "qsirecon":
-            if is_qsirecon_done(config, subject, session) is False:
-                print(
-                    f"[MRIQC] QSIrecon not completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
-                return None
-
-        job_ids = []
+    if is_already_processed(config, subject, session):
+        print(f"[MRIQC] Subject {subject}_{session} already processed. Skipping MRIQC submission.\n")
+        return None
 
     # Add dependency if this is not the first job in the chain
     path_to_script = f"{DERIVATIVES_DIR}/mriqc_{data_type}/scripts/{subject}_{session}_mriqc.slurm"

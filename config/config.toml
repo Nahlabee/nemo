@@ -34,7 +34,6 @@ run_qsirecon = false
 run_fmriprep = true
 run_xcp_d = true
 run_mriqc_raw = false
-run_mriqc_derivatives = false
 run_freesurfer_qc = false
 run_qsiprep_qc = false
 run_qsirecon_qc = false
@@ -53,7 +52,7 @@ requested_mem = "16G"
 requested_time = "9:00:00"
 
 # =============================
-#   PIPELINE: FSQC
+#   PIPELINE: FreeSurfer QC
 # =============================
 [fsqc]
 fsqc_container = "/scratch/lhashimoto/fsqc-2.1.4.sif"
@@ -111,7 +110,7 @@ omp_threads = 4
 # =============================
 #   PIPELINE: XCP-D
 # =============================
-[xcp_d]
+[xcpd]
 xcp_d_input_dir = "/scratch/lhashimoto/nemo_derivatives/fmriprep/outputs"
 xcp_d_container = "/scratch/lhashimoto/xcpd-0.12.0.sif"
 xcp_d_config = "/scratch/lhashimoto/code/nemo/config/xcp_d_surf_config.toml"

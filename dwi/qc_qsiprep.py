@@ -152,15 +152,11 @@ def run(config, subjects_sessions, job_ids=None):
     for sub_sess in subjects_sessions:
         subject = sub_sess.split('_')[0]
         session = sub_sess.split('_')[1]
+        # todo: move read_log to utils
         finished_status, runtime = read_log(config, subject, session)
         dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/qsiprep/{subject}/{session}")
         file_count = utils.count_files(f"{DERIVATIVES_DIR}/qsiprep/{subject}/{session}")
         frames.append([subject, session, finished_status, runtime, dir_count, file_count])
-
-        # Extract values, mean, max, std of metrics from qsiprep outputs :
-        # - confounds_timeseries
-        # - image_qc
-        # put values in frames
     qc = pd.DataFrame(frames, columns=cols)
 
     path_to_qc = f"{DERIVATIVES_DIR}/qc/qsiprep/qc.csv"

@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
+from config import config
 
 
 # todo: separate is_already_processed part
@@ -120,7 +121,7 @@ def generate_slurm_script(config, subject, session, path_to_script):
         f'        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
         f'        recon-all \\\n'
         f'            -all \\\n'
-        f'            -s {subject}_{session} \\\n'
+        f'            -s {subject} \\\n'
         f'            -i /data/{subject}/{session}/anat/{subject}_{session}_T1w.nii.gz \\\n'
         f'            -sd /out'
     )
