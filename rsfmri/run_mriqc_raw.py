@@ -2,13 +2,8 @@
 import os
 import sys
 from pathlib import Path
-
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-from rsfmri.run_fmriprep import is_already_processed as is_fmriprep_done
-from rsfmri.run_xcpd import is_already_processed as is_xcpd_done
-from dwi.run_qsiprep import is_already_processed as is_qsiprep_done
-from dwi.run_qsirecon import is_already_processed as is_qsirecon_done
 
 
 # --------------------------------------------
@@ -221,6 +216,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
     else:
         with open(path_to_script, 'w') as f:
             f.write(header + module_export + prereq_check + singularity_cmd + save_work)
+
 
 # ------------------------------
 # MAIN JOB SUBMISSION LOGIC

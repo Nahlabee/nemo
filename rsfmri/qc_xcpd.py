@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-import json, os
-import numpy as np
-import pandas as pd
+import os
 from pathlib import Path
-import nibabel as nb
 import utils
 
-from config import config
+
 # ------------------------
 def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_ids=None):
     """
@@ -141,6 +138,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
     with open(path_to_script, 'w') as f:
         f.write(header + module_export + prereq_check + tmp_dir_setup + singularity_cmd + python_command + save_work)
     print(f"Created MRIQC-XCP-D SLURM job: {path_to_script} for subject: {subject}, session: {session}")
+
 
 def run_qc_xcpd(config, subject, session, job_ids=None):
     """

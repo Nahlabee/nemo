@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
-
 import warnings
 import os
-
-from config import config
-from rsfmri.qc_fmriprep_metrics_extractions import run as extract_qc_metrics
 import utils
-
 warnings.filterwarnings("ignore")
-# -----------------------
+
 
 # ------------------------
 # Create SLURM job script for MRIQC 

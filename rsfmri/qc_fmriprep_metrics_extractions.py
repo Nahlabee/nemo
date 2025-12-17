@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 from venv import logger
 import numpy as np
 import nibabel as nib
@@ -8,14 +7,10 @@ from pathlib import Path
 from sklearn.metrics import mutual_info_score
 from nilearn.image import mean_img
 import warnings
-import re
-import os
-import toml
 import utils
-from config import config
-
 warnings.filterwarnings("ignore")
 # -----------------------
+
 
 def load_any_image(path: Path) -> np.ndarray:
     """

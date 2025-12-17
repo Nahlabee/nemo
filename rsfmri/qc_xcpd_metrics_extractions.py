@@ -13,12 +13,14 @@ MIN_RETAINED_VOLS = 100 # Minimum number of volumes to retain after censoring
 MAX_CENSOR_PCT = 50.0 # Maximum percentage of censored volumes
 MAX_MEAN_FD = 0.5 # Maximum mean framewise displacement
 
+
 # ------------------------------
 # HELPERS
 # ------------------------------
 def load_if_exists(path):
     """Load a file if it exists, otherwise return None."""
     return path if path.exists() else None
+
 
 def compute_tsnr(nifti_file, mask_file=None):
     """
@@ -44,6 +46,7 @@ def compute_tsnr(nifti_file, mask_file=None):
     std_img = np.std(data, axis=-1)
     tsnr = np.nanmean(mean_img / std_img)
     return float(tsnr)
+
 
 # ------------------------------
 # MAIN QC FUNCTION
