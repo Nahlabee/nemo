@@ -1,4 +1,5 @@
-import os, toml
+import toml
+import os
 import subprocess
 from pathlib import Path
 

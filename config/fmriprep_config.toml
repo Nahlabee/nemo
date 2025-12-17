@@ -1,7 +1,7 @@
 [environment]
 
 [execution]
-bids_dir = ""
+#bids_dir = ""
 boilerplate_only = false
 sloppy = false
 debug = []
@@ -13,6 +13,7 @@ track_carbon = false
 me_output_echos = false
 aggr_ses_reports = 4
 output_layout = "bids"
+output_spaces = "fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native"
 reports_only = false
 write_graph = false
 
@@ -20,6 +21,7 @@ write_graph = false
 anat_only = false
 bold2anat_dof = 6
 bold2anat_init = "auto"
+cifti_output = "91k"
 fmap_bspline = false
 force_syn = false
 hires = true
@@ -33,15 +35,18 @@ project_goodvoxels = true
 regressors_all_comps = false
 regressors_dvars_th = 2.0
 regressors_fd_th = 0.5
-run_reconall = true
+run_reconall = false
 skull_strip_fixed_seed = false
 skull_strip_template = "OASIS30ANTs"
 skull_strip_t1w = "force"
 slice_time_ref = 0.5
+subject_anatomical_reference = "first-lex"
 use_syn_sdc = false
 me_t2s_fit_method = "curvefit"
 
 [nipype]
+#nprocs = 32
+#omp_nthreads = 8
 crashfile_format = "txt"
 get_linked_libs = false
 plugin = "MultiProc"

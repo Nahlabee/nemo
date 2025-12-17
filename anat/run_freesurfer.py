@@ -47,7 +47,6 @@ def check_prerequisites(config, subject, session):
             return False
 
     # Check if already processed
-    # todo: change output directory subject/session or session/subject
     path_to_output = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"
     if os.path.exists(path_to_output):
         logs = os.path.join(path_to_output, 'scripts/recon-all-status.log')
@@ -97,7 +96,7 @@ def generate_slurm_script(config, subject, session, path_to_script):
 
     if common.get("email"):
         header += (
-            f'#SBATCH --mail-type=BEGIN,END\n'
+            f'#SBATCH --mail-type={common["email_frequency"]}\n'
             f'#SBATCH --mail-user={common["email"]}\n'
         )
 
@@ -114,10 +113,10 @@ def generate_slurm_script(config, subject, session, path_to_script):
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --cleanenv \\\n'
-        f'    -B {BIDS_DIR}:/data \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer/{session}:/out \\\n'
-        f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
-        f'    --env FS_LICENSE=/license.txt \\\n'
+        f'    -B {BIDS_DIR}:/data:ro \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer:/out \\\n'
+        f'    -B {common["freesurfer_license"]}:/license \\\n'
+        f'    --env FS_LICENSE=/license/license.txt \\\n'
         f'    {freesurfer["freesurfer_container"]} bash -c \\\n'
         f'        "source /usr/local/freesurfer/SetUpFreeSurfer.sh && \\\n'
         f'        recon-all \\\n'
@@ -168,7 +167,7 @@ def run_freesurfer(config, subject, session):
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/scripts", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/{session}", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/freesurfer", exist_ok=True)
 
     path_to_script = f"{DERIVATIVES_DIR}/freesurfer/scripts/{subject}_{session}_freesurfer.slurm"
     generate_slurm_script(config, subject, session, path_to_script)

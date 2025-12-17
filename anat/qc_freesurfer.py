@@ -1,18 +1,17 @@
 import json
 import os
-# import fsqc
 import pandas as pd
-from fsqc.outlierDetection import readAsegStats
 from pathlib import Path
 import sys
 
 sys.path.append(str(Path(__file__).resolve().parent))
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from outlierDetection import outlierDetection_normalized, outlierTable
+from _outlierDetection import outlierDetection_normalized, outlierTable, readAsegStats
 import utils
 import re
 import csv
 import numpy as np
+# import fsqc
 
 
 def read_log(log_file):
@@ -20,6 +19,10 @@ def read_log(log_file):
     Uses regex to extract information from the log file such as the runtime, the number of Euler number before and after topological correction
 
     """
+
+    if not os.path.exists(log_file):
+        return None, None, None, None, None, None
+
     finished_pattern = re.compile(r"finished without error")
     runtime_pattern = re.compile(r"#@#%# recon-all-run-time-hours (\d+\.\d+)")
     topo_before_pattern_lh = re.compile(r"#@# Fix Topology lh.*?before topology correction, eno=([^\(]+)", re.DOTALL)
@@ -212,7 +215,6 @@ def qc_freesurfer(config, subjects_sessions):
 
     print("\n---------------------------------------")
     print("Running log verification")
-    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
     cols = ["subject",
             "Number of folders generated",
             "Number of files generated",
@@ -223,17 +225,16 @@ def qc_freesurfer(config, subjects_sessions):
             "Euler number before topo correction LH",
             "Euler number after topo correction RH"]
     frames = []
+    print(subjects_sessions)
     for sub_sess in subjects_sessions:
-        log_file = f"{DERIVATIVES_DIR}/freesurfer{sub_sess}/scripts/recon-all.log"
-        info = None
-        dir_count = 0
-        file_count = 0
-        if os.path.exists(log_file):
-            info = read_log(log_file)
-            dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
-            file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
+        print(sub_sess)
+        log_file = f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}/scripts/recon-all.log"
+        info = read_log(log_file)
+        dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
+        file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
         frames.append([sub_sess, dir_count, file_count] + list(info))
     logs = pd.DataFrame(frames, columns=cols)
+    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
     qc = pd.merge(logs, fsqc_results, on="subject", how="left")
 
     # Convert radians to degrees
@@ -260,10 +261,10 @@ def qc_freesurfer(config, subjects_sessions):
     }
     df_group_stats, df_outliers = calculate_outliers(f"{DERIVATIVES_DIR}/freesurfer", subjects_sessions, outlier_dir, outlier_params)
     df_group_stats.reset_index(inplace=True)
-    path_to_group_stats = f"{DERIVATIVES_DIR}/qc/fsqc/group_aparc-aseg_values.csv"
+    path_to_group_stats = f"{DERIVATIVES_DIR}/qc/fsqc/group_aparc-aseg.csv"
     df_group_stats.to_csv(path_to_group_stats, index=False)
-
     qc = pd.merge(qc, df_outliers, on="subject", how="left")
+
     path_to_final_fsqc = f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv"
     qc.to_csv(path_to_final_fsqc, index=False)
 
@@ -285,6 +286,7 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
         f'module load userspace/all\n'
         f'module load singularity\n'
         f'module load python3/3.12.0\n'
+        f'source {common["python_env"]}/bin/activate\n'
     )
 
     subjects_sessions_str = " ".join(subjects_sessions)
@@ -293,7 +295,7 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --writable-tmpfs --cleanenv \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer:/data \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/fsqc:/out \\\n'
         f'    {fsqc["fsqc_container"]} \\\n'
         f'      --subjects_dir /data \\\n'
@@ -318,17 +320,16 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
     if fsqc["qc_hippocampus"]:
         singularity_command += f'      --hippocampus \\\n'
 
-    if fsqc["qc_skip_existing"]:
-        singularity_command += f'      --skip-existing \\\n'
-
     if fsqc["qc_outlier"]:
         singularity_command += f'      --outlier \\\n'
 
+    if fsqc["qc_skip_existing"]:
+        singularity_command += f'      --skip-existing \\\n'
+
     # Call to python scripts for the rest of QC
-    # todo: test json dump with dict
     python_command = (
         f'\npython3 anat/qc_freesurfer.py '
-        f"'{json.dumps(vars(config))}' {','.join(subjects_sessions)}"
+        f"'{json.dumps(config)}' {','.join(subjects_sessions)}"
     )
 
     # Add permissions for shared ownership of the output directory
@@ -341,29 +342,9 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
 
 def run(config, subjects_sessions, job_ids=None):
     """
-    Run the QSIrecon for a given subject and session.
-
-    Parameters
-    ----------
-    job_ids
-    args : Namespace
-        Configuration arguments.
-    subject : str
-        Subject identifier.
-    session : str
-        Session identifier.
-
-    Returns
-    -------
-    str or None
-        SLURM job ID if the job is submitted successfully, None otherwise.
+    Run FreeSurfer QC
+    Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
     """
-
-    # Run FreeSurfer QC
-    # Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
-
-    if job_ids is None:
-        job_ids = []
 
     common = config["common"]
     fsqc = config["fsqc"]
@@ -393,3 +374,10 @@ def run(config, subjects_sessions, job_ids=None):
     os.system(cmd)
     print(f"[FSQC] Submitting (background) task on interactive node")
     return
+
+
+if __name__ == "__main__":
+    import sys
+    config = json.loads(sys.argv[1])
+    subjects_sessions = sys.argv[2].split(',')
+    qc_freesurfer(config, subjects_sessions)

@@ -27,7 +27,7 @@ def is_already_processed(config, input_dir, data_type="raw"):
         True if already processed, False otherwise.
     """
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Check if mriqc already processed without error
     if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
@@ -69,8 +69,8 @@ def generate_slurm_mriqc_script(config, input_dir, path_to_script, data_type="ra
     job_ids : list, optional
         List of SLURM job IDs to set as dependencies (default is None).
     """
-    common = config.config["common"]
-    mriqc = config.config["mriqc"]
+    common = config["common"]
+    mriqc = config["mriqc"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
@@ -172,7 +172,7 @@ def run_mriqc_group(config, input_dir, data_type="raw", job_ids=None):
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_group_{data_type}", exist_ok=True)
@@ -193,5 +193,4 @@ def run_mriqc_group(config, input_dir, data_type="raw", job_ids=None):
 
     cmd = f"sbatch {path_to_script}"
     job_id = utils.submit_job(cmd)
-    print(f"[MRIQC] Submitting job {cmd}\n")
     return job_id

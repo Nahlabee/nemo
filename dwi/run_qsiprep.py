@@ -74,7 +74,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'#SBATCH -p {qsiprep["partition"]}\n'
         f'#SBATCH --gpus-per-node={qsiprep["gpu_per_node"]}\n'
         f'#SBATCH --nodes=1\n'
-        f'#SBATCH --mem={qsiprep["requested_mem"]}gb\n'
+        f'#SBATCH --mem={qsiprep["requested_mem"]}\n'
         f'#SBATCH -t {qsiprep["requested_time"]}\n'
         f'#SBATCH -e {DERIVATIVES_DIR}/qsiprep/stdout/%x_job-%j.err\n'
         f'#SBATCH -o {DERIVATIVES_DIR}/qsiprep/stdout/%x_job-%j.out\n'
@@ -102,23 +102,24 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
 
 
     # Note: Temporary binding to a local FreeSurfer version is included
-    # todo: After PR accepted and new container built, remove bound to local freesurfer 7.4.1 and env variable
+    # todo: After PR Update FreeSurfer #19 accepted and new container built, remove bound to local freesurfer 7.4.1 and env variable
     singularity_command = (
         f'\napptainer run \\\n'
-        f'    --nv --cleanenv \\\n'
-        f'    -B {BIDS_DIR}:/data \\\n'
+        f'    --nv --cleanenv --writable-tmpfs \\\n'
+        f'    -B {BIDS_DIR}:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qsiprep:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license \\\n'
         f'    -B {qsiprep["config_eddy"]}:/config/eddy_params.json \\\n'
-        f'    -B {qsiprep["qsiprep_config"]}:/config/config-file.toml \\\n'
+        f'    -B {qsiprep["qsiprep_config"]}:/config/qsiprep_config.toml \\\n'
         f'    -B /scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer:/opt/freesurfer:ro \\\n'
         f'    --env FREESURFER_HOME=/opt/freesurfer \\\n'
         f'    {qsiprep["qsiprep_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
-        f'    --skip-bids-validation -v -w /out/temp_qsiprep \\\n'
+        f'    --skip-bids-validation -v -w /out/work \\\n'
+        f'    --bids-database-dir /out/work/bids_db_dir \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --eddy-config /config/eddy_params.json \\\n'
-        f'    --config-file /config/config-file.toml \\\n'
+        f'    --config-file /config/qsiprep_config.toml \\\n'
         f'    --output-resolution {qsiprep["output_resolution"]}\n'
     )
 
@@ -168,6 +169,5 @@ def run_qsiprep(config, subject, session, job_ids=None):
     generate_slurm_script(config, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"
-    print(f"[QSIPREP] Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id

@@ -46,6 +46,7 @@ def main(config_file=None):
     # -------------------------------
     if not config_file:
         config_file = f"{Path(__file__).parent}/config/config.toml"
+        config_file = f"{Path(__file__).parent}/config/config.toml"
     config = utils.load_config(config_file)
 
     common = config["common"]
@@ -57,12 +58,22 @@ def main(config_file=None):
     mriqc = config["mriqc"]
     xcpd = config["xcpd"]
     fsqc = config["fsqc"]
+    common = config["common"]
+    workflow = config["workflow"]
+    freesurfer = config["freesurfer"]
+    qsiprep = config["qsiprep"]
+    qsirecon = config["qsirecon"]
+    fmriprep = config["fmriprep"]
+    mriqc = config["mriqc"]
+    xcpd = config["xcp_d"]
+    fsqc = config["fsqc"]
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # Save config with datetime
-    filename = f"{DERIVATIVES_DIR}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    filename = f"{DERIVATIVES_DIR}/config_{datetime.now().strftime('%Y%m%d-%H%M%S')}.toml"
     with open(filename, "w") as f:
+        toml.dump(config, f)
         toml.dump(config, f)
 
     # -------------------------------------------------------
@@ -96,16 +107,14 @@ def main(config_file=None):
 
         print(f"\n================ {subject} ================")
 
-        # Initialize job IDs list for the current subject
-        job_ids = []
-       
         # -------------------------------------------
         # Loop over sessions
         # -------------------------------------------
         sessions = utils.get_sessions(BIDS_DIR, subject, common.get('sessions'))
 
+        # FMRIprep must wait for a session to be finished before running the next one
         fmriprep_sub_job_ids = []
-        
+
         for session in sessions:
             print('\n', subject, ' - ', session, '\n')
             subjects_sessions.append(f"{subject}_{session}")
@@ -113,77 +122,71 @@ def main(config_file=None):
             # -------------------------------------------
             # 0. MRIQC on raw BIDS data
             # -------------------------------------------
-            if workflow["run_mriqc_raw"]:
-                print("🔹 Submitting MRIQC (raw data)")
-                mriqc_raw_job_id = run_mriqc_raw(
+            if workflow.get("run_mriqc_raw"):
+                print("[MRIQC-RAW] (raw data)")
+                jid_mriqc_raw = run_mriqc(
                     config,
                     subject=subject,
                     session=session,
                     data_type="raw"
                     )
-                mriqc_job_ids.append(mriqc_raw_job_id)
-                print(f"[MRIQC-RAW] job IDs: {mriqc_raw_job_id}\n")
-            else:
-                mriqc_raw_job_id = None    
             # -------------------------------------------
             # 1. FREESURFER
             # -------------------------------------------
-            if workflow["run_freesurfer"]:
-                print("🔹 Submitting freesurfer")
+            if workflow.get("run_freesurfer"):
+                print("[FREESURFER]")
                 freesurfer_job_id = run_freesurfer(config, subject, session)
                 freesurfer_job_ids.append(freesurfer_job_id)
-                print(f"[FREESURFER] job IDs: {freesurfer_job_id}\n")
             else:
                 freesurfer_job_id = None
             
             # -------------------------------------------
             # 2. QSIprep and QSIrecon
             # -------------------------------------------
-            if workflow["run_qsiprep"]:
-                print("🔹 Submitting QSIprep")
+            if workflow.get("run_qsiprep"):
+                print("[QSIPREP]p")
                 qsiprep_job_id = run_qsiprep(config, subject, session)
                 qsiprep_job_ids.append(qsiprep_job_id)
-                print(f"[QSIPREP] job IDs: {qsiprep_job_id}\n")
             else:
                 qsiprep_job_id = None
 
-            if workflow["run_qsirecon"]:
-                print("🔹 Submitting QSIrecon")
+            if workflow.get("run_qsirecon"):
+                print("[QSIRECON]")
                 dependencies = [job_id for job_id in [freesurfer_job_id, qsiprep_job_id] if job_id is not None]
                 qsirecon_job_id = run_qsirecon(config, subject, session, dependencies)
-                qsirecon_job_ids.append(qsirecon_job_id)
-                print(f"[QSIRECON] job IDs: {qsirecon_job_id}\n")
             else:
                 qsirecon_job_id = None
-            
-            # -------------------------------------------
-            # 3.a fMRIPrep 
-            # -------------------------------------------
 
-            if workflow["run_fmriprep"]:
-                print("🔹 Submitting fMRIPrep")
+            # -------------------------------------------
+            # 1. fMRIPrep
+            # -------------------------------------------
+            if workflow.get("run_fmriprep"):
+                print("[FMRIPREP]")
                 dependencies = [job_id for job_id in [freesurfer_job_id] + fmriprep_sub_job_ids if job_id is not None]
-                fmriprep_job_id = run_fmriprep(config, 
-                                               subject=subject,
-                                               session=session,
-                                               job_ids=dependencies)
-                print(f"[FMRIPREP] job IDs: {fmriprep_job_id}\n")
+                fmriprep_job_id = run_fmriprep(config, subject, session, dependencies)
                 fmriprep_sub_job_ids.append(fmriprep_job_id)
             else:
                 fmriprep_job_id = None
-            
+
+            # -------------------------------------------
+            # 3.a fMRIPrep 
+            # -------------------------------------------
+            if workflow.get("run_xcp_d"):
+                print("[XCP-D]")
+                dependencies = [job_id for job_id in [fmriprep_job_id] if job_id is not None]
+                xcpd_job_id = run_xcpd(config, subject, session, dependencies)
+            else:
+                xcpd_job_id = None
             # -------------------------------------------
             # 3.b QC fMRIPrep 
             # -------------------------------------------
-
-            if workflow["run_mriqc_derivatives"]:
-                print("🔹 Submitting MRIQC (fMRIPrep)")
-                dependencies_mriqc_fmriprep = [job_id for job_id in [freesurfer_job_id, fmriprep_job_id] if job_id is not None]
-                mriqc_fmriprep_job_id = run_qc_fmriprep(
+            if workflow.get("run_mriqc_derivatives"):
+                mriqc_fprep_job_id = run_mriqc(
                     config,
                     subject=subject,
                     session=session,
-                    job_ids=dependencies_mriqc_fmriprep
+                    data_type="fmriprep",
+                    job_ids=fmriprep_job_id
                 )
                 print(f"[MRIQC-FMRIPREP] job IDs: {mriqc_fmriprep_job_id}\n")
             else:
@@ -202,95 +205,52 @@ def main(config_file=None):
                     session=session,
                     job_ids=dependencies_xcpd
                 )
-                print(f"[XCP-D] job IDs: {xcpd_job_id}\n")
-                xcpd_job_ids.append(xcpd_job_id)
-            else:
-                xcpd_job_id = None
-            
-            # -------------------------------------------
-            # 4.b QC on XCP-D 
-            # -------------------------------------------
+                print(f"[MRIQC-QSIPREP] job IDs: {mriqc_qsiprep_job_id}\n")
 
-            if workflow["run_mriqc_derivatives"]:
-                print("🔹 Submitting MRIQC (XCP-D)")
-                dependencies_mriqc_xcpd = [job_id for job_id in [freesurfer_job_id, fmriprep_job_id, xcpd_job_id] if job_id is not None]
-                mriqc_xcpd_job_id = run_qc_xcpd(
+                mriqc_qsirecon_job_id = run_mriqc(
+                    config,
+                    subject=subject,
+                    session=session,
+                    data_type="qsirecon",
+                    job_ids=qsirecon_job_id
+                )
+                print(f"[MRIQC-QSIRECON] job IDs: {mriqc_qsirecon_job_id}\n")
+
+                dependencies = [job_id for job_id in [fmriprep_job_id, xcpd_job_id] if job_id is not None]
+                mriqc_xcpd_job_id = run_mriqc(
                     config,
                     subject=subject,
                     session=session,
                     job_ids=dependencies_mriqc_xcpd
                 )
                 print(f"[MRIQC-XCPD] job IDs: {mriqc_xcpd_job_id}\n")
-            else:
-                mriqc_xcpd_job_id = None
-
-            # -------------------------------------------
-            # 5. MRIQC on derivatives
-            # -------------------------------------------
-            # if workflow["run_mriqc_derivatives"]:
-            #     mriqc_fprep_job_id = run_mriqc(
-            #         config,
-            #         subject=subject,
-            #         session=session,
-            #         data_type="fmriprep",
-            #         job_ids=fmriprep_job_id
-            #     )
-            #     print(f"[MRIQC-FMRIPREP] job IDs: {mriqc_fprep_job_id}\n")
-
-            #     mriqc_qsiprep_job_id = run_mriqc(
-            #         config,
-            #         subject=subject,
-            #         session=session,
-            #         data_type="qsiprep",
-            #         job_ids=qsiprep_job_id
-            #     )
-            #     print(f"[MRIQC-QSIPREP] job IDs: {mriqc_qsiprep_job_id}\n")
-
-            #     mriqc_qsirecon_job_id = run_mriqc(
-            #         config,
-            #         subject=subject,
-            #         session=session,
-            #         data_type="qsirecon",
-            #         job_ids=qsirecon_job_id
-            #     )
-            #     print(f"[MRIQC-QSIRECON] job IDs: {mriqc_qsirecon_job_id}\n")
-
-            #     dependencies = [job_id for job_id in [fmriprep_job_id, xcpd_job_id] if job_id is not None]
-            #     mriqc_xcpd_job_id = run_mriqc(
-            #         config,
-            #         subject=subject,
-            #         session=session,
-            #         data_type="xcpd",
-            #         job_ids=dependencies
-            #     )
-            #     print(f"[MRIQC-XCPD] job IDs: {mriqc_xcpd_job_id}\n")
             # else:
             #     print("⚠️  MRIQC on derivatives skipped")
-        print("\n✅ Workflow submission complete")
+        # print("\n✅ Workflow submission complete")
 
     # -------------------------------------------
     # 6. QC FREESURFER
     # -------------------------------------------
-#    if workflow["run_freesurfer_qc"] and subjects_sessions:
-#        print("🔹 Submitting FreeSurfer QC")
-#        dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
-#        run_freesurfer_qc(config, subjects_sessions, dependencies)
-#    else:
-#        print("⚠️  FreeSurfer QC skipped")
+    if workflow.get("run_freesurfer_qc") and subjects_sessions:
+        print("🔹 Submitting FreeSurfer QC")
+        dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
+        qc_freesurfer.run(config, subjects_sessions, dependencies)
+    # else:
+    #     print("⚠️  FreeSurfer QC skipped")
     # -------------------------------------------
     # 7. QC QSIPREP
     # -------------------------------------------
-#    if workflow["run_qsiprep_qc"] and subjects_sessions:
-#        print("🔹 Submitting QSIprep QC")
-#        dependencies = [job_id for job_id in qsiprep_job_ids if job_id is not None]
-#        qc_qsiprep.run(config, subjects_sessions, dependencies)
-#    else:
-#        print("⚠️  QSIprep QC skipped")
+    if workflow.get("run_qsiprep_qc") and subjects_sessions:
+        print("🔹 Submitting QSIprep QC")
+        dependencies = [job_id for job_id in qsiprep_job_ids if job_id is not None]
+        qc_qsiprep.run(config, subjects_sessions, dependencies)
+    # else:
+    #     print("⚠️  QSIprep QC skipped")
 
     # -------------------------------------------------------
     # GROUP-LEVEL MRIQC JOBS
     # -------------------------------------------------------
-    if workflow["run_mriqc_group"]:
+    if workflow.get("run_mriqc_group"):
         print("🔹 Submitting MRIQC group-level jobs")
         # MRIQC group-level for raw data
         jid_mriqc_raw_group = run_mriqc_group(
@@ -331,8 +291,8 @@ def main(config_file=None):
             input_dir=f"{DERIVATIVES_DIR}/xcpd/outputs"
         )
         print(f"[MRIQC-XCPD-GROUP] job IDs: {jid_mriqc_xcpd_group}\n")
-    else:
-        print("⚠️  Group-level MRIQC jobs skipped")
+    # else:
+    #     print("⚠️  Group-level MRIQC jobs skipped")
 
 
 if __name__ == "__main__":

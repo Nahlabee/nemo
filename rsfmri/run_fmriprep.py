@@ -212,12 +212,12 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         )
 
     save_work = (
-        f'\necho "Cleaning up temporary work directory..."\n'
+        # f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/fmriprep\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/fmriprep/work\n'
+        # f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/fmriprep/work\n'
         f'\nrsync -av {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat/ {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}/anat/\n'
         f'\nrm -rf {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat\n'
-        f'echo "Finished fMRIPrep for subject: {subject}, session: {session}"\n'
+        # f'echo "Finished fMRIPrep for subject: {subject}, session: {session}"\n'
     )
 
     # Write the complete SLURM script to the specified file
@@ -226,6 +226,7 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
     print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
+def run_fmriprep(config, subject, session, job_ids=None):
 def run_fmriprep(config, subject, session, job_ids=None):
     """
     Run the FMRIPrep for a given subject and session.

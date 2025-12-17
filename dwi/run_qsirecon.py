@@ -127,17 +127,14 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     qsirecon = config["qsirecon"]
     DERIVATIVES_DIR = common["derivatives"]
 
-    if job_ids is None:
-        job_ids = []
-
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH -J qsirecon_{subject}_{session}\n'
         f'#SBATCH -p {qsirecon["partition"]}\n'
         f'#SBATCH --gpus-per-node={qsirecon["gpu_per_node"]}\n'
         f'#SBATCH --nodes=1\n'
-        f'#SBATCH --mem={qsirecon["requested_mem"]}gb\n'
-        f'#SBATCH -t {qsirecon["requested_time"]}:00:00\n'
+        f'#SBATCH --mem={qsirecon["requested_mem"]}\n'
+        f'#SBATCH -t {qsirecon["requested_time"]}\n'
         f'#SBATCH -e {DERIVATIVES_DIR}/qsirecon/stdout/%x_job-%j.err\n'
         f'#SBATCH -o {DERIVATIVES_DIR}/qsirecon/stdout/%x_job-%j.out\n'
     )
@@ -190,23 +187,23 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
 
     singularity_command = (
         f'\napptainer run \\\n'
-        f'    --nv --cleanenv\\\n'
-        f'    -B {DERIVATIVES_DIR}/qsiprep:/data \\\n'
+        f'    --nv --cleanenv --writable-tmpfs \\\n'
+        f'    -B {DERIVATIVES_DIR}/qsiprep:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qsirecon:/out \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer:/freesurfer \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer/{subject}_{session}:/freesurfer/{subject} \\\n'  # Mount subject's 
+        # folder to address the unrecognized folder name containing _ses-XX. Bug reported and fixed in end-2024 but 
+        # apparently still not working in last version qsirecon-1.1.1
         f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
-        f'    -B {qsirecon["qsirecon_config"]}:/config/config-file.toml \\\n'
+        f'    -B {qsirecon["qsirecon_config"]}:/config/qsirecon_config.toml \\\n'
+        f'    --env TEMPLATEFLOW_HOME=/opt/templateflow \\\n'  # probably unnecessary since apptainer always binds $HOME
         f'    {qsirecon["qsirecon_container"]} /data /out participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
-        f'    -v -w /out/temp_qsirecon \\\n'
+        f'    -v -w /out/work \\\n'
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --fs-subjects-dir /freesurfer \\\n'
-        f'    --atlases AAL116 \\\n'
+        f'    --atlases {" ".join(qsirecon["atlases"])} \\\n'
         f'    --config-file /config/qsirecon_config.toml\n'
     )
-    #
-    # f'    --recon-spec mrtrix_multishell_msmt_ACT-hsvs \\\n'
-    # f'    --config-file /config/qsirecon_config.toml \\\n'
     # f'    --bids-database-dir /out/temp_qsirecon/bids_db_dir\n'
 
     # Add permissions for shared ownership of the output directory
@@ -255,6 +252,5 @@ def run_qsirecon(config, subject, session, job_ids=None):
     generate_slurm_script(config, subject, session, path_to_script, job_ids)
 
     cmd = f"sbatch {path_to_script}"
-    print(f"[QSIRECON] Submitting job: {cmd}")
     job_id = utils.submit_job(cmd)
     return job_id

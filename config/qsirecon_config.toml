@@ -2,9 +2,9 @@
 
 [execution]
 # atlases = [ "4S156Parcels",]
-#bids_database_dir = ""
+# bids_database_dir = ""
 boilerplate_only = false
-sloppy = false
+sloppy = true
 debug = []
 log_level = 25
 low_mem = false
@@ -31,4 +31,4 @@ omp_nthreads = 24
 plugin = "MultiProc"
 remove_unnecessary_outputs = true
 resource_monitor = false
-stop_on_first_crash = true
+stop_on_first_crash = false

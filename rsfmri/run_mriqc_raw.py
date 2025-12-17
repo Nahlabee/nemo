@@ -37,23 +37,21 @@ def is_already_processed(config, subject, session, data_type="raw"):
     DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout"
     if not os.path.exists(stdout_dir):
-        print(f"[MRIQC] Could not read standard outputs from MRIQC, recomputing ....")
         return False
 
-    else:
-        prefix = f"mriqc_{subject}_{session}"
-        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-        if not stdout_files:
-            return False
+    prefix = f"mriqc_{subject}_{session}"
+    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+    if not stdout_files:
+        return False
 
-        for file in stdout_files:
-            file_path = os.path.join(stdout_dir, file)
-            with open(file_path, 'r') as f:
-                if 'MRIQC completed' in f.read():
-                    print(f"[MRIQC] Skip already processed subject {subject}_{session}")
-                    return True
-                else:
-                    return False
+    for file in stdout_files:
+        file_path = os.path.join(stdout_dir, file)
+        with open(file_path, 'r') as f:
+            if 'MRIQC completed' in f.read():
+                print(f"[MRIQC] Skip already processed subject {subject}_{session}")
+                return True
+
+    return False
 
 
 def derivatives_datatype_exists(config, subject, session, data_type="raw"):
@@ -132,13 +130,8 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         f'#SBATCH --partition={mriqc["partition"]}\n'
     )
 
-    # todo: simplify just like qsirecon in run_workflow ?
-    if job_ids is None:
-        valid_ids = []
-    else:
-        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
-        if valid_ids:
-            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
+    if job_ids:
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
 
     if common.get("email"):
         header += (
@@ -234,7 +227,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/mriqc_{data_type}\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/mriqc_{data_type}/work\n'
+        # f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/mriqc_{data_type}/work\n'
         f'echo "Finished MRIQC for subject: {subject}, session: {session}"\n'
     )
 
