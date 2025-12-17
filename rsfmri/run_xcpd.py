@@ -161,7 +161,7 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
         f'      --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
         f'      --nuisance-regressors 36P \\\n'
         f'      --work-dir /out/work \\\n'
-        f'      --config-file /config/xcp_d_config.toml \\\n'
+        f'      --config-file /config/xcpd_config.toml \\\n'
     )
 
     save_work = (
@@ -174,7 +174,7 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
         # f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
-        f.write(header + module_export + singularity_command + save_work)
+        f.write(header + module_export + prereq_check + singularity_command + save_work)
     # print(f"Created xcp_d SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
