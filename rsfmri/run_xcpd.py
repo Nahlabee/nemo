@@ -82,11 +82,11 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
         f'#SBATCH --partition={xcpd["partition"]}\n'
     )
 
-    if job_ids:
-        header += f'#SBATCH --dependency=afterok:{":".join([job_ids])}\n'
-        
+    if not job_ids:
+        return ""
     else:
-        job_ids = []
+        job_ids = [str(jid) for jid in job_ids if jid]
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
                     
     if common.get("email"):
         header += (

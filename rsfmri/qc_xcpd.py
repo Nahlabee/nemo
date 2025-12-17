@@ -142,7 +142,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
         f.write(header + module_export + prereq_check + tmp_dir_setup + singularity_cmd + python_command + save_work)
     print(f"Created MRIQC-XCP-D SLURM job: {path_to_script} for subject: {subject}, session: {session}")
 
-def run_mriqc_xcpd(config, subject, session, job_ids=None):
+def run_qc_xcpd(config, subject, session, job_ids=None):
     """
     Run QC and MRQC on XCP-D outputs for a given subject and session.
 
@@ -170,29 +170,10 @@ def run_mriqc_xcpd(config, subject, session, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/xcpd/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/xcpd/scripts", exist_ok=True)
 
-    path_to_script = Path(f"{DERIVATIVES_DIR}/qc/xcpd/slurm_scripts/qc_xcpd_{subject}_{session}.sh")
-    generate_slurm_mriqc_script(config.config, subject, session, path_to_script, job_ids)
+    path_to_script = Path(f"{DERIVATIVES_DIR}/qc/xcpd/scripts/qc_xcpd_{subject}_{session}.sh")
+    generate_slurm_mriqc_script(config, subject, session, path_to_script, job_ids)
 
-    cmd = (f'\nsrun --job-name=mriqc --ntasks=1 '
-           f'--partition={mriqc["partition"]} '
-           f'--mem={mriqc["requested_mem"]}'
-           f'--time={mriqc["requested_time"]} '
-           f'--out={DERIVATIVES_DIR}/qc/xcpd/stdout/mriqc_xcpd_{subject}_{session}.out '
-           f'--err={DERIVATIVES_DIR}/qc/xcpd/stdout/mriqc_xcpd_{subject}_{session}.err ')
-
-    if job_ids:
-        cmd += f'--dependency=afterok:{":".join(job_ids)} '
-
-    cmd += f'sh {path_to_script} &'
-
-    os.system(cmd)
-    print(f"[MRIQC] Submitting (background) task on interactive node")
-    return
-    if job_ids:
-        cmd += f'--dependency=afterok:{":".join(job_ids)} '
-
-    cmd += f'sh {path_to_script} &'
-
-    os.system(cmd)
-    print(f"[MRIQC] Submitting (background) task on interactive node")
-    return
+    cmd = f"sbatch {path_to_script}"
+    print(f"[QC-XCPD] Submitting job: {cmd}")
+    job_id = utils.submit_job(cmd)
+    return job_id

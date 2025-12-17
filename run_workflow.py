@@ -23,12 +23,12 @@ import utils
 from anat.run_freesurfer import run_freesurfer
 from dwi.run_qsiprep import run_qsiprep
 from dwi.run_qsirecon import run_qsirecon
-from anat.qc_freesurfer import run as run_freesurfer_qc
+#from anat.qc_freesurfer import run as run_freesurfer_qc
 from rsfmri.run_fmriprep import run_fmriprep
 from rsfmri.run_mriqc_raw import run_mriqc as run_mriqc_raw
-from rsfmri.qc_fmriprep import run_mriqc_fmriprep
+from rsfmri.qc_fmriprep import run_qc_fmriprep
 from rsfmri.run_xcpd import run_xcpd
-from rsfmri.qc_xcpd import run_mriqc_xcpd 
+from rsfmri.qc_xcpd import run_qc_xcpd 
 from rsfmri.run_mriqc_group import run_mriqc_group
 from config import config
 
@@ -76,7 +76,7 @@ def main(config_file=None):
     freesurfer_job_ids = []
     qsiprep_job_ids = []
     mriqc_job_ids = []
-    fmriprep_job_ids = []
+
     qsirecon_job_ids = []
     xcpd_job_ids = []
     # -------------------------------------------------------
@@ -104,6 +104,8 @@ def main(config_file=None):
         # -------------------------------------------
         sessions = utils.get_sessions(BIDS_DIR, subject, common.get('sessions'))
 
+        fmriprep_sub_job_ids = []
+        
         for session in sessions:
             print('\n', subject, ' - ', session, '\n')
             subjects_sessions.append(f"{subject}_{session}")
@@ -160,23 +162,24 @@ def main(config_file=None):
 
             if workflow["run_fmriprep"]:
                 print("🔹 Submitting fMRIPrep")
+                dependencies = [job_id for job_id in [freesurfer_job_id] + fmriprep_sub_job_ids if job_id is not None]
                 fmriprep_job_id = run_fmriprep(config, 
                                                subject=subject,
                                                session=session,
-                                               job_ids=freesurfer_job_id)
+                                               job_ids=dependencies)
                 print(f"[FMRIPREP] job IDs: {fmriprep_job_id}\n")
-                fmriprep_job_ids.append(fmriprep_job_id)  # downstream depends on fMRIPrep only
+                fmriprep_sub_job_ids.append(fmriprep_job_id)
             else:
                 fmriprep_job_id = None
             
             # -------------------------------------------
-            # 3.b MRIQC fMRIPrep 
+            # 3.b QC fMRIPrep 
             # -------------------------------------------
 
             if workflow["run_mriqc_derivatives"]:
                 print("🔹 Submitting MRIQC (fMRIPrep)")
                 dependencies_mriqc_fmriprep = [job_id for job_id in [freesurfer_job_id, fmriprep_job_id] if job_id is not None]
-                mriqc_fmriprep_job_id = run_mriqc_fmriprep(
+                mriqc_fmriprep_job_id = run_qc_fmriprep(
                     config,
                     subject=subject,
                     session=session,
@@ -205,13 +208,13 @@ def main(config_file=None):
                 xcpd_job_id = None
             
             # -------------------------------------------
-            # 4.b MRIQC on XCP-D 
+            # 4.b QC on XCP-D 
             # -------------------------------------------
 
             if workflow["run_mriqc_derivatives"]:
                 print("🔹 Submitting MRIQC (XCP-D)")
                 dependencies_mriqc_xcpd = [job_id for job_id in [freesurfer_job_id, fmriprep_job_id, xcpd_job_id] if job_id is not None]
-                mriqc_xcpd_job_id = run_mriqc_xcpd(
+                mriqc_xcpd_job_id = run_qc_xcpd(
                     config,
                     subject=subject,
                     session=session,
@@ -268,12 +271,12 @@ def main(config_file=None):
     # -------------------------------------------
     # 6. QC FREESURFER
     # -------------------------------------------
-    if workflow["run_freesurfer_qc"] and subjects_sessions:
-        print("🔹 Submitting FreeSurfer QC")
-        dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
-        run_freesurfer_qc(config, subjects_sessions, dependencies)
-    else:
-        print("⚠️  FreeSurfer QC skipped")
+#    if workflow["run_freesurfer_qc"] and subjects_sessions:
+#        print("🔹 Submitting FreeSurfer QC")
+#        dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
+#        run_freesurfer_qc(config, subjects_sessions, dependencies)
+#    else:
+#        print("⚠️  FreeSurfer QC skipped")
     # -------------------------------------------
     # 7. QC QSIPREP
     # -------------------------------------------

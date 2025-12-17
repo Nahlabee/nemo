@@ -10,7 +10,7 @@ from config import config
 # ------------------------------
 # HELPERS
 # ------------------------------
-def is_already_processed(config, subject, session):
+def check_prerequisites(config, subject, session):
     """
     Check if subject_session is already processed successfully.
     Note: Even if FMRIprep put files in cache, some steps are recomputed which require several hours of ressources.
@@ -171,22 +171,19 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
     )
 
     if job_ids:
-        header += f'#SBATCH --dependency=afterok:{":".join([job_ids])}\n'
-        
-    else:
-        job_ids = []
-    
+        header += (
+            f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
+        )
+
         
     prereq_check = (
     
         f'\n# Check that FreeSurfer finished without error\n'
         f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/{subject}_{session}" ]; then\n'
         f'    echo "[FMRIPREP] Please run FreeSurfer recon-all command before FMRIPREP."\n'
-        f'    exit 1\n'
         f'fi\n'
         f'if ! grep -q "finished without error" {DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all.log; then\n'
         f'    echo "[FMRIPREP] FreeSurfer did not terminate for {subject} {session}."\n'
-        f'    exit 1\n'
         f'fi\n'
     )
 
