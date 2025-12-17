@@ -26,7 +26,7 @@ from dwi.run_qsiprep import run_qsiprep
 from dwi.run_qsirecon import run_qsirecon
 #from anat.qc_freesurfer import run as run_freesurfer_qc
 from rsfmri.run_fmriprep import run_fmriprep
-from rsfmri.run_mriqc_raw import run_mriqc as run_mriqc_raw
+from rsfmri.run_mriqc import run_mriqc
 from rsfmri.qc_fmriprep import run_qc_fmriprep
 from rsfmri.run_xcpd import run_xcpd
 from rsfmri.qc_xcpd import run_qc_xcpd
@@ -116,7 +116,7 @@ def main(config_file=None):
             # -------------------------------------------
             if workflow.get("run_mriqc_raw"):
                 print("[MRIQC-RAW] (raw data)")
-                jid_mriqc_raw = run_mriqc_raw(
+                jid_mriqc_raw = run_mriqc(
                     config,
                     subject=subject,
                     session=session,

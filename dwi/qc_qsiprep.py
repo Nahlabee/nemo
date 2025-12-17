@@ -59,7 +59,7 @@ def read_log(config, subject, session):
 def generate_bash_script(config, subjects_sessions, path_to_script):
 
     common = config["common"]
-    qsiprepqc = config["qsiprepqc"]
+    fsqc = config["fsqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
     module_export = (
@@ -157,6 +157,11 @@ def run(config, subjects_sessions, job_ids=None):
         dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/qsiprep/{subject}/{session}")
         file_count = utils.count_files(f"{DERIVATIVES_DIR}/qsiprep/{subject}/{session}")
         frames.append([subject, session, finished_status, runtime, dir_count, file_count])
+
+        # Extract values, mean, max, std of metrics from qsiprep outputs :
+        # - confounds_timeseries
+        # - image_qc
+        # put values in frames
     qc = pd.DataFrame(frames, columns=cols)
 
     path_to_qc = f"{DERIVATIVES_DIR}/qc/qsiprep/qc.csv"

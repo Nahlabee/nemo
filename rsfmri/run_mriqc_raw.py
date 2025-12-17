@@ -141,8 +141,6 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
         f'\nmodule purge\n'
         f'module load userspace/all\n'
         f'module load singularity\n'
-
-        f'echo "------ Running {mriqc["mriqc_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
     prereq_check = (

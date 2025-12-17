@@ -9,15 +9,13 @@ import utils
 # ------------------------------
 # HELPERS
 # ------------------------------
-def check_prerequisites(config, subject, session):
+def is_already_processed(config, subject, session):
     """
     Check if subject_session is already processed successfully.
     Note: Even if FMRIprep put files in cache, some steps are recomputed which require several hours of ressources.
 
     Parameters
     ----------
-    args : Namespace
-        Configuration arguments.
     subject : str
         Subject identifier (e.g., "sub-01").
     session : str
@@ -38,20 +36,26 @@ def check_prerequisites(config, subject, session):
     if not utils.has_func_fmap(BIDS_DIR, subject):
         print(f"[FMRIPREP] ERROR - No functional data found for {subject} {session}.")
         return False
-        
+
     # Check if fmriprep already processed without error
     DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/fmriprep/stdout"
+    if not os.path.exists(stdout_dir):
+        return False
+
     prefix = f"fmriprep_{subject}_{session}"
-    if os.path.exists(stdout_dir):
-        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-        for file in stdout_files:
-            file_path = os.path.join(stdout_dir, file)
-            with open(file_path, 'r') as f:
-                if 'fMRIPrep finished successfully!' in f.read():
-                    print(f"[FMRIPREP] Skip already processed subject {subject}_{session}")
-                    return False            
-    return True
+    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+    if not stdout_files:
+        return False
+
+    for file in stdout_files:
+        file_path = os.path.join(stdout_dir, file)
+        with open(file_path, 'r') as f:
+            if 'fMRIPrep finished successfully!' in f.read():
+                print(f"[FMRIPREP] Skip already processed subject {subject}_{session}")
+                return True
+
+    return False
 
 # def is_freesurfer_done(config, subject, session):
 #     """
@@ -126,6 +130,7 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
     - Runs fMRIPrep container with specified output spaces and configurations
     - Handles output directory permissions and work file consolidation
     """
+
     common = config["common"]
     fmriprep = config["fmriprep"]
     DERIVATIVES_DIR = common["derivatives"]
@@ -139,6 +144,9 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'#SBATCH --time={fmriprep["requested_time"]}\n'
         f'#SBATCH --partition={fmriprep["partition"]}\n'
     )
+
+    if job_ids:
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
 
     if common.get("email"):
         header += (
@@ -154,29 +162,23 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'echo "------ Running {fmriprep["fmriprep_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
-    tmp_dir_setup = (
-        f'\nhostname\n'
-        f'# Choose writable scratch directory\n'
-        f'if [ -n "$SLURM_TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
-        f'elif [ -n "$TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$TMPDIR"\n'
-        f'else\n'
-        f'    TMP_WORK_DIR=$(mktemp -d /tmp/fmriprep_{subject}_{session})\n'
-        f'fi\n'
-        f'mkdir -p "$TMP_WORK_DIR"\n'
-        f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-        f'echo "Using OUT_FMRIPREP_DIR = {common["derivatives"]}/fmriprep"\n'
-    )
+    # tmp_dir_setup = (
+    #     f'\nhostname\n'
+    #     f'# Choose writable scratch directory\n'
+    #     f'if [ -n "$SLURM_TMPDIR" ]; then\n'
+    #     f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
+    #     f'elif [ -n "$TMPDIR" ]; then\n'
+    #     f'    TMP_WORK_DIR="$TMPDIR"\n'
+    #     f'else\n'
+    #     f'    TMP_WORK_DIR=$(mktemp -d /tmp/fmriprep_{subject}_{session})\n'
+    #     f'fi\n'
+    #     f'mkdir -p "$TMP_WORK_DIR"\n'
+    #     f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
+    #     f'echo "Using OUT_FMRIPREP_DIR = {common["derivatives"]}/fmriprep"\n'
+    # )
 
-    if job_ids:
-        header += (
-            f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
-        )
-
-        
     prereq_check = (
-    
+
         f'\n# Check that FreeSurfer finished without error\n'
         f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/{subject}_{session}" ]; then\n'
         f'    echo "[FMRIPREP] Please run FreeSurfer recon-all command before FMRIPREP."\n'
@@ -190,25 +192,26 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
     singularity_command = (
         f'\napptainer run --cleanenv \\\n'
         f'    -B {common["input_dir"]}:/data:ro \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer:/fs_dir \\\n'
-        f'    -B {DERIVATIVES_DIR}/fmriprep/outputs:/out \\\n'
-        f'    -B {common["freesurfer_license"]}:/license.txt \\\n'
-        f'    -B {fmriprep["fmriprep_config"]}:/fmriprep_config.toml \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer:/freesurfer \\\n'
+        f'    -B {DERIVATIVES_DIR}/fmriprep:/out \\\n'
+        f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
+        f'    -B {fmriprep["fmriprep_config"]}:/config/fmriprep_config.toml \\\n'
         f'    -B {fmriprep["bids_filter_dir"]}:/bids_filter_dir \\\n'
-        f'    {fmriprep["fmriprep_container"]} /data /out participant \\\n'
+        f'    {fmriprep["fmriprep_container"]} /data /out/outputs participant \\\n'
         f'    --participant-label {subject} \\\n'
         f'    --session-label {session} \\\n'
-        f'    --fs-subjects-dir /fs_dir \\\n'
-        f'    --fs-license-file /license.txt \\\n'
+        f'    --fs-subjects-dir /freesurfer \\\n'
+        f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-        f'    --cifti-output 91k \\\n'
-        f'    --mem {fmriprep["requested_mem"]} \\\n'
-        f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
+        # f'    --project-goodvoxels \\\n'
+        # f'    --cifti-output 91k \\\n'
+        f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
+        # f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
         f'    --skip-bids-validation \\\n'
-        f'    --work-dir $TMP_WORK_DIR \\\n'
-        f'    --config-file /fmriprep_config.toml \n'
-
-        )
+        f'    --work-dir /out/work \\\n'
+        f'    --config-file /config/fmriprep_config.toml \\\n'
+        f'    --fs-no-reconall\n'
+    )
 
     save_work = (
         # f'\necho "Cleaning up temporary work directory..."\n'
@@ -221,8 +224,9 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + prereq_check + tmp_dir_setup + singularity_command + save_work)
-    print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
+        # f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
+        f.write(header + module_export + prereq_check + singularity_command + save_work)
+    # print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
 def run_fmriprep(config, subject, session, job_ids=None):
