@@ -224,24 +224,25 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
     if job_ids is None:
         # todo : move prerequisite check into slurm script like in run_qsirecon.
         #  This ckeck must be done even if all previous jobs are finished. Because they could finish with errors
+        # To not run MRIQC on erroneous outputs
         if data_type == "fmriprep":
             if is_fmriprep_done(config, subject, session) is False:
                 print(
-                    f"[MRIQC] FMRIprep not yet completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
+                    f"[MRIQC] FMRIprep not completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
                 return None
         elif data_type == "xcp_d":
             if is_xcpd_done(config, subject, session) is False:
-                print(f"[MRIQC] XCP-D not yet completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
+                print(f"[MRIQC] XCP-D not completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
                 return None
         elif data_type == "qsiprep":
             if is_qsiprep_done(config, subject, session) is False:
                 print(
-                    f"[MRIQC] QSIprep not yet completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
+                    f"[MRIQC] QSIprep not completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
                 return None
         elif data_type == "qsirecon":
             if is_qsirecon_done(config, subject, session) is False:
                 print(
-                    f"[MRIQC] QSIrecon not yet completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
+                    f"[MRIQC] QSIrecon not completed for subject {subject}_{session}. Cannot proceed with MRIQC.\n")
                 return None
 
         job_ids = []

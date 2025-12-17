@@ -157,14 +157,16 @@ def main(config_file=None):
             # -------------------------------------------
             if workflow.get("run_xcp_d"):
                 print("[XCP-D]")
-                dependencies = [job_id for job_id in [fmriprep_job_id] if job_id is not None]
-                xcpd_job_id = run_xcpd(config, subject, session, dependencies)
+                xcpd_job_id = run_xcpd(config, subject, session, [fmriprep_job_id])
             else:
                 xcpd_job_id = None
+
             # -------------------------------------------
             # 5. MRIQC on derivatives
             # -------------------------------------------
             if workflow.get("run_mriqc_derivatives"):
+                print("[MRIQC-DERIVATIVES]")
+
                 mriqc_fprep_job_id = run_mriqc(
                     config,
                     subject=subject,
@@ -172,7 +174,6 @@ def main(config_file=None):
                     data_type="fmriprep",
                     job_ids=fmriprep_job_id
                 )
-                print(f"[MRIQC-FMRIPREP] job IDs: {mriqc_fprep_job_id}\n")
 
                 mriqc_qsiprep_job_id = run_mriqc(
                     config,
@@ -181,7 +182,6 @@ def main(config_file=None):
                     data_type="qsiprep",
                     job_ids=qsiprep_job_id
                 )
-                print(f"[MRIQC-QSIPREP] job IDs: {mriqc_qsiprep_job_id}\n")
 
                 mriqc_qsirecon_job_id = run_mriqc(
                     config,
@@ -190,20 +190,16 @@ def main(config_file=None):
                     data_type="qsirecon",
                     job_ids=qsirecon_job_id
                 )
-                print(f"[MRIQC-QSIRECON] job IDs: {mriqc_qsirecon_job_id}\n")
 
-                dependencies = [job_id for job_id in [fmriprep_job_id, xcpd_job_id] if job_id is not None]
                 mriqc_xcpd_job_id = run_mriqc(
                     config,
                     subject=subject,
                     session=session,
                     data_type="xcp_d",
-                    job_ids=dependencies
+                    job_ids=xcpd_job_id
                 )
-                print(f"[MRIQC-XCPD] job IDs: {mriqc_xcpd_job_id}\n")
             # else:
             #     print("⚠️  MRIQC on derivatives skipped")
-        # print("\n✅ Workflow submission complete")
 
     # -------------------------------------------
     # 3. QC FREESURFER
@@ -270,6 +266,8 @@ def main(config_file=None):
         print(f"[MRIQC-XCPD-GROUP] job IDs: {jid_mriqc_xcpd_group}\n")
     # else:
     #     print("⚠️  Group-level MRIQC jobs skipped")
+
+    # print("\n✅ Workflow submission complete")
 
 
 if __name__ == "__main__":
