@@ -112,7 +112,7 @@ omp_threads = 4
 # =============================
 [xcpd]
 xcpd_container = "/scratch/lhashimoto/xcpd-0.12.0.sif"
-xcpd_config = "/scratch/lhashimoto/code/nemo/config/xcpd_surf_config.toml"
+xcpd_config = "/scratch/lhashimoto/code/nemo/config/xcpd_config.toml"
 bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"

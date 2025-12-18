@@ -109,11 +109,11 @@ def generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids
     )
 
     prereq_check = (
-        # f'\n# Check that FMRIPREP outputs exists\n'
-        # f'if [ ! -d "{DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}" ]; then\n'
-        # f'    echo "[XCP-D] Please run Fmriprep command before XCP-D."\n'
-        # f'    exit 1\n'
-        # f'fi\n'
+        f'\n# Check that FMRIPREP outputs exists\n'
+        f'if [ ! -d "{DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}" ]; then\n'
+        f'    echo "[XCP-D] Please run Fmriprep command before XCP-D."\n'
+        f'    exit 1\n'
+        f'fi\n'
         
         f'\n# Check that FMRIPREP finished without error\n'
         f'prefix="{DERIVATIVES_DIR}/fmriprep/stdout/fmriprep_{subject}_{session}"\n'
