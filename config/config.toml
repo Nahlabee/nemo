@@ -106,8 +106,7 @@ requested_mem = "64G"
 requested_time = "12:00:00"
 reserved_cpus = 8
 omp_threads = 4
-#output_spaces = "fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native"
-
+cifti_outputs = "91k"
 
 # =============================
 #   PIPELINE: XCP-D
