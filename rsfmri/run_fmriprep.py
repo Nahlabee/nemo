@@ -259,14 +259,12 @@ def run_fmriprep(config, subject, session, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/scripts", exist_ok=True)
 
-    if not check_prerequisites(config, subject, session) :
+    if not is_already_processed(config, subject, session):
         return None
-    else:
-        print(f"Submitting fMRIPrep job for {subject} {session}...")
-        path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{session}_fmriprep.slurm"
-        generate_slurm_fmriprep_script(config, subject, session, path_to_script, job_ids=job_ids)
-        
-        cmd = f"sbatch {path_to_script}"
-        print(f"[FMRIPREP] Submitting job: {cmd}")
-        job_id = utils.submit_job(cmd)
-        return job_id
+
+    path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{session}_fmriprep.slurm"
+    generate_slurm_fmriprep_script(config, subject, session, path_to_script, job_ids=job_ids)
+
+    cmd = f"sbatch {path_to_script}"
+    job_id = utils.submit_job(cmd)
+    return job_id
