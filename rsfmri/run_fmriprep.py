@@ -206,11 +206,13 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         # f'    --project-goodvoxels \\\n'
         # f'    --cifti-output 91k \\\n'
         f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
-        # f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
+        f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
         f'    --skip-bids-validation \\\n'
         f'    --work-dir /out/work \\\n'
         f'    --config-file /config/fmriprep_config.toml \\\n'
-        f'    --fs-no-reconall\n'
+        # f'    --fs-no-reconall\n'  # The fs-no-recon-all step will disable further downstream surface level steps,
+        # like boundary based registration, which you should want to keep. The volumetric analogs may be quicker,
+        # but generally do not perform as well.
     )
 
     save_work = (
