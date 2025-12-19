@@ -132,11 +132,11 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
     python_command = (
         f'\npython3 rsfmri/qc_fmriprep_metrics_extractions.py {config} {subject} {session}\n'
                 )
-    
+
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
-        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/mriqc_fmriprep\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/mriqc_fmriprep/work\n'
+        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/fmriprep\n'
+        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/qc/fmriprep/work\n'
         f'echo "Finished MRIQC-FMRIPREP for subject: {subject}, session: {session}"\n'
     )
 

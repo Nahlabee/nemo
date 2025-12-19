@@ -192,7 +192,7 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
     singularity_command = (
         f'\napptainer run --cleanenv \\\n'
         f'    -B {common["input_dir"]}:/data:ro \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer:/freesurfer \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer/outputs:/freesurfer \\\n'
         f'    -B {DERIVATIVES_DIR}/fmriprep:/out \\\n'
         f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
         f'    -B {fmriprep["fmriprep_config"]}:/config/fmriprep_config.toml \\\n'

@@ -29,10 +29,11 @@ def is_already_processed(config, input_dir, data_type="raw"):
     DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Check if mriqc already processed without error
+    # todo : remonter dans le main()
     if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
         raise ValueError(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
 
-    stdout_dir = f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout"
+    stdout_dir = f"{DERIVATIVES_DIR}/qc/{data_type}/stdout"
     if not os.path.exists(stdout_dir):
         print(f"[MRIQC] Could not read standard outputs from MRIQC, recomputing ....")
         return False

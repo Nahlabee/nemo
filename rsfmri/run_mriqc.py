@@ -186,7 +186,7 @@ def generate_slurm_script(config, subject, session, path_to_script, data_type="r
         f'\napptainer run \\\n'
         f'    --cleanenv \\\n'
         f'    -B {MRIQC_INPUT}:/data:ro \\\n'
-        f'    -B {DERIVATIVES_DIR}/mriqc_{data_type}/outputs:/out \\\n'
+        f'    -B {DERIVATIVES_DIR}/qc/{data_type}/outputs:/out \\\n'
         f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
         f'    {mriqc["mriqc_container"]} /data /out participant \\\n'
         f'    --participant_label {subject} \\\n'
@@ -246,7 +246,7 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/outputs", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/outputs", exist_ok=True) # todo: change outputs to mriqc ?
     os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/work", exist_ok=True)

@@ -130,7 +130,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --nv --cleanenv --writable-tmpfs \\\n'
         f'    -B {DERIVATIVES_DIR}/qsiprep:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qsirecon:/out \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer/{subject}_{session}:/freesurfer/{subject} \\\n'  # Mount subject's 
+        f'    -B {DERIVATIVES_DIR}/freesurfer/outputs/{subject}_{session}:/freesurfer/{subject} \\\n'  # Mount subject's 
         # folder to address the unrecognized folder name containing _ses-XX. Bug reported and fixed in end-2024 but 
         # apparently still not working in last version qsirecon-1.1.1
         f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
