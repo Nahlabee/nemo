@@ -123,6 +123,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
         f'    --no-sub --notrack\n'
     )
 
+    # todo: mettre les fonctions dans ce script ou dans un script qc ou metrics
     python_command = (
         f'\npython3 rsfmri/qc_xcpd_metrics_extractions.py {config} {subject} {session}\n'
     )

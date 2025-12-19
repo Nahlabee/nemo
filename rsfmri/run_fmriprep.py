@@ -26,7 +26,7 @@ def is_already_processed(config, subject, session):
     bool
         True if already processed, False otherwise.
     """
-
+    # todo : separer is_already_processed de check_prerequisites
     # Check required files
     BIDS_DIR = config["common"]["input_dir"]
     if not utils.has_anat(BIDS_DIR, subject):
@@ -249,8 +249,11 @@ def run_fmriprep(config, subject, session, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
-    common = config["common"]
-    DERIVATIVES_DIR = common["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
+    fmriprep = config["fmriprep"]
+
+    if is_already_processed(config, subject, session) and fmriprep["skip_processed"]:
+        return None
 
     # Create output (derivatives) directories if they do not exist
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep", exist_ok=True)
@@ -258,9 +261,6 @@ def run_fmriprep(config, subject, session, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/work", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/fmriprep/scripts", exist_ok=True)
-
-    if not is_already_processed(config, subject, session):
-        return None
 
     path_to_script = f"{DERIVATIVES_DIR}/fmriprep/scripts/{subject}_{session}_fmriprep.slurm"
     generate_slurm_fmriprep_script(config, subject, session, path_to_script, job_ids=job_ids)

@@ -173,18 +173,16 @@ def run_mriqc_group(config, input_dir, data_type="raw", job_ids=None):
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
 
+    if is_already_processed(config, input_dir):
+        return None
+
     # Create output (derivatives) directories
+    # todo: change output directory to qc/
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_group_{data_type}", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_group_{data_type}/outputs", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_group_{data_type}/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_group_{data_type}/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/mriqc_group_{data_type}/work", exist_ok=True)
-
-    if job_ids is None:
-        job_ids = []
-
-    if is_already_processed(config, input_dir):
-        return None
 
     # Add dependency if this is not the first job in the chain
     path_to_script = f"{DERIVATIVES_DIR}/mriqc_group_{data_type}/scripts/group_mriqc_{data_type}.slurm"

@@ -95,7 +95,7 @@ def derivatives_datatype_exists(config, subject, session, data_type="raw"):
 # ------------------------
 # Create SLURM job script for MRIQC
 # ------------------------
-def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_type="raw", job_ids=None):
+def generate_slurm_script(config, subject, session, path_to_script, data_type="raw", job_ids=None):
     """Generate the SLURM job script.
     Parameters
     ----------
@@ -118,8 +118,8 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, data_t
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH --job-name=mriqc_{data_type}_{subject}_{session}\n'
-        f'#SBATCH --output={DERIVATIVES_DIR}/mriqc_{data_type}/stdout/mriqc_{data_type}_{subject}_{session}_%j.out\n'
-        f'#SBATCH --error={DERIVATIVES_DIR}/mriqc_{data_type}/stdout/mriqc_{data_type}_{subject}_{session}_%j.err\n'
+        f'#SBATCH --output={DERIVATIVES_DIR}/qc/{data_type}/stdout/mriqc_{data_type}_{subject}_{session}_%j.out\n'
+        f'#SBATCH --error={DERIVATIVES_DIR}/qc/{data_type}/stdout/mriqc_{data_type}_{subject}_{session}_%j.err\n'
         f'#SBATCH --mem={mriqc["requested_mem"]}\n'
         f'#SBATCH --time={mriqc["requested_time"]}\n'
         f'#SBATCH --partition={mriqc["partition"]}\n'
@@ -234,26 +234,26 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    DERIVATIVES_DIR = config["common"]["derivatives"]
-
     if data_type not in ["raw", "fmriprep", "xcpd", "qsiprep", "qsirecon"]:
         print(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
         return None
 
-    # Create output (derivatives) directories
-    os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/outputs", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/scripts", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/mriqc_{data_type}/work", exist_ok=True)
+    DERIVATIVES_DIR = config["common"]["derivatives"]
+    mriqc = config["mriqc"]
 
-    if is_already_processed(config, subject, session):
-        print(f"[MRIQC] Subject {subject}_{session} already processed. Skipping MRIQC submission.\n")
+    if is_already_processed(config, subject, session, data_type) and mriqc["skip_processed"]:
         return None
 
+    # Create output (derivatives) directories
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/outputs", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/stdout", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/work", exist_ok=True)
+
     # Add dependency if this is not the first job in the chain
-    path_to_script = f"{DERIVATIVES_DIR}/mriqc_{data_type}/scripts/{subject}_{session}_mriqc.slurm"
-    generate_slurm_mriqc_script(config, subject, session, path_to_script, data_type=data_type, job_ids=job_ids)
+    path_to_script = f"{DERIVATIVES_DIR}/qc/{data_type}/scripts/{subject}_{session}_mriqc.slurm"
+    generate_slurm_script(config, subject, session, path_to_script, data_type=data_type, job_ids=job_ids)
 
     cmd = f"sbatch {path_to_script}"
     job_id = utils.submit_job(cmd)

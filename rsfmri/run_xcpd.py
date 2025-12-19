@@ -198,6 +198,10 @@ def run_xcpd(config, subject, session, job_ids=None):
     """
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
+    xcpd = config["xcpd"]
+
+    if is_already_processed(config, subject, session) and xcpd["skip_processed"]:
+        return None
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/xcpd", exist_ok=True)
@@ -205,9 +209,6 @@ def run_xcpd(config, subject, session, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/xcpd/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/xcpd/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/xcpd/work", exist_ok=True)
-    
-    if is_already_processed(config, subject, session):
-        return None
 
     path_to_script = f"{DERIVATIVES_DIR}/xcpd/scripts/{subject}_{session}_xcpd.slurm"
     generate_slurm_xcpd_script(config, subject, session, path_to_script, job_ids=job_ids)

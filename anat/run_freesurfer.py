@@ -30,7 +30,6 @@ def check_prerequisites(config, subject, session):
     common = config["common"]
     freesurfer = config["freesurfer"]
     BIDS_DIR = common["input_dir"]
-    DERIVATIVES_DIR = common["derivatives"]
 
     # Check required files
     required_files = [
@@ -44,19 +43,30 @@ def check_prerequisites(config, subject, session):
         if not os.path.exists(file):
             print(f"[FREESURFER] ERROR - Missing file: {file}")
             return False
+    return True
 
-    # Check if already processed
-    path_to_output = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"
-    if os.path.exists(path_to_output):
-        logs = os.path.join(path_to_output, 'scripts/recon-all-status.log')
-        with open(logs, 'r') as f:
-            lines = f.readlines()
-        for l in lines:
-            if 'finished without error' in l and freesurfer["skip_processed"]:
-                print(f"[FREESURFER] Skip already processed {subject} - {session}")
-                return False
-        # Remove existing subject folder
-        shutil.rmtree(path_to_output)
+
+def is_already_processed(config, subject, session, clear_fs=False):
+
+    # Check if freesurfer already processed without error
+    DERIVATIVES_DIR = config["common"]["derivatives"]
+    freesurfer = config["freesurfer"]
+
+    output_dir = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"
+    if not os.path.exists(output_dir):
+        return False
+
+    logs = os.path.join(output_dir, 'scripts/recon-all-status.log')
+    with open(logs, 'r') as f:
+        lines = f.readlines()
+    for l in lines:
+        if 'finished without error' in l and freesurfer["skip_processed"]:
+            print(f"[FREESURFER] Skip already processed {subject} - {session}")
+            return False
+
+    # Remove existing subject folder
+    if clear_fs:
+        shutil.rmtree(output_dir)
 
     return True
 
@@ -113,7 +123,7 @@ def generate_slurm_script(config, subject, session, path_to_script):
         f'\napptainer run \\\n'
         f'    --cleanenv \\\n'
         f'    -B {BIDS_DIR}:/data:ro \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer:/out \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer/outputs:/out \\\n'
         f'    -B {common["freesurfer_license"]}:/license \\\n'
         f'    --env FS_LICENSE=/license/license.txt \\\n'
         f'    {freesurfer["freesurfer_container"]} bash -c \\\n'
@@ -161,12 +171,15 @@ def run_freesurfer(config, subject, session):
     if not check_prerequisites(config, subject, session):
         return None
 
+    if is_already_processed(config, subject, session, clear_fs=True):
+        return None
+
     # Create output (derivatives) directories
     DERIVATIVES_DIR = config["common"]["derivatives"]
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/scripts", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/freesurfer", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/outputs", exist_ok=True)
 
     path_to_script = f"{DERIVATIVES_DIR}/freesurfer/scripts/{subject}_{session}_freesurfer.slurm"
     generate_slurm_script(config, subject, session, path_to_script)

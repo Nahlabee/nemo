@@ -45,11 +45,11 @@ run_xcpd_qc = false
 # =============================
 [freesurfer]
 freesurfer_container = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
-skip_processed = true
 use_t2 = true
 partition = "skylake"
 requested_mem = "16G"
 requested_time = "9:00:00"
+skip_processed = true
 
 # =============================
 #   PIPELINE: FreeSurfer QC
@@ -74,6 +74,8 @@ qc_skip_existing = true
 # =============================
 [qsiprep]
 qsiprep_container = "/scratch/lhashimoto/qsiprep-1.0.2.sif"
+local_freesurfer_path = "/scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer"  # path to locally installed FS to
+#replace old version in the QSIprep container which does not work (see PullRequest#19)
 config_eddy = "/scratch/lhashimoto/code/nemo/config/eddy_params.json"
 qsiprep_config = "/scratch/lhashimoto/code/nemo/config/qsiprep_config.toml"
 output_resolution = 1.8
@@ -81,6 +83,7 @@ partition = "kepler"
 gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
+skip_processed = true
 
 # =============================
 #   PIPELINE: QSIRecon
@@ -93,6 +96,7 @@ gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
 atlases = ["4S156Parcels"] #, "4S356Parcels"]
+skip_processed = true
 
 # =============================
 #   PIPELINE: fMRIPrep
@@ -107,6 +111,7 @@ requested_time = "12:00:00"
 reserved_cpus = 8
 omp_threads = 4
 cifti_outputs = "91k"
+skip_processed = true
 
 # =============================
 #   PIPELINE: XCP-D
@@ -120,6 +125,7 @@ requested_mem = "64G"
 requested_time = "8:00:00"
 reserved_cpus = 8
 omp_threads = 4
+skip_processed = true
 
 # =============================
 #   PIPELINE: MRIQC
@@ -131,3 +137,4 @@ bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
 requested_time = "3:00:00"
+skip_processed = true
