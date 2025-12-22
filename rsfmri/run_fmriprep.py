@@ -182,9 +182,11 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'\n# Check that FreeSurfer finished without error\n'
         f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/{subject}_{session}" ]; then\n'
         f'    echo "[FMRIPREP] Please run FreeSurfer recon-all command before FMRIPREP."\n'
+        f'    exit 1\n'
         f'fi\n'
         f'if ! grep -q "finished without error" {DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all.log; then\n'
         f'    echo "[FMRIPREP] FreeSurfer did not terminate for {subject} {session}."\n'
+        f'    exit 1\n'
         f'fi\n'
     )
 

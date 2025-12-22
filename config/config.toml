@@ -111,7 +111,7 @@ requested_time = "12:00:00"
 reserved_cpus = 8
 omp_threads = 4
 cifti_outputs = "91k"
-skip_processed = true
+skip_processed = false
 
 # =============================
 #   PIPELINE: XCP-D
