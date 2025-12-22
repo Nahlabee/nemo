@@ -52,6 +52,7 @@ def is_already_processed(config, subject, session):
         file_path = os.path.join(stdout_dir, file)
         with open(file_path, 'r') as f:
             if 'fMRIPrep finished successfully!' in f.read():
+                # todo: move to main function with complete if test pour TOUS
                 print(f"[FMRIPREP] Skip already processed subject {subject}_{session}")
                 return True
 
@@ -180,11 +181,11 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
     prereq_check = (
 
         f'\n# Check that FreeSurfer finished without error\n'
-        f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/{subject}_{session}" ]; then\n'
+        f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/outputs/{subject}_{session}" ]; then\n'
         f'    echo "[FMRIPREP] Please run FreeSurfer recon-all command before FMRIPREP."\n'
         f'    exit 1\n'
         f'fi\n'
-        f'if ! grep -q "finished without error" {DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all.log; then\n'
+        f'if ! grep -q "finished without error" {DERIVATIVES_DIR}/freesurfer/outputs/{subject}_{session}/scripts/recon-all.log; then\n'
         f'    echo "[FMRIPREP] FreeSurfer did not terminate for {subject} {session}."\n'
         f'    exit 1\n'
         f'fi\n'
