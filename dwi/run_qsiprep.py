@@ -25,6 +25,11 @@ def is_already_processed(config, subject, session):
 
     # Check if QSIprep already processed without error
     DERIVATIVES_DIR = config["common"]["derivatives"]
+
+    output_dir = f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}"
+    if not os.path.exists(output_dir):
+        return False
+
     stdout_dir = f"{DERIVATIVES_DIR}/qsiprep/stdout"
     if not os.path.exists(stdout_dir):
         return False

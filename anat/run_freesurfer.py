@@ -52,7 +52,7 @@ def is_already_processed(config, subject, session, clear_fs=False):
     DERIVATIVES_DIR = config["common"]["derivatives"]
     freesurfer = config["freesurfer"]
 
-    output_dir = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"
+    output_dir = f"{DERIVATIVES_DIR}/freesurfer/outputs/{subject}_{session}"
     if not os.path.exists(output_dir):
         return False
 

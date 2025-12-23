@@ -30,7 +30,7 @@ def is_already_processed(config, subject, session, data_type="raw"):
 
     # Check if mriqc already processed without error
     DERIVATIVES_DIR = config["common"]["derivatives"]
-    stdout_dir = f"{DERIVATIVES_DIR}/mriqc_{data_type}/stdout"
+    stdout_dir = f"{DERIVATIVES_DIR}/qc/{data_type}/stdout"
     if not os.path.exists(stdout_dir):
         return False
 
@@ -49,47 +49,47 @@ def is_already_processed(config, subject, session, data_type="raw"):
     return False
 
 
-def derivatives_datatype_exists(config, subject, session, data_type="raw"):
-    """
-    Check if derivatives data type directory exists for a given subject and session.
-
-    Parameters
-    ----------
-    subject : str
-        Subject identifier (e.g., "sub-01").
-    session : str
-        Session identifier (e.g., "ses-01").
-    data_type : str
-        Type of data to process (possible choices: "raw", "fmriprep", "xcpd", "qsirecon" or "qsiprep").
-
-    Returns
-    -------
-    bool
-        True if derivatives data type directory exists, False otherwise.
-    """
-    DERIVATIVES_DIR = config["common"]["derivatives"]
-    deriv_dir = f"{DERIVATIVES_DIR}/{data_type}/outputs/{subject}/{session}"
-    stdout_dir = f"{DERIVATIVES_DIR}/{data_type}/stdout"
-    # Check if derivatives data type directory exists
-    if not os.path.exists(deriv_dir):
-        print(f"[MRIQC] Derivatives directory {deriv_dir} does not exist. MRIQC cannot proceed.")
-        return False
-    else:
-        prefix = f"{data_type}_{subject}_{session}"
-        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-        if not stdout_files:
-            print(f"[MRIQC] Could not read standard outputs from {data_type}, MRIQC cannot proceed.")
-            return False
-
-        for file in stdout_files:
-            file_path = os.path.join(stdout_dir, file)
-            with open(file_path, 'r') as f:
-                if f'{data_type} completed' or 'successful' in f.read():
-                    print(f"[MRIQC] Skip already processed subject {subject}_{session}")
-                    return True
-                else:
-                    return False
-    return
+# def derivatives_datatype_exists(config, subject, session, data_type="raw"):
+#     """
+#     Check if derivatives data type directory exists for a given subject and session.
+#
+#     Parameters
+#     ----------
+#     subject : str
+#         Subject identifier (e.g., "sub-01").
+#     session : str
+#         Session identifier (e.g., "ses-01").
+#     data_type : str
+#         Type of data to process (possible choices: "raw", "fmriprep", "xcpd", "qsirecon" or "qsiprep").
+#
+#     Returns
+#     -------
+#     bool
+#         True if derivatives data type directory exists, False otherwise.
+#     """
+#     DERIVATIVES_DIR = config["common"]["derivatives"]
+#     deriv_dir = f"{DERIVATIVES_DIR}/{data_type}/outputs/{subject}/{session}"
+#     stdout_dir = f"{DERIVATIVES_DIR}/{data_type}/stdout"
+#     # Check if derivatives data type directory exists
+#     if not os.path.exists(deriv_dir):
+#         print(f"[MRIQC] Derivatives directory {deriv_dir} does not exist. MRIQC cannot proceed.")
+#         return False
+#     else:
+#         prefix = f"{data_type}_{subject}_{session}"
+#         stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+#         if not stdout_files:
+#             print(f"[MRIQC] Could not read standard outputs from {data_type}, MRIQC cannot proceed.")
+#             return False
+#
+#         for file in stdout_files:
+#             file_path = os.path.join(stdout_dir, file)
+#             with open(file_path, 'r') as f:
+#                 if f'{data_type} completed' or 'successful' in f.read():
+#                     print(f"[MRIQC] Skip already processed subject {subject}_{session}")
+#                     return True
+#                 else:
+#                     return False
+#     return
 
 
 # ------------------------
@@ -188,7 +188,7 @@ def generate_slurm_script(config, subject, session, path_to_script, data_type="r
         f'    -B {MRIQC_INPUT}:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/{data_type}/outputs:/out \\\n'
         f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-        f'    {mriqc["mriqc_container"]} /data /out participant \\\n'
+        f'    {mriqc["mriqc_container"]} /data /out/outputs participant \\\n'
         f'    --participant_label {subject} \\\n'
         f'    --session-id {session} \\\n'
         f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
@@ -202,7 +202,7 @@ def generate_slurm_script(config, subject, session, path_to_script, data_type="r
 
     save_work = (
         f'\necho "Cleaning up temporary work directory..."\n'
-        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/mriqc_{data_type}\n'
+        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/{data_type}\n'
         # f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/mriqc_{data_type}/work\n'
         f'echo "Finished MRIQC for subject: {subject}, session: {session}"\n'
     )

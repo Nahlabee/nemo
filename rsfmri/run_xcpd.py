@@ -37,6 +37,11 @@ def is_already_processed(config, subject, session):
 
     # Check if xcpd already processed without error
     DERIVATIVES_DIR = config["common"]["derivatives"]
+
+    output_dir = f"{DERIVATIVES_DIR}/xcpd/outputs/{subject}/{session}"
+    if not os.path.exists(output_dir):
+        return False
+
     stdout_dir = f"{DERIVATIVES_DIR}/xcpd/stdout"
     if not os.path.exists(stdout_dir):
         return False
