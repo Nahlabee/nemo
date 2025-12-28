@@ -15,27 +15,7 @@ warnings.filterwarnings("ignore")
 # ------------------------
 # Create SLURM job script for MRIQC 
 # ------------------------
-
-def is_mriqc_done(config, subject, session):
-    """
-    Checks if MRIQC processing is done for a given subject and session.
-    """
-
-    DERIVATIVES_DIR = config["common"]["derivatives"]
-    stdout_dir = f"{DERIVATIVES_DIR}/qc/fmriprep/stdout"
-    prefix = f"qc_fmriprep_{subject}_{session}"
-    if os.path.exists(stdout_dir):
-        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-        for file in stdout_files:
-            file_path = os.path.join(stdout_dir, file)
-            with open(file_path, 'r') as f:
-                if 'MRIQC completed' in f.read():
-                    print(f"[MRIQC-FMRIPREP] Skip already processed subject {subject}_{session}")
-                    return True
-    return False
-
-
-def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_ids=None):
+def generate_slurm_script(config, subject, session, path_to_script, job_ids=None):
     """
     Generate the SLURM job script for MRIQC FMRIPREP processing.
 
@@ -55,8 +35,10 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
 
     common = config["common"]
     mriqc = config["mriqc"]
-    BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
+
+    if job_ids is None:
+        job_ids = []
 
     header = (
         f'#!/bin/bash\n'
@@ -69,13 +51,8 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
         f'#SBATCH --partition={mriqc["partition"]}\n'
     )
 
-    # todo: simplify just like qsirecon in run_workflow ?
-    if job_ids is None:
-        valid_ids = []
-    else:
-        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
-        if valid_ids:
-            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
+    if job_ids:
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
 
     if common.get("email"):
         header += (
@@ -135,7 +112,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
     )
 
     # Define the Singularity command for running MRIQC
-    # Note: Unlike fmriprep, no config file is used here, the option doesn't exist for mriqc
+    # Note: Unlike other BIDS apps, no config file is used here, the option doesn't exist for mriqc
     input_dir = f"{DERIVATIVES_DIR}/fmriprep/outputs"
 
     #todo: voir version Heni
@@ -143,9 +120,9 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
             f'\napptainer run \\\n'
             f'    --cleanenv \\\n'
             f'    -B {input_dir}:/data:ro \\\n'
-            f'    -B {DERIVATIVES_DIR}/qc/fmriprep/outputs:/out \\\n'
+            f'    -B {DERIVATIVES_DIR}/qc/fmriprep:/out \\\n'
             f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {mriqc["mriqc_container"]} /data /out participant \\\n'
+            f'    {mriqc["mriqc_container"]} /data /out/outputs participant \\\n'
             f'    --participant_label {subject} \\\n'
             f'    --session-id {session} \\\n'
             f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
@@ -165,17 +142,14 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
         f'python3 rsfmri/qc_fmriprep_metrics_extractions.py {config} {subject} {session}\n'
                 )
 
-    save_work = (
-        f'\necho "Cleaning up temporary work directory..."\n'
+    # Add permissions for shared ownership of the output directory
+    ownership_sharing = (
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/fmriprep\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/qc/fmriprep/work\n'
-        f'echo "Finished QC-FMRIPREP for subject: {subject}, session: {session}"\n'
     )
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        # f.write(header + module_export + prereq_check + tmp_dir_setup + singularity_cmd + python_command + save_work)
-        f.write(header + module_export + prereq_check + singularity_cmd + python_command + save_work)
+        f.write(header + module_export + prereq_check + singularity_cmd + python_command + ownership_sharing)
 
 
 def run_qc_fmriprep(config, subject, session, job_ids=None):
@@ -198,13 +172,7 @@ def run_qc_fmriprep(config, subject, session, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
-    # Run MRIQC
-
-    if job_ids is None:
-        job_ids = []
-
     common = config["common"]
-    mriqc = config["mriqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # Create output (derivatives) directories
@@ -212,18 +180,21 @@ def run_qc_fmriprep(config, subject, session, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep/outputs", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep/work", exist_ok=True)
 
-    if not is_mriqc_done(config, subject, session):
+    if not utils.is_mriqc_done(config, subject, session, runtype='fmriprep'):
         path_to_script = f"{DERIVATIVES_DIR}/qc/fmriprep/scripts/qc_fmriprep_{subject}_{session}.slurm"
-        generate_slurm_mriqc_script(config, subject, session, path_to_script, job_ids=job_ids)
+        generate_slurm_script(config, subject, session, path_to_script, job_ids=job_ids)
         cmd = f"sbatch {path_to_script}"
         print(f"[QC-FMRIPREP] Submitting job: {cmd}")
         job_id = utils.submit_job(cmd)
         return job_id
 
     else:
-        print(f"Performing only python command extraction for {subject}_{session}")
+        print(f"[QC-FMRIPREP] Skip already processed MRIQC")
+        print(f"[QC-FMRIPREP] Performing only python command extraction for {subject}_{session}")
         try:
+            # todo: config not a path but a dict
             extract_qc_metrics(config, subject, session)
         except Exception as e:
             print(f"[QC-FMRIPREP] ERROR during QC extraction: {e}", file=sys.stderr)

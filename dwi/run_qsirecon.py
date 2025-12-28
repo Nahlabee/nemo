@@ -72,6 +72,9 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     qsirecon = config["qsirecon"]
     DERIVATIVES_DIR = common["derivatives"]
 
+    if job_ids is None:
+        job_ids = []
+
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH -J qsirecon_{subject}_{session}\n'

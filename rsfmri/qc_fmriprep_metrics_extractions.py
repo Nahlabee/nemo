@@ -31,7 +31,7 @@ def load_any_image(path: Path) -> np.ndarray:
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
 
-    img = nib.load(str(path)) # type: ignore
+    img = nib.load(str(path))  # type: ignore
 
     if isinstance(img, nib.gifti.gifti.GiftiImage):
         logger.info(f"Detected GIFTI surface file: {path.name}")
@@ -41,6 +41,7 @@ def load_any_image(path: Path) -> np.ndarray:
         raise TypeError(f"Unsupported file type: {type(img)}")
 
     return img
+
 
 def voxel_count(mask):
     """
@@ -81,6 +82,7 @@ def dice(a, b):
     s = a.sum() + b.sum()
     return (2 * inter / s) if s > 0 else np.nan
 
+
 def mutual_information(img1, img2, bins=64):
     """
     Compute mutual information between two images.
@@ -107,6 +109,7 @@ def mutual_information(img1, img2, bins=64):
     hgram, _, _ = np.histogram2d(i1, i2, bins=bins)
     return mutual_info_score(None, None, contingency=hgram)
 
+
 # -----------------------
 # Main extraction
 # -----------------------
@@ -128,82 +131,82 @@ def run(config, subject, session):
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
     try:               
-                # Extract process status from log files
-                finished_status, runtime = utils.read_log(config, subject, session, runtype="fmriprep")
-                dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
-                file_count = utils.count_files(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
+        # Extract process status from log files
+        finished_status, runtime = utils.read_log(config, subject, session, runtype="fmriprep")
+        dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
+        file_count = utils.count_files(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
 
-                anat = Path(DERIVATIVES_DIR) / "fmriprep/outputs" / subject / session / "anat"
-                func = Path(DERIVATIVES_DIR) / "fmriprep/outputs" / subject / session / "func"
+        anat = Path(DERIVATIVES_DIR) / "fmriprep/outputs" / subject / session / "anat"
+        func = Path(DERIVATIVES_DIR) / "fmriprep/outputs" / subject / session / "func"
 
-                # Identify required files
-                t1w = next(anat.glob("*_desc-preproc_T1w.nii.gz"))
-                t1w_mask = next(anat.glob("*_desc-brain_mask.nii.gz"))
-                gm = next(anat.glob("*_label-GM_probseg.nii.gz"))
-                wm = next(anat.glob("*_label-WM_probseg.nii.gz"))
-                csf = next(anat.glob("*_label-CSF_probseg.nii.gz"))
+        # Identify required files
+        t1w = next(anat.glob("*_desc-preproc_T1w.nii.gz"))
+        t1w_mask = next(anat.glob("*_desc-brain_mask.nii.gz"))
+        gm = next(anat.glob("*_label-GM_probseg.nii.gz"))
+        wm = next(anat.glob("*_label-WM_probseg.nii.gz"))
+        csf = next(anat.glob("*_label-CSF_probseg.nii.gz"))
 
-                bold = next(func.glob("*_desc-preproc_bold.nii.gz"))
-                bold_mask = next(func.glob("*_desc-brain_mask.nii.gz"))
+        bold = next(func.glob("*_desc-preproc_bold.nii.gz"))
+        bold_mask = next(func.glob("*_desc-brain_mask.nii.gz"))
 
-                # Load data
-                t1w_img = load_any_image(t1w)
-                t1w_mask_img = load_any_image(t1w_mask)
-                t1w_mask = t1w_mask_img.get_fdata() > 0
-                bold_img = load_any_image(bold)
+        # Load data
+        t1w_img = load_any_image(t1w)
+        t1w_mask_img = load_any_image(t1w_mask)
+        t1w_mask = t1w_mask_img.get_fdata() > 0
+        bold_img = load_any_image(bold)
 
-                # Compute mean BOLD image
-                mean_bold_img = mean_img(bold_img)
-                mean_bold = mean_bold_img.get_fdata()
-                
-                # Load masks for voxel counts
-                brain_mask_img = load_any_image(bold_mask)
-                brain_mask = brain_mask_img.get_fdata() > 0
-                bg_mask = ~brain_mask
+        # Compute mean BOLD image
+        mean_bold_img = mean_img(bold_img)
+        mean_bold = mean_bold_img.get_fdata()
 
-                gm_img = load_any_image(gm)
-                gm_mask = gm_img.get_fdata() > 0.5
-                wm_img = load_any_image(wm)
-                wm_mask = wm_img.get_fdata() > 0.5
-                csf_img = load_any_image(csf)
-                csf_mask = csf_img.get_fdata() > 0.5
+        # Load masks for voxel counts
+        brain_mask_img = load_any_image(bold_mask)
+        brain_mask = brain_mask_img.get_fdata() > 0
+        bg_mask = ~brain_mask
 
-                # Compute QC metrics
-                t1w_data = t1w_img.get_fdata()
-                t1w_mask_data = t1w_mask_img.get_fdata()
-                if t1w_data.shape == t1w_mask_data.shape:
-                    t1w_brain = t1w_data[t1w_mask_data > 0]
-                else:
-                    print(f"Shape mismatch for T1w and mask: {t1w_data.shape} vs {t1w_mask_data.shape}, using all T1w data")
-                    t1w_brain = t1w_data.flatten()
+        gm_img = load_any_image(gm)
+        gm_mask = gm_img.get_fdata() > 0.5
+        wm_img = load_any_image(wm)
+        wm_mask = wm_img.get_fdata() > 0.5
+        csf_img = load_any_image(csf)
+        csf_mask = csf_img.get_fdata() > 0.5
 
-                if mean_bold.shape == brain_mask.shape:
-                    bold_brain = mean_bold[brain_mask > 0]
-                else:
-                    print(f"Shape mismatch for BOLD and mask: {mean_bold.shape} vs {brain_mask.shape}, using all BOLD data")
-                    bold_brain = mean_bold.flatten()
+        # Compute QC metrics
+        t1w_data = t1w_img.get_fdata()
+        t1w_mask_data = t1w_mask_img.get_fdata()
+        if t1w_data.shape == t1w_mask_data.shape:
+            t1w_brain = t1w_data[t1w_mask_data > 0]
+        else:
+            print(f"Shape mismatch for T1w and mask: {t1w_data.shape} vs {t1w_mask_data.shape}, using all T1w data")
+            t1w_brain = t1w_data.flatten()
 
-                row = dict(
-                    subject=subject,
-                    session=session,
-                    Process_Run="fmriprep",
-                    Finished_without_error=finished_status,
-                    Processing_time_hours=runtime,
-                    Number_of_folders_generated=dir_count,
-                    Number_of_files_generated=file_count,
-                    t1w_shape = t1w_mask_img.shape,
-                    brain_voxels_t1w = voxel_count(t1w_mask_img),
-                    brain_voxels_bold=voxel_count(brain_mask),
-                    background_voxels_bold = voxel_count(bg_mask),
-                    bold_shape = bold_img.shape,
-                    gm_voxels=voxel_count(gm_mask),
-                    wm_voxels=voxel_count(wm_mask),
-                    csf_voxels=voxel_count(csf_mask),
-                    MI_T1w_BOLD=mutual_information(t1w_brain, bold_brain),
-                )
+        if mean_bold.shape == brain_mask.shape:
+            bold_brain = mean_bold[brain_mask > 0]
+        else:
+            print(f"Shape mismatch for BOLD and mask: {mean_bold.shape} vs {brain_mask.shape}, using all BOLD data")
+            bold_brain = mean_bold.flatten()
+
+        row = dict(
+            subject=subject,
+            session=session,
+            Process_Run="fmriprep",
+            Finished_without_error=finished_status,
+            Processing_time_hours=runtime,
+            Number_of_folders_generated=dir_count,
+            Number_of_files_generated=file_count,
+            t1w_shape = t1w_mask_img.shape,
+            brain_voxels_t1w = voxel_count(t1w_mask_img),
+            brain_voxels_bold=voxel_count(brain_mask),
+            background_voxels_bold = voxel_count(bg_mask),
+            bold_shape = bold_img.shape,
+            gm_voxels=voxel_count(gm_mask),
+            wm_voxels=voxel_count(wm_mask),
+            csf_voxels=voxel_count(csf_mask),
+            MI_T1w_BOLD=mutual_information(t1w_brain, bold_brain),
+        )
 
     except Exception as e:
-                print(f"⚠️ Skipping {subject} {session}: {e}")
+        print(f"⚠️ Skipping {subject} {session}: {e}")
     print(f"Fmriprep Quality Check terminated successfully for {subject} {session}.")
     
     sub_ses = pd.DataFrame([row])
@@ -221,6 +224,7 @@ if __name__ == "__main__":
             "Usage: python qc_fmriprep_metrics_extractions.py <config_path> <subject> <session>"
         )
 
+    # todo: config not a path but a dict
     config_path, subject, session = sys.argv[1:4]
     with open(config_path, "rb") as f:
         config = tomllib.load(f)

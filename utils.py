@@ -236,3 +236,21 @@ def read_log(config, subject, session, runtype):
                     print(e)
 
     return finished_status, runtime
+
+
+def is_mriqc_done(config, subject, session, runtype):
+    """
+    Checks if MRIQC processing is done for a given subject and session.
+    """
+
+    DERIVATIVES_DIR = config["common"]["derivatives"]
+    stdout_dir = f"{DERIVATIVES_DIR}/qc/{runtype}/stdout"
+    prefix = f"qc_{runtype}_{subject}_{session}"
+    if os.path.exists(stdout_dir):
+        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+        for file in stdout_files:
+            file_path = os.path.join(stdout_dir, file)
+            with open(file_path, 'r') as f:
+                if 'MRIQC completed' in f.read():
+                    return True
+    return False
