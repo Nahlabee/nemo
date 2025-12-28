@@ -213,7 +213,9 @@ def main(config_file=None):
                     session=session,
                     job_ids=dependencies
                 )
-                qc_fmriprep_job_ids.append(qc_fmriprep_job_id)
+            else:
+                qc_fprep_job_id = None
+            qc_fmriprep_job_ids.append(qc_fmriprep_job_id)
 
             # -------------------------------------------
             # 5a. XCP-D
@@ -241,7 +243,9 @@ def main(config_file=None):
                     session=session,
                     job_ids=dependencies
                 )
-                qc_xcpd_job_ids.append(qc_xcpd_job_id)
+            else:
+                qc_xcpd_job_id = None
+            qc_xcpd_job_ids.append(qc_xcpd_job_id)
 
     # -------------------------------------------
     # 6. QC FREESURFER
@@ -259,7 +263,8 @@ def main(config_file=None):
     # 7. GROUP-LEVEL QC
     # -------------------------------------------------------
     if workflow.get("run_qc_group"):
-        # MRIQC group-level for raw data
+        # QC group-level for raw data
+        # -------------------------------------------
         print(f"[MRIQC-RAW-GROUP]")
         dependencies = [job_id for job_id in mriqc_job_ids if job_id is not None]
         run_mriqc_group(
@@ -269,7 +274,8 @@ def main(config_file=None):
             job_ids=dependencies
         )
 
-        # MRIQC group-level for qsiprep data
+        # QC group-level for qsiprep data
+        # -------------------------------------------
         print(f"[MRIQC-QSIPREP-GROUP]")
         dependencies = [job_id for job_id in qc_qsiprep_job_ids if job_id is not None]
         run_mriqc_group(
@@ -280,6 +286,7 @@ def main(config_file=None):
         )
 
         # MRIQC group-level for qsirecon data
+        # -------------------------------------------
         print(f"[MRIQC-QSIRECON-GROUP]")
         dependencies = [job_id for job_id in qc_qsirecon_job_ids if job_id is not None]
         run_mriqc_group(
@@ -289,7 +296,8 @@ def main(config_file=None):
             job_ids=dependencies
         )
 
-        # MRIQC group-level for fmriprep data
+        # QC group-level for fmriprep data
+        # -------------------------------------------
         print(f"[MRIQC-FMRIPREP-GROUP]")
         dependencies = [job_id for job_id in qc_fmriprep_job_ids if job_id is not None]
         run_mriqc_group(
@@ -300,6 +308,7 @@ def main(config_file=None):
         )
 
         # MRIQC group-level for xcp_d data
+        # -------------------------------------------
         print(f"[MRIQC-XCPD-GROUP]")
         dependencies = [job_id for job_id in qc_xcpd_job_ids if job_id is not None]
         run_mriqc_group(
@@ -309,7 +318,7 @@ def main(config_file=None):
             job_ids=dependencies
         )
 
-    print("\n✅ Workflow submission complete")
+    print("\n✅ Workflow submission complete for subject:", subject)
 
 
 if __name__ == "__main__":

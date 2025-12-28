@@ -7,6 +7,8 @@ from pathlib import Path
 from sklearn.metrics import mutual_info_score
 from nilearn.image import mean_img
 import warnings
+import os
+import tomllib
 import utils
 warnings.filterwarnings("ignore")
 # -----------------------
@@ -23,8 +25,8 @@ def load_any_image(path: Path) -> np.ndarray:
     
     Returns
     -------
-    data : np.ndarray
-        Loaded numeric data array.
+    img : nibabel image object
+        Loaded image object.
     """
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
@@ -33,34 +35,45 @@ def load_any_image(path: Path) -> np.ndarray:
 
     if isinstance(img, nib.gifti.gifti.GiftiImage):
         logger.info(f"Detected GIFTI surface file: {path.name}")
-        data = np.column_stack([d.data for d in img.darrays])
     elif isinstance(img, (nib.Nifti1Image, nib.Nifti2Image)): # type: ignore
         logger.info(f"Detected NIfTI volumetric file: {path.name}")
-        data = img.get_fdata()
     else:
         raise TypeError(f"Unsupported file type: {type(img)}")
 
-    return data, img.affine  # type: ignore
+    return img
 
 def voxel_count(mask):
     """
     Extract voxel count from a mask (binary or multiclass).
     
-    :param mask: array data
-    :return: voxel count per unique value
+    Parameters
+    ----------
+    mask : np.ndarray
+        Mask array data.
+    Returns
+    -------
+    int
+        Number of True voxels.
     """
 
-    return np.unique(mask, return_counts=True)
+    return np.sum(mask)
 
 
 def dice(a, b):
     """
     Compute dice similarity coefficient between two binary masks.
     
-    :param a: array data
-    :param b: array data
+    Parameters
+    ----------
+    a : np.ndarray
+        First binary mask array.
+    b : np.ndarray
+        Second binary mask array.
 
-    :return: Dice similarity coefficient
+    Returns
+    -------
+    float
+        Dice similarity coefficient.
     """
     a = a.astype(bool)
     b = b.astype(bool)
@@ -72,13 +85,24 @@ def mutual_information(img1, img2, bins=64):
     """
     Compute mutual information between two images.
     
-    :param img1: array data
-    :param img2: array data
-    :param bins: number of bins for histogram
-    :return: Mutual information score
+    Parameters
+    ----------
+    img1 : np.ndarray
+        First image data array.
+    img2 : np.ndarray
+        Second image data array.
+    bins : int, optional
+        Number of bins for histogram (default is 64).
+    Returns
+    -------
+    float
+        Mutual information score.
     """
     i1 = img1.flatten()
     i2 = img2.flatten()
+
+    if len(i1) != len(i2):
+        return np.nan
 
     hgram, _, _ = np.histogram2d(i1, i2, bins=bins)
     return mutual_info_score(None, None, contingency=hgram)
@@ -105,12 +129,12 @@ def run(config, subject, session):
     DERIVATIVES_DIR = config["common"]["derivatives"]
     try:               
                 # Extract process status from log files
-                finished_status, runtime = utils.read_log(config, subject, session, run_type="fmriprep")
+                finished_status, runtime = utils.read_log(config, subject, session, runtype="fmriprep")
                 dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
                 file_count = utils.count_files(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
 
-                anat = Path(DERIVATIVES_DIR / "fmriprep/outputs" / subject / session / "anat")
-                func = Path(DERIVATIVES_DIR / "fmriprep/outputs" / subject / session / "func")
+                anat = Path(DERIVATIVES_DIR) / "fmriprep/outputs" / subject / session / "anat"
+                func = Path(DERIVATIVES_DIR) / "fmriprep/outputs" / subject / session / "func"
 
                 # Identify required files
                 t1w = next(anat.glob("*_desc-preproc_T1w.nii.gz"))
@@ -123,26 +147,42 @@ def run(config, subject, session):
                 bold_mask = next(func.glob("*_desc-brain_mask.nii.gz"))
 
                 # Load data
-                t1w_data, t1w_affine = load_any_image(t1w)
-                bold_data, bold_affine = load_any_image(bold)
+                t1w_img = load_any_image(t1w)
+                t1w_mask_img = load_any_image(t1w_mask)
+                t1w_mask = t1w_mask_img.get_fdata() > 0
+                bold_img = load_any_image(bold)
 
                 # Compute mean BOLD image
-                mean_bold_img = mean_img(bold_data)
+                mean_bold_img = mean_img(bold_img)
                 mean_bold = mean_bold_img.get_fdata()
                 
                 # Load masks for voxel counts
-                brain_mask, _ = load_any_image(bold_mask)
-                brain_mask = brain_mask > 0
+                brain_mask_img = load_any_image(bold_mask)
+                brain_mask = brain_mask_img.get_fdata() > 0
                 bg_mask = ~brain_mask
 
-                gm_mask, _ = load_any_image(gm)
-                gm_mask = gm_mask > 0.5
-                wm_mask, _ = load_any_image(wm)
-                wm_mask = wm_mask > 0.5
-                csf_mask, _ = load_any_image(csf)
-                csf_mask = csf_mask > 0.5
+                gm_img = load_any_image(gm)
+                gm_mask = gm_img.get_fdata() > 0.5
+                wm_img = load_any_image(wm)
+                wm_mask = wm_img.get_fdata() > 0.5
+                csf_img = load_any_image(csf)
+                csf_mask = csf_img.get_fdata() > 0.5
 
                 # Compute QC metrics
+                t1w_data = t1w_img.get_fdata()
+                t1w_mask_data = t1w_mask_img.get_fdata()
+                if t1w_data.shape == t1w_mask_data.shape:
+                    t1w_brain = t1w_data[t1w_mask_data > 0]
+                else:
+                    print(f"Shape mismatch for T1w and mask: {t1w_data.shape} vs {t1w_mask_data.shape}, using all T1w data")
+                    t1w_brain = t1w_data.flatten()
+
+                if mean_bold.shape == brain_mask.shape:
+                    bold_brain = mean_bold[brain_mask > 0]
+                else:
+                    print(f"Shape mismatch for BOLD and mask: {mean_bold.shape} vs {brain_mask.shape}, using all BOLD data")
+                    bold_brain = mean_bold.flatten()
+
                 row = dict(
                     subject=subject,
                     session=session,
@@ -151,17 +191,16 @@ def run(config, subject, session):
                     Processing_time_hours=runtime,
                     Number_of_folders_generated=dir_count,
                     Number_of_files_generated=file_count,
-                    brain_voxels=voxel_count(brain_mask),
+                    t1w_shape = t1w_mask_img.shape,
+                    brain_voxels_t1w = voxel_count(t1w_mask_img),
+                    brain_voxels_bold=voxel_count(brain_mask),
+                    background_voxels_bold = voxel_count(bg_mask),
+                    bold_shape = bold_img.shape,
                     gm_voxels=voxel_count(gm_mask),
                     wm_voxels=voxel_count(wm_mask),
                     csf_voxels=voxel_count(csf_mask),
-                    MI_T1w_BOLD=mutual_information(
-                        t1w_data[t1w_mask > 0],
-                        mean_bold[brain_mask > 0],
-                    ),
+                    MI_T1w_BOLD=mutual_information(t1w_brain, bold_brain),
                 )
-
-
 
     except Exception as e:
                 print(f"⚠️ Skipping {subject} {session}: {e}")
@@ -170,5 +209,19 @@ def run(config, subject, session):
     sub_ses = pd.DataFrame([row])
     # Save outputs to csv file
     path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/qc_{subject}_{session}.csv"
-    sub_ses.to_csv(path_to_qc, mode='a', header=False, index=False)
+    sub_ses.to_csv(path_to_qc, mode='w', header=True, index=False)
     print(f"QC saved in {path_to_qc}\n")
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) < 4:
+        raise RuntimeError(
+            "Usage: python qc_fmriprep_metrics_extractions.py <config_path> <subject> <session>"
+        )
+
+    config_path, subject, session = sys.argv[1:4]
+    with open(config_path, "rb") as f:
+        config = tomllib.load(f)
+    run(config, subject, session)
