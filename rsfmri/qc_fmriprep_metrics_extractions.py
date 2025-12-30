@@ -181,13 +181,13 @@ def run(config, subject, session):
     bold_data = bold_img.get_fdata()
 
     # Compute mean BOLD image
-    mean_bold = np.mean(bold_data, axis=-1)
+    mean_bold = np.mean(bold_data, axis=3)
 
     # Load masks for voxel counts
     bold_mask_img = load_any_image(bold_mask)
     bold_mask_data = bold_mask_img.get_fdata()
-    t1w_brain = t1w_data[t1w_mask_data > 0]
-    bold_brain = mean_bold[bold_mask_data > 0]
+    t1w_brain = t1w_data * t1w_mask_data
+    bold_brain = mean_bold * bold_mask_data
 
     gm_img = load_any_image(gm)
     gm_mask = gm_img.get_fdata() > 0.5
