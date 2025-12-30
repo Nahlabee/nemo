@@ -1,5 +1,3 @@
-from datetime import datetime
-import re
 import toml
 import os
 import subprocess
