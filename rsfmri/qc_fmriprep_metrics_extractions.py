@@ -4,12 +4,13 @@ from venv import logger
 import numpy as np
 import nibabel as nib
 import pandas as pd
-from pathlib import Path
 from sklearn.metrics import mutual_info_score
 # from nilearn.image import mean_img
 import warnings
 import os
-import tomllib
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 
 warnings.filterwarnings("ignore")
@@ -214,7 +215,7 @@ def run(config, subject, session):
 
         sub_ses = pd.DataFrame([row])
         # Save outputs to csv file
-        path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/qc_{subject}_{session}.csv"
+        path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/outputs/{subject}/{session}/{subject}_{session}_qc.csv"
         sub_ses.to_csv(path_to_qc, mode='w', header=True, index=False)
         print(f"QC saved in {path_to_qc}\n")
 
