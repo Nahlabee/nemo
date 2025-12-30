@@ -155,7 +155,7 @@ def run(config, subject, session):
         wm = next(anat.glob("*_label-WM_probseg.nii.gz"))
         csf = next(anat.glob("*_label-CSF_probseg.nii.gz"))
 
-        bold = next(func.glob("*_desc-preproc_bold.nii.gz"))
+        bold = next(func.glob("*_space-T1w_desc-preproc_bold.nii.gz"))
         bold_mask = next(func.glob("*_desc-brain_mask.nii.gz"))
 
         # Load data
@@ -163,10 +163,10 @@ def run(config, subject, session):
         t1w_mask_img = load_any_image(t1w_mask)
         t1w_mask = t1w_mask_img.get_fdata() > 0
         bold_img = load_any_image(bold)
+        bold_data = bold_img.get_fdata()
 
         # Compute mean BOLD image
-        mean_bold_img = np.mean(bold_img, axis=-1)
-        mean_bold = mean_bold_img.get_fdata()
+        mean_bold = np.mean(bold_data, axis=-1)
 
         # Load masks for voxel counts
         brain_mask_img = load_any_image(bold_mask)
@@ -223,7 +223,7 @@ def run(config, subject, session):
         print(f"Fmriprep Quality Check terminated successfully for {subject} {session}.")
 
     except Exception as e:
-        print(f"⚠️ Skipping QC for {subject} {session}: \n{e}")
+        print(f"⚠️ ERROR: QC aborted for {subject} {session}: \n{e}")
 
 
 if __name__ == "__main__":
