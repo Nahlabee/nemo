@@ -193,8 +193,9 @@ def extract_runtime(content):
 
     # Calculer le runtime
     runtime = last_timestamp - first_timestamp
+    runtime_hours = runtime.total_seconds() / 3600.0  # Convert in hours
 
-    return runtime
+    return runtime_hours
 
 
 def read_log(config, subject, session, runtype):

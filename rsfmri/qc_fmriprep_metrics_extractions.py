@@ -144,6 +144,20 @@ def run(config, subject, session):
         dir_count = utils.count_dirs(output_dir)
         file_count = utils.count_files(output_dir)
 
+        # Load TSV file produced by QSIprep
+        fmriprep_confounds = f'{subject}_{session}_task-rest_desc-confounds_timeseries.tsv'
+        df = pd.read_csv(os.path.join(output_dir, 'dwi', fmriprep_confounds), sep='\t')
+
+        max_framewise_displacement = df['framewise_displacement'].max()
+        max_rot_x = df['rot_x'].max()
+        max_rot_y = df['rot_y'].max()
+        max_rot_z = df['rot_z'].max()
+        max_trans_x = df['trans_x'].max()
+        max_trans_y = df['trans_y'].max()
+        max_trans_z = df['trans_z'].max()
+        max_dvars = df['dvars'].max()
+        max_rmsd = df['rmsd'].max()
+
         anat = Path(os.path.join(output_dir, "anat"))
         func = Path(os.path.join(output_dir, "func"))
 
@@ -156,12 +170,13 @@ def run(config, subject, session):
         csf = next(anat.glob("*_label-CSF_probseg.nii.gz"))
 
         bold = next(func.glob("*_space-T1w_desc-preproc_bold.nii.gz"))
-        bold_mask = next(func.glob("*_desc-brain_mask.nii.gz"))
+        bold_mask = next(func.glob("*_space-T1w_desc-brain_mask.nii.gz"))
 
         # Load data
         t1w_img = load_any_image(t1w)
+        t1w_data = t1w_img.get_fdata()
         t1w_mask_img = load_any_image(t1w_mask)
-        t1w_mask = t1w_mask_img.get_fdata() > 0
+        t1w_mask_data = t1w_mask_img.get_fdata()
         bold_img = load_any_image(bold)
         bold_data = bold_img.get_fdata()
 
@@ -169,9 +184,10 @@ def run(config, subject, session):
         mean_bold = np.mean(bold_data, axis=-1)
 
         # Load masks for voxel counts
-        brain_mask_img = load_any_image(bold_mask)
-        brain_mask = brain_mask_img.get_fdata() > 0
-        bg_mask = ~brain_mask
+        bold_mask_img = load_any_image(bold_mask)
+        bold_mask_data = bold_mask_img.get_fdata()
+        t1w_brain = t1w_data[t1w_mask_data > 0]
+        bold_brain = bold_data[bold_mask_data > 0]
 
         gm_img = load_any_image(gm)
         gm_mask = gm_img.get_fdata() > 0.5
@@ -180,20 +196,22 @@ def run(config, subject, session):
         csf_img = load_any_image(csf)
         csf_mask = csf_img.get_fdata() > 0.5
 
-        # Compute QC metrics
-        t1w_data = t1w_img.get_fdata()
-        t1w_mask_data = t1w_mask_img.get_fdata()
-        if t1w_data.shape == t1w_mask_data.shape:
-            t1w_brain = t1w_data[t1w_mask_data > 0]
-        else:
-            print(f"Shape mismatch for T1w and mask: {t1w_data.shape} vs {t1w_mask_data.shape}, using all T1w data")
-            t1w_brain = t1w_data.flatten()
+        # Resample dwi into t1w space
+        bold_brain_hr = utils.resample(bold_brain, t1w_data)
+        bold_mask_data_hr = utils.resample(bold_mask_data, t1w_data)
 
-        if mean_bold.shape == brain_mask.shape:
-            bold_brain = mean_bold[brain_mask > 0]
-        else:
-            print(f"Shape mismatch for BOLD and mask: {mean_bold.shape} vs {brain_mask.shape}, using all BOLD data")
-            bold_brain = mean_bold.flatten()
+        # Compute QC metrics
+        # if t1w_data.shape == t1w_mask_data.shape:
+        #     t1w_brain = t1w_data[t1w_mask_data > 0]
+        # else:
+        #     print(f"Shape mismatch for T1w and mask: {t1w_data.shape} vs {t1w_mask_data.shape}, using all T1w data")
+        #     t1w_brain = t1w_data.flatten()
+        #
+        # if mean_bold.shape == brain_mask.shape:
+        #     bold_brain = mean_bold[brain_mask > 0]
+        # else:
+        #     print(f"Shape mismatch for BOLD and mask: {mean_bold.shape} vs {brain_mask.shape}, using all BOLD data")
+        #     bold_brain = mean_bold.flatten()
 
         row = dict(
             subject=subject,
@@ -203,15 +221,24 @@ def run(config, subject, session):
             Processing_time_hours=runtime,
             Number_of_folders_generated=dir_count,
             Number_of_files_generated=file_count,
-            t1w_shape=t1w_mask_img.shape,
-            brain_voxels_t1w=voxel_count(t1w_mask_img),
-            brain_voxels_bold=voxel_count(brain_mask),
-            background_voxels_bold=voxel_count(bg_mask),
+            t1w_shape=t1w_data.shape,
+            brain_voxels_t1w=np.sum(t1w_mask_data > 0),
+            brain_voxels_bold=np.sum(bold_mask_data > 0),
             bold_shape=bold_img.shape,
-            gm_voxels=voxel_count(gm_mask),
-            wm_voxels=voxel_count(wm_mask),
-            csf_voxels=voxel_count(csf_mask),
-            MI_T1w_BOLD=mutual_information(t1w_brain, bold_brain),
+            gm_voxels=np.sum(gm_mask > 0),
+            wm_voxels=np.sum(wm_mask > 0),
+            csf_voxels=np.sum(csf_mask > 0),
+            DICE_t1w_bold=utils.dice(t1w_mask_data, bold_mask_data_hr),
+            MI_t1w_bold=mutual_information(t1w_brain, bold_brain_hr),
+            max_framewise_displacement=max_framewise_displacement,
+            max_rot_x=max_rot_x,
+            max_rot_y=max_rot_y,
+            max_rot_z=max_rot_z,
+            max_trans_x=max_trans_x,
+            max_trans_y=max_trans_y,
+            max_trans_z=max_trans_z,
+            max_dvars=max_dvars,
+            max_rmsd=max_rmsd,
         )
 
         sub_ses = pd.DataFrame([row])
