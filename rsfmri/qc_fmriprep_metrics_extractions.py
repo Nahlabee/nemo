@@ -187,7 +187,7 @@ def run(config, subject, session):
         bold_mask_img = load_any_image(bold_mask)
         bold_mask_data = bold_mask_img.get_fdata()
         t1w_brain = t1w_data[t1w_mask_data > 0]
-        bold_brain = bold_data[bold_mask_data > 0]
+        bold_brain = mean_bold[bold_mask_data > 0]
 
         gm_img = load_any_image(gm)
         gm_mask = gm_img.get_fdata() > 0.5
@@ -196,7 +196,7 @@ def run(config, subject, session):
         csf_img = load_any_image(csf)
         csf_mask = csf_img.get_fdata() > 0.5
 
-        # Resample dwi into t1w space
+        # Resample bold into t1w space
         bold_brain_hr = utils.resample(bold_brain, t1w_data)
         bold_mask_data_hr = utils.resample(bold_mask_data, t1w_data)
 
