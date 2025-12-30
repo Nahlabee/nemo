@@ -1,7 +1,7 @@
 # =============================
 #   PROJECT-WIDE SETTINGS
 # =============================
-#[common]
+[common]
 #input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
 #derivatives = "/scratch/lhashimoto/nemo_derivatives"
 #subjects = ["1054002"]
