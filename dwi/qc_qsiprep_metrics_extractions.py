@@ -3,6 +3,9 @@ import json
 import numpy as np
 import pandas as pd
 import os
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 
 

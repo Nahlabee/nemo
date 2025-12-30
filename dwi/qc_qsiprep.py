@@ -1,6 +1,8 @@
 import json
 import os
 import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 from dwi.qc_qsiprep_metrics_extractions import run as extract_qc_metrics
 
