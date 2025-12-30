@@ -2,8 +2,13 @@ import toml
 import os
 import subprocess
 import re
-from pathlib import Path
+import numpy as np
+from venv import logger
 from datetime import datetime
+from pathlib import Path
+import nibabel as nib
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def load_config(config_file):
@@ -252,3 +257,98 @@ def is_mriqc_done(config, subject, session, runtype):
                 if 'MRIQC completed' in f.read():
                     return True
     return False
+
+
+def load_any_image(path: Path) -> np.ndarray:
+    """
+    Load an fMRIPrep/XCP-D output image, handling both NIfTI and GIFTI formats.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the .nii(.gz) or .gii file.
+
+    Returns
+    -------
+    img : nibabel image object
+        Loaded image object.
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {path}")
+
+    img = nib.load(str(path))  # type: ignore
+
+    if isinstance(img, nib.gifti.gifti.GiftiImage):
+        logger.info(f"Detected GIFTI surface file: {path.name}")
+    elif isinstance(img, (nib.Nifti1Image, nib.Nifti2Image)):  # type: ignore
+        logger.info(f"Detected NIfTI volumetric file: {path.name}")
+    else:
+        raise TypeError(f"Unsupported file type: {type(img)}")
+
+    return img
+
+
+def dice(a, b):
+    """
+    Compute dice similarity coefficient between two binary masks.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        First binary mask array.
+    b : np.ndarray
+        Second binary mask array.
+
+    Returns
+    -------
+    float
+        Dice similarity coefficient.
+    """
+    a = a.astype(bool)
+    b = b.astype(bool)
+    inter = np.logical_and(a, b).sum()
+    s = a.sum() + b.sum()
+    return (2 * inter / s) if s > 0 else np.nan
+
+
+def resample(low_res_image, high_res_image):
+    from scipy.ndimage import zoom
+
+    target_shape = high_res_image.shape  # Cible : la résolution de l'image de plus haute résolution
+
+    # Calculer les facteurs de zoom pour chaque dimension
+    zoom_factors = [target_shape[i] / low_res_image.shape[i] for i in range(3)]
+
+    # Rééchantillonner image1 pour qu'elle ait la même taille que image2
+    return zoom(low_res_image, zoom_factors, mode='nearest')
+
+
+def mutual_information(image1, image2, bins=64):
+    # Normaliser les images entre 0 et 1
+    image1 = (image1 - image1.min()) / (image1.max() - image1.min())
+    image2 = (image2 - image2.min()) / (image2.max() - image2.min())
+
+    # Aplatir les images 3D en 1D
+    flat_image1 = image1.ravel()
+    flat_image2 = image2.ravel()
+
+    # Calculer l'histogramme conjoint
+    joint_hist, _, _ = np.histogram2d(flat_image1, flat_image2, bins=bins, range=[[0, 1], [0, 1]])
+
+    # Calculer les histogrammes marginaux
+    hist1, _ = np.histogram(flat_image1, bins=bins, range=[0, 1])
+    hist2, _ = np.histogram(flat_image2, bins=bins, range=[0, 1])
+
+    # Normaliser les histogrammes
+    joint_hist = joint_hist / joint_hist.sum()
+    hist1 = hist1 / hist1.sum()
+    hist2 = hist2 / hist2.sum()
+
+    # Calculer l'information mutuelle
+    mi = 0
+    for i in range(bins):
+        for j in range(bins):
+            if joint_hist[i, j] > 0 and hist1[i] > 0 and hist2[j] > 0:
+                mi += joint_hist[i, j] * np.log2(joint_hist[i, j] / (hist1[i] * hist2[j]))
+
+    return mi

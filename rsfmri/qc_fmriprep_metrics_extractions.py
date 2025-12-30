@@ -5,12 +5,15 @@ import nibabel as nib
 import pandas as pd
 from pathlib import Path
 from sklearn.metrics import mutual_info_score
-from nilearn.image import mean_img
+# from nilearn.image import mean_img
 import warnings
 import os
 import tomllib
 import utils
+
 warnings.filterwarnings("ignore")
+
+
 # -----------------------
 
 
@@ -35,7 +38,7 @@ def load_any_image(path: Path) -> np.ndarray:
 
     if isinstance(img, nib.gifti.gifti.GiftiImage):
         logger.info(f"Detected GIFTI surface file: {path.name}")
-    elif isinstance(img, (nib.Nifti1Image, nib.Nifti2Image)): # type: ignore
+    elif isinstance(img, (nib.Nifti1Image, nib.Nifti2Image)):  # type: ignore
         logger.info(f"Detected NIfTI volumetric file: {path.name}")
     else:
         raise TypeError(f"Unsupported file type: {type(img)}")
@@ -130,15 +133,18 @@ def run(config, subject, session):
     """
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
-    try:               
+    output_dir = f"{DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}"
+
+    try:
         # Extract process status from log files
         finished_status, runtime = utils.read_log(config, subject, session, runtype="fmriprep")
-        dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
-        file_count = utils.count_files(f"{DERIVATIVES_DIR}/fmriprep/{subject}/{session}")
+        dir_count = utils.count_dirs(output_dir)
+        file_count = utils.count_files(output_dir)
 
-        anat = Path(DERIVATIVES_DIR) / "fmriprep/outputs" / subject / session / "anat"
-        func = Path(DERIVATIVES_DIR) / "fmriprep/outputs" / subject / session / "func"
+        anat = os.path.join(output_dir, "anat")
+        func = os.path.join(output_dir, "func")
 
+        # todo: test fmriprep sessionwise and check directory for T1w
         # Identify required files
         t1w = next(anat.glob("*_desc-preproc_T1w.nii.gz"))
         t1w_mask = next(anat.glob("*_desc-brain_mask.nii.gz"))
@@ -156,7 +162,7 @@ def run(config, subject, session):
         bold_img = load_any_image(bold)
 
         # Compute mean BOLD image
-        mean_bold_img = mean_img(bold_img)
+        mean_bold_img = np.mean(bold_img, axis=-1)
         mean_bold = mean_bold_img.get_fdata()
 
         # Load masks for voxel counts
@@ -194,26 +200,27 @@ def run(config, subject, session):
             Processing_time_hours=runtime,
             Number_of_folders_generated=dir_count,
             Number_of_files_generated=file_count,
-            t1w_shape = t1w_mask_img.shape,
-            brain_voxels_t1w = voxel_count(t1w_mask_img),
+            t1w_shape=t1w_mask_img.shape,
+            brain_voxels_t1w=voxel_count(t1w_mask_img),
             brain_voxels_bold=voxel_count(brain_mask),
-            background_voxels_bold = voxel_count(bg_mask),
-            bold_shape = bold_img.shape,
+            background_voxels_bold=voxel_count(bg_mask),
+            bold_shape=bold_img.shape,
             gm_voxels=voxel_count(gm_mask),
             wm_voxels=voxel_count(wm_mask),
             csf_voxels=voxel_count(csf_mask),
             MI_T1w_BOLD=mutual_information(t1w_brain, bold_brain),
         )
 
+        sub_ses = pd.DataFrame([row])
+        # Save outputs to csv file
+        path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/qc_{subject}_{session}.csv"
+        sub_ses.to_csv(path_to_qc, mode='w', header=True, index=False)
+        print(f"QC saved in {path_to_qc}\n")
+
+        print(f"Fmriprep Quality Check terminated successfully for {subject} {session}.")
+
     except Exception as e:
-        print(f"⚠️ Skipping {subject} {session}: {e}")
-    print(f"Fmriprep Quality Check terminated successfully for {subject} {session}.")
-    
-    sub_ses = pd.DataFrame([row])
-    # Save outputs to csv file
-    path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/qc_{subject}_{session}.csv"
-    sub_ses.to_csv(path_to_qc, mode='w', header=True, index=False)
-    print(f"QC saved in {path_to_qc}\n")
+        print(f"⚠️ Skipping QC for {subject} {session}: \n{e}")
 
 
 if __name__ == "__main__":

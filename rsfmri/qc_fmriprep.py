@@ -110,13 +110,12 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
 
     # Define the Singularity command for running MRIQC
     # Note: Unlike other BIDS apps, no config file is used here, the option doesn't exist for mriqc
-    input_dir = f"{DERIVATIVES_DIR}/fmriprep/outputs"
 
     #todo: voir version Heni
     singularity_cmd = (
             f'\napptainer run \\\n'
             f'    --cleanenv \\\n'
-            f'    -B {input_dir}:/data:ro \\\n'
+            f'    -B {DERIVATIVES_DIR}/fmriprep/outputs:/data:ro \\\n'
             f'    -B {DERIVATIVES_DIR}/qc/fmriprep:/out \\\n'
             f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
             f'    {mriqc["mriqc_container"]} /data /out/outputs participant \\\n'

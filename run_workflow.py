@@ -214,7 +214,7 @@ def main(config_file=None):
                     job_ids=dependencies
                 )
             else:
-                qc_fprep_job_id = None
+                qc_fmriprep_job_id = None
             qc_fmriprep_job_ids.append(qc_fmriprep_job_id)
 
             # -------------------------------------------
