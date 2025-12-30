@@ -71,12 +71,8 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
     )
 
     if job_ids:
-        if isinstance(job_ids, str):
-            dependency = [job_ids]
-        else:
-            dependency = [jid for jid in job_ids if jid]
         header += (
-            f'#SBATCH --dependency=afterok:{":".join(dependency)}\n'
+            f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
         )
 
     if common.get("email"):

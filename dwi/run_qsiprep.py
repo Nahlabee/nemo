@@ -70,9 +70,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
-    if job_ids is None:
-        job_ids = []
-
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH -J qsiprep_{subject}_{session}\n'

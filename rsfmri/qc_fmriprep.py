@@ -37,9 +37,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     mriqc = config["mriqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
-    if job_ids is None:
-        job_ids = []
-
     header = (
         f'#!/bin/bash\n'
         f'set -euo pipefail\n'

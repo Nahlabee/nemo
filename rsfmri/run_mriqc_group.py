@@ -85,9 +85,7 @@ def generate_slurm_mriqc_script(config, input_dir, path_to_script, data_type="ra
     )
 
     if job_ids:
-        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
-        if valid_ids:
-            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
 
     if common.get("email"):
         header += (
