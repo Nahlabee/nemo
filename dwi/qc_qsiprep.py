@@ -89,9 +89,11 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
             f'    --cleanenv \\\n'
             f'    -B {DERIVATIVES_DIR}/qsiprep/outputs:/data:ro \\\n'
             f'    -B {DERIVATIVES_DIR}/qc/qsiprep:/out \\\n'
+            f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
             f'    {mriqc["mriqc_container"]} /data /out/outputs participant \\\n'
             f'    --participant_label {subject} \\\n'
             f'    --session-id {session} \\\n'
+            f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
             f'    --mem {mriqc["requested_mem"]} \\\n'
             f'    -w /out/work \\\n'
             f'    --fd_thres 0.5 \\\n'
@@ -104,7 +106,8 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     # todo : adapt to qsiprep
     python_command = (
         f'\necho "Running QC metrics extraction"\n'
-        f'python3 dwi/qc_qsiprep_metrics_extractions.py {json.dumps(config)} {subject} {session}\n'
+        f'python3 dwi/qc_qsiprep_metrics_extractions.py '
+        f"'{json.dumps(config)}' '{subject}' '{session}'\n"
     )
     # python_command = (
     #     f'\npython3 anat/qc_freesurfer.py '
