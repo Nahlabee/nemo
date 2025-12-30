@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
+import glob
 
 warnings.filterwarnings("ignore")
 
@@ -143,8 +144,8 @@ def run(config, subject, session):
         dir_count = utils.count_dirs(output_dir)
         file_count = utils.count_files(output_dir)
 
-        anat = os.path.join(output_dir, "anat")
-        func = os.path.join(output_dir, "func")
+        anat = Path(os.path.join(output_dir, "anat"))
+        func = Path(os.path.join(output_dir, "func"))
 
         # todo: test fmriprep sessionwise and check directory for T1w
         # Identify required files
