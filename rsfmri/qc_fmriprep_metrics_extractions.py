@@ -144,9 +144,9 @@ def run(config, subject, session):
         dir_count = utils.count_dirs(output_dir)
         file_count = utils.count_files(output_dir)
 
-        # Load TSV file produced by QSIprep
+        # Load TSV file produced by FMRIprep
         fmriprep_confounds = f'{subject}_{session}_task-rest_desc-confounds_timeseries.tsv'
-        df = pd.read_csv(os.path.join(output_dir, 'dwi', fmriprep_confounds), sep='\t')
+        df = pd.read_csv(os.path.join(output_dir, 'func', fmriprep_confounds), sep='\t')
 
         max_framewise_displacement = df['framewise_displacement'].max()
         max_rot_x = df['rot_x'].max()
