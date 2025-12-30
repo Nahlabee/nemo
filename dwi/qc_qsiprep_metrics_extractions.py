@@ -28,8 +28,8 @@ def run(config, subject, session):
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
     output_dir = f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}"
-    anat = f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/anat"  # todo: check if sessionwise
-    dwi = f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}/dwi"
+    anat = Path(f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/anat")  # todo: check if sessionwise
+    dwi = Path(f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}/dwi")
 
     try:
         # Extract process status from log files
@@ -72,8 +72,8 @@ def run(config, subject, session):
         seg_data = seg_img.get_fdata()
 
         # Resample dwi into t1w space
-        t1w_brain = t1w_data[t1w_mask_data > 0]
-        dwi_brain = dwi_data[dwi_mask_data > 0]
+        t1w_brain = t1w_data * t1w_mask_data
+        dwi_brain = dwi_data * dwi_mask_data
         dwi_brain_hr = utils.resample(dwi_brain, t1w_data)
         dwi_mask_data_hr = utils.resample(dwi_mask_data, t1w_data)
 
@@ -116,7 +116,7 @@ def run(config, subject, session):
         print(f"QSIPrep Quality Check terminated successfully for {subject} {session}.")
 
     except Exception as e:
-        print(f"⚠️ Skipping QC for {subject} {session}: \n{e}")
+        print(f"⚠️ ERROR: QC aborted for {subject} {session}: \n{e}")
 
 
 if __name__ == "__main__":
