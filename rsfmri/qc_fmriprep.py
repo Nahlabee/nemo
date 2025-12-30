@@ -39,7 +39,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
 
     header = (
         f'#!/bin/bash\n'
-        f'set -euo pipefail\n'
+        # f'set -euo pipefail\n'
         f'#SBATCH --job-name=qc_fmriprep_{subject}_{session}\n'
         f'#SBATCH --output={DERIVATIVES_DIR}/qc/fmriprep/stdout/qc_fmriprep_{subject}_{session}_%j.out\n'
         f'#SBATCH --error={DERIVATIVES_DIR}/qc/fmriprep/stdout/qc_fmriprep_{subject}_{session}_%j.err\n'
@@ -65,9 +65,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'module load userspace/all\n'
         f'module load python3/3.12.0\n'
         f'module load singularity\n'
-        f'source /scratch/hrasoanandrianina/python_env/fmriprep_env/bin/activate\n'  # todo: env as parameter
-
-        f'echo "------ Running {mriqc["mriqc_container"]} for subject: {subject}, session: {session} --------"\n'
+        f'source {common["python_env"]}/bin/activate\n'
     )
 
     # tmp_dir_setup = (
@@ -135,7 +133,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     # todo: voir version Heni
     python_command = (
         f'\necho "Running QC metrics extraction"\n'
-        f'python3 rsfmri/qc_fmriprep_metrics_extractions.py {config} {subject} {session}\n'
+        f'python3 rsfmri/qc_fmriprep_metrics_extractions.py {json.dumps(config)} {subject} {session}\n'
                 )
 
     # Add permissions for shared ownership of the output directory
