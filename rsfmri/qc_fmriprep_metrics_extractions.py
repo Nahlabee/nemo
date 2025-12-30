@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 from venv import logger
 import numpy as np
 import nibabel as nib
@@ -230,9 +231,13 @@ if __name__ == "__main__":
         raise RuntimeError(
             "Usage: python qc_fmriprep_metrics_extractions.py <config_path> <subject> <session>"
         )
-
-    # todo: config not a path but a dict
-    config_path, subject, session = sys.argv[1:4]
-    with open(config_path, "rb") as f:
-        config = tomllib.load(f)
+    config = json.loads(sys.argv[1])
+    subject = sys.argv[2]
+    session = sys.argv[3]
     run(config, subject, session)
+
+    # # todo: config not a path but a dict
+    # config_path, subject, session = sys.argv[1:4]
+    # with open(config_path, "rb") as f:
+    #     config = tomllib.load(f)
+    # run(config, subject, session)

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
+import json
 import warnings
 import os
 import sys
 from pathlib import Path
-# todo: homogeneization
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from rsfmri.qc_fmriprep_metrics_extractions import run as extract_qc_metrics
 import utils
