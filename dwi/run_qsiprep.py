@@ -122,14 +122,19 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --fs-license-file /opt/freesurfer/license.txt \\\n'
         f'    --eddy-config /config/eddy_params.json \\\n'
         f'    --config-file /config/qsiprep_config.toml \\\n'
+        f'    --subject-anatomical-reference {qsiprep["subject_anatomical_reference"]} \\\n'
         f'    --output-resolution {qsiprep["output_resolution"]}\n'
     )
 
-    # Add permissions for shared ownership of the output directory
-    ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qsiprep\n'
+    save_work = (
+        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qsiprep\n'
+        # f'\nrsync -av {DERIVATIVES_DIR}/qsiprep/outputs/{subject}/anat/ {DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}/anat/\n'
+        # f'\nrm -rf {DERIVATIVES_DIR}/qsiprep/outputs/{subject}/anat\n'
+    )
+
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + singularity_command + ownership_sharing)
+        f.write(header + module_export + singularity_command + save_work)
 
 
 def run_qsiprep(config, subject, session, job_ids=None):
