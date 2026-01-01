@@ -215,6 +215,7 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'    --cifti-output {fmriprep["cifti_outputs"]} \\\n'
         f'    --mem-mb {fmriprep["requested_mem"]} \\\n'
         f'    --output-spaces fsLR:den-32k T1w fsaverage:den-164k MNI152NLin6Asym:res-native \\\n'
+        f'    --subject-anatomical-reference {fmriprep["subject_anatomical_reference"]} \\\n'
         f'    --skip-bids-validation \\\n'
         f'    --work-dir /out/work \\\n'
         f'    --config-file /config/fmriprep_config.toml \\\n'
