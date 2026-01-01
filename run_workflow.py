@@ -16,15 +16,13 @@ from datetime import datetime
 from pathlib import Path
 import sys
 from anat import qc_freesurfer
-from dwi import qc_qsiprep
-#from anat import qc_freesurfer
+from dwi import qc_qsiprep, qc_qsirecon
 import toml
 sys.path.append(str(Path(__file__).resolve().parent))
 import utils
 from anat.run_freesurfer import run_freesurfer
 from dwi.run_qsiprep import run_qsiprep
 from dwi.run_qsirecon import run_qsirecon
-#from anat.qc_freesurfer import run as run_freesurfer_qc
 from rsfmri.run_fmriprep import run_fmriprep
 from rsfmri.run_mriqc import run_mriqc
 from rsfmri.qc_fmriprep import run_qc_fmriprep
@@ -178,7 +176,7 @@ def main(config_file=None):
             if workflow.get("run_qsirecon_qc"):
                 print("[QSIRECON QC]")
                 dependencies = [job_id for job_id in [qsirecon_job_id] if job_id is not None]
-                qc_qsirecon_job_id = qc_qsiprep.run(
+                qc_qsirecon_job_id = qc_qsirecon.run(
                     config,
                     subject=subject,
                     session=session,
