@@ -1,93 +1,90 @@
 #!/usr/bin/env python3
+import json
 import os
-import argparse
-import numpy as np
 import pandas as pd
-from pathlib import Path
 import utils
-import toml
-import nibabel as nib
 
-# ------------------------------
-# CONFIG / THRESHOLDS
-# ------------------------------
-MIN_RETAINED_VOLS = 100 # Minimum number of volumes to retain after censoring
-MAX_CENSOR_PCT = 50.0 # Maximum percentage of censored volumes
-MAX_MEAN_FD = 0.5 # Maximum mean framewise displacement
+# # ------------------------------
+# # CONFIG / THRESHOLDS
+# # ------------------------------
+# MIN_RETAINED_VOLS = 100 # Minimum number of volumes to retain after censoring
+# MAX_CENSOR_PCT = 50.0 # Maximum percentage of censored volumes
+# MAX_MEAN_FD = 0.5 # Maximum mean framewise displacement
 
-# ------------------------------
-# HELPERS
-# ------------------------------
-def load_if_exists(path):
-    """Load a file if it exists, otherwise return None."""
-    return path if path.exists() else None
+# # ------------------------------
+# # HELPERS
+# # ------------------------------
+# def load_if_exists(path):
+#     """Load a file if it exists, otherwise return None."""
+#     return path if path.exists() else None
+#
+# def compute_tsnr_maps(fmri_4d_nii, filename, mask_nii=None):
+#     """
+#     Compute temporal signal-to-noise ratio (tSNR) maps from a 4D fMRI NIfTI file.
+#     Returns the tSNR map as a NumPy array and saves it as a NIfTI file.
+#
+#     Parameters
+#     ----------
+#     fmri_4d_nii : str
+#         Path to the input 4D fMRI NIfTI file.
+#     filename : str
+#         Path to save the output tSNR NIfTI file.
+#     mask_nii : str or None, optional
+#         Path to a NIfTI file containing a binary mask. If provided, tSNR will be computed only within the mask.
+#         If None, tSNR will be computed over the entire brain.
+#     Returns
+#     -------
+#     tsnr : np.ndarray
+#         The computed tSNR map as a NumPy array.
+#     """
+#
+#     img = nib.load(fmri_4d_nii)
+#     data = img.get_fdata()
+#
+#     if data.ndim != 4:
+#         raise ValueError("Input must be a 4D fMRI image")
+#
+#     mean_img = np.mean(data, axis=3)
+#     std_img = np.std(data, axis=3, ddof=1)
+#
+#     tsnr = np.zeros_like(mean_img)
+#     valid = std_img > 0
+#     tsnr[valid] = mean_img[valid] / std_img[valid]
+#
+#     if mask_nii is not None:
+#         mask = nib.load(mask_nii).get_fdata().astype(bool)
+#         tsnr[~mask] = 0
+#
+#     tsnr_nii = nib.Nifti1Image(tsnr, img.affine, img.header)
+#     nib.save(tsnr_nii, filename)
+#
+#     return tsnr
+#
+# def summarize_tsnr(tsnr_map, mask_nii=None):
+#     """
+#     Compute the mean temporal signal-to-noise ratio (tSNR) from a tSNR map, optionally within a specified mask.
+#
+#     Parameters
+#     ----------
+#     tsnr_map : np.ndarray
+#         The tSNR map as a NumPy array, typically 3D.
+#     mask_nii : str or None, optional
+#         Path to a NIfTI file containing a binary mask. If provided, the mean tSNR is computed only within the mask.
+#         If None, the mean tSNR is computed over the entire map.
+#
+#     Returns
+#     -------
+#     tsnr_value : float
+#         The mean tSNR value, either within the mask or across the whole map.
+#     """
+#
+#     if mask_nii is None:
+#         tsnr_value = np.nanmean(tsnr_map)
+#     else:
+#         mask = nib.load(mask_nii).get_fdata().astype(bool)
+#         tsnr_value = np.nanmean(tsnr_map[mask])
+#     return tsnr_value
 
-def compute_tsnr_maps(fmri_4d_nii, filename, mask_nii=None):
-    """
-    Compute temporal signal-to-noise ratio (tSNR) maps from a 4D fMRI NIfTI file.
-    Returns the tSNR map as a NumPy array and saves it as a NIfTI file.
-
-    Parameters
-    ----------
-    fmri_4d_nii : str
-        Path to the input 4D fMRI NIfTI file.
-    filename : str
-        Path to save the output tSNR NIfTI file.
-    mask_nii : str or None, optional
-        Path to a NIfTI file containing a binary mask. If provided, tSNR will be computed only within the mask.
-        If None, tSNR will be computed over the entire brain.
-    Returns
-    -------
-    tsnr : np.ndarray
-        The computed tSNR map as a NumPy array.
-    """
-
-    img = nib.load(fmri_4d_nii)
-    data = img.get_fdata()
-
-    if data.ndim != 4:
-        raise ValueError("Input must be a 4D fMRI image")
-
-    mean_img = np.mean(data, axis=3)
-    std_img = np.std(data, axis=3, ddof=1)
-
-    tsnr = np.zeros_like(mean_img)
-    valid = std_img > 0
-    tsnr[valid] = mean_img[valid] / std_img[valid]
-
-    if mask_nii is not None:
-        mask = nib.load(mask_nii).get_fdata().astype(bool)
-        tsnr[~mask] = 0
-
-    tsnr_nii = nib.Nifti1Image(tsnr, img.affine, img.header)
-    nib.save(tsnr_nii, filename)
-
-    return tsnr
-
-def summarize_tsnr(tsnr_map, mask_nii=None):
-    """
-    Compute the mean temporal signal-to-noise ratio (tSNR) from a tSNR map, optionally within a specified mask.
-
-    Parameters
-    ----------
-    tsnr_map : np.ndarray
-        The tSNR map as a NumPy array, typically 3D.
-    mask_nii : str or None, optional
-        Path to a NIfTI file containing a binary mask. If provided, the mean tSNR is computed only within the mask.
-        If None, the mean tSNR is computed over the entire map.
-
-    Returns
-    -------
-    tsnr_value : float
-        The mean tSNR value, either within the mask or across the whole map.
-    """
-
-    if mask_nii is None:
-        tsnr_value = np.nanmean(tsnr_map)
-    else:
-        mask = nib.load(mask_nii).get_fdata().astype(bool)
-        tsnr_value = np.nanmean(tsnr_map[mask])
-    return tsnr_value
 
 # ------------------------------
 # MAIN QC FUNCTION
@@ -125,68 +122,96 @@ def run(config, subject, session):
     """
     
     DERIVATIVES_DIR = config["common"]["derivatives"]
-    out_dir = Path(f"{DERIVATIVES_DIR}/qc/xcpd")
-    os.makedirs(out_dir, exist_ok=True)
+    xcpd_dir = f"{DERIVATIVES_DIR}/xcpd/outputs/{subject}/{session}"
 
-    xcpd_dir = Path(DERIVATIVES_DIR) / "xcpd/outputs" / subject / session
-
-    rows = []
     try:
-        # Extract status from log
+        # Extract process status from log files
         finished_status, runtime = utils.read_log(config, subject, session, runtype="xcpd")
-        dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/xcpd/{subject}/{session}")
-        file_count = utils.count_files(f"{DERIVATIVES_DIR}/xcpd/{subject}/{session}")
+        dir_count = utils.count_dirs(xcpd_dir)
+        file_count = utils.count_files(xcpd_dir)
 
-        # Load XCP-D QC file
-        qc_files = list(xcpd_dir.glob("**/*_qc.tsv"))
-        if not qc_files:
-            raise FileNotFoundError("No xcp-d QC file found.")
+        # Load TSV file produced by XCP-D
+        xcpd_metrics = f'{subject}_{session}_task-rest_motion.tsv'
+        df = pd.read_csv(os.path.join(xcpd_dir, 'func', xcpd_metrics), sep='\t')
 
-        qc_df = pd.read_csv(qc_files[0], sep='\t')
+        max_framewise_displacement = df['framewise_displacement'].max()
+        max_rot_x = df['rot_x'].max()
+        max_rot_y = df['rot_y'].max()
+        max_rot_z = df['rot_z'].max()
+        max_trans_x = df['trans_x'].max()
+        max_trans_y = df['trans_y'].max()
+        max_trans_z = df['trans_z'].max()
+        max_rmsd = df['rmsd'].max()
 
-        # Basic metrics
-        mean_fd = qc_df["mean_fd"].iloc[0] if "mean_fd" in qc_df.columns else None
-        censor_pct = qc_df["fd_perc"].iloc[0] if "fd_perc" in qc_df.columns else None
-        n_retained = qc_df["n_volumes_retained"].iloc[0] if "n_volumes_retained" in qc_df.columns else None
-        dvars = qc_df["dvars_mean"].iloc[0] if "dvars_mean" in qc_df.columns else None
+        # # Load XCP-D QC file
+        # qc_files = list(xcpd_dir.glob("**/*_qc.tsv"))
+        # if not qc_files:
+        #     raise FileNotFoundError("No xcp-d QC file found.")
+        #
+        # qc_df = pd.read_csv(qc_files[0], sep='\t')
+        #
+        # # Basic metrics
+        # mean_fd = qc_df["mean_fd"].iloc[0] if "mean_fd" in qc_df.columns else None
+        # censor_pct = qc_df["fd_perc"].iloc[0] if "fd_perc" in qc_df.columns else None
+        # n_retained = qc_df["n_volumes_retained"].iloc[0] if "n_volumes_retained" in qc_df.columns else None
+        # dvars = qc_df["dvars_mean"].iloc[0] if "dvars_mean" in qc_df.columns else None
+        #
+        #
+        # # PASS / FAIL logic
+        # # If any of the criteria are not met, mark as FAIL
+        # fail_reasons = []
+        # if n_retained is not None and n_retained < MIN_RETAINED_VOLS:
+        #     fail_reasons.append("Too few volumes")
+        # if censor_pct is not None and censor_pct > MAX_CENSOR_PCT:
+        #     fail_reasons.append("Excessive censoring")
+        # if mean_fd is not None and mean_fd > MAX_MEAN_FD:
+        #     fail_reasons.append("High motion")
+        #
+        # # Add computed metrics to qc_df
+        # qc_df['Finished_without_error'] = finished_status
+        # qc_df['Processing_time_hours'] = runtime
+        # qc_df['Number_of_folders_generated'] = dir_count
+        # qc_df['Number_of_files_generated'] = file_count
+        # qc_df['fail_reasons'] = str(fail_reasons)
 
-
-        # PASS / FAIL logic
-        # If any of the criteria are not met, mark as FAIL
-        fail_reasons = []
-        if n_retained is not None and n_retained < MIN_RETAINED_VOLS:
-            fail_reasons.append("Too few volumes")
-        if censor_pct is not None and censor_pct > MAX_CENSOR_PCT:
-            fail_reasons.append("Excessive censoring")
-        if mean_fd is not None and mean_fd > MAX_MEAN_FD:
-            fail_reasons.append("High motion")
-
-        # Add computed metrics to qc_df
-        qc_df['Finished_without_error'] = finished_status
-        qc_df['Processing_time_hours'] = runtime
-        qc_df['Number_of_folders_generated'] = dir_count
-        qc_df['Number_of_files_generated'] = file_count
-        qc_df['fail_reasons'] = str(fail_reasons)
+        row = dict(
+            subject=subject,
+            session=session,
+            Process_Run="xcpd",
+            Finished_without_error=finished_status,
+            Processing_time_hours=runtime,
+            Number_of_folders_generated=dir_count,
+            Number_of_files_generated=file_count,
+            max_framewise_displacement=max_framewise_displacement,
+            max_rot_x=max_rot_x,
+            max_rot_y=max_rot_y,
+            max_rot_z=max_rot_z,
+            max_trans_x=max_trans_x,
+            max_trans_y=max_trans_y,
+            max_trans_z=max_trans_z,
+            max_rmsd=max_rmsd,
+        )
+        sub_ses_qc = pd.DataFrame([row])
 
         # Save the updated qc_df
-        path_to_qc = f"{DERIVATIVES_DIR}/qc/xcpd/qc_{subject}_{session}_updated.csv"
-        qc_df.to_csv(path_to_qc, index=False, header=True)
-
+        path_to_qc = f"{DERIVATIVES_DIR}/qc/xcpd/outputs/{subject}/{session}/{subject}_{session}_qc.csv"
+        sub_ses_qc.to_csv(path_to_qc, mode='w', header=True, index=False)
         print(f"QC saved in {path_to_qc}\n")
-        print(f"XCP-D Quality Check terminated successfully.")
+
+        print(f"XCP-D Quality Check terminated successfully for {subject} {session}.")
 
     except Exception as e:
-        print(f" Skipping {subject} {session}: {e}")
-# ------------------------------
+        print(f"⚠️ ERROR: QC aborted for {subject} {session}: \n{e}")
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', required=True)
-    parser.add_argument('--subject', required=True)
-    parser.add_argument('--session', required=True)
-    args = parser.parse_args()
+    import sys
 
-    with open(args.config, 'r') as f:
-        config = toml.load(f)
-
-    run(config, args.subject, args.session)
+    if len(sys.argv) < 4:
+        raise RuntimeError(
+            "Usage: python qc_xcpd_metrics_extractions.py <config> <subject> <session>"
+        )
+    config = json.loads(sys.argv[1])
+    subject = sys.argv[2]
+    session = sys.argv[3]
+    run(config, subject, session)

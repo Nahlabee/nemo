@@ -1,43 +1,14 @@
 #!/usr/bin/env python3
-import json, os
-
+import json
+import os
 import sys
 from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-
-import numpy as np
-import pandas as pd
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-
 from rsfmri.qc_xcpd_metrics_extractions import run as extract_qc_metrics
 
-# ------------------------
 
-def is_mriqc_done(config, subject, session):
-    """
-    Checks if MRIQC processing is done for a given subject and session.
-
-    :param config: Configuration object containing paths and settings.
-    :param subject: Subject identifier (e.g., 'sub-01').
-    :param session: Session identifier (e.g., 'ses-01').
-    """
-    DERIVATIVES_DIR = config["common"]["derivatives"]
-    stdout_dir = f"{DERIVATIVES_DIR}/qc/xcpd/stdout"
-    prefix = f"qc_xcpd_{subject}_{session}"
-    if os.path.exists(stdout_dir):
-        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-        for file in stdout_files:
-            file_path = os.path.join(stdout_dir, file)
-            with open(file_path, 'r') as f:
-                if 'MRIQC completed' in f.read():
-                    print(f"[MRIQC-XCPD] Skip already processed subject {subject}_{session}")
-                    return True
-    return False
-
-
-def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_ids=None):
+def generate_slurm_script(config, subject, session, path_to_script, job_ids=None):
     """
     Generate the SLURM script for MRIQC XCPD processing .
 
@@ -61,7 +32,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
 
     header = (
         f'#!/bin/bash\n'
-        f'set -euo pipefail\n'
+        # f'set -euo pipefail\n'
         f'#SBATCH --job-name=qc_xcpd_{subject}_{session}\n'
         f'#SBATCH --output={DERIVATIVES_DIR}/qc/xcpd/stdout/qc_xcpd_{subject}_{session}_%j.out\n'
         f'#SBATCH --error={DERIVATIVES_DIR}/qc/xcpd/stdout/qc_xcpd_{subject}_{session}_%j.err\n'
@@ -89,7 +60,7 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
         f'module load userspace/all\n'
         f'module load singularity\n'
         f'module load python3/3.12.0\n'
-        f'source /scratch/hrasoanandrianina/python_env/fmriprep_env/bin/activate \n' # todo: argument
+        f'source {common["python_env"]}/bin/activate\n'
     )
 
     # tmp_dir_setup = (
@@ -127,27 +98,25 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
         f'    fi\n'
         f'done\n'
         f'if [ "$found_success" = false ]; then\n'
-        f'    echo "[QC] XCP-D did not terminate for {subject} {session}. Please run XCP-D command before."\n '
+        f'    echo "[QC-XCPD] XCP-D did not terminate for {subject} {session}. Please run XCP-D command before."\n '
         f'    exit 1\n'
         f'fi\n'
     
     )
     # Define the Singularity command for running MRIQC
-    input_dir = f"{DERIVATIVES_DIR}/xcpd/outputs"
-
     # todo: voir version Heni
     singularity_cmd = (
         f'\napptainer run \\\n'
         f'    --cleanenv \\\n'
-        f'    -B {input_dir}:/data:ro \\\n'
-        f'    -B {DERIVATIVES_DIR}/qc/xcpd/outputs:/out \\\n'
+        f'    -B {DERIVATIVES_DIR}/xcpd/outputs:/data:ro \\\n'
+        f'    -B {DERIVATIVES_DIR}/qc/xcpd:/out \\\n'
         f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-        f'    {mriqc["mriqc_container"]} /data /out participant \\\n'
+        f'    {mriqc["mriqc_container"]} /data /out/outputs participant \\\n'
         f'    --participant_label {subject} \\\n'
         f'    --session-id {session} \\\n'
         f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
         f'    --mem {mriqc["requested_mem"]} \\\n'
-        f'    -w $TMP_WORK_DIR \\\n'
+        f'    -w /out/work \\\n'
         f'    --fd_thres 0.5 \\\n'
         f'    --verbose-reports \\\n'
         f'    --verbose \\\n'
@@ -158,20 +127,15 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
     # todo: voir version Heni
     python_command = (
         f'\necho "Running QC metrics extraction"\n'
-        f'python3 rsfmri/qc_xcpd_metrics_extractions.py {config} {subject} {session}\n'
+        f'python3 rsfmri/qc_xcpd_metrics_extractions.py '
+        f"'{json.dumps(config)}' '{subject}' '{session}'\n"
     )
 
-    save_work = (
-        f'\necho "Cleaning up temporary work directory..."\n'
-        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/xcpd\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/qc/xcpd/work\n'
-        f'echo "Finished MRIQC XCP-D for subject {subject} session {session} "\n'
-    )
+    ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/xcpd\n'
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        # f.write(header + module_export + prereq_check + tmp_dir_setup + singularity_cmd + python_command + save_work)
-        f.write(header + module_export + prereq_check + singularity_cmd + python_command + save_work)
+        f.write(header + module_export + prereq_check + singularity_cmd + python_command + ownership_sharing)
 
 
 def run_qc_xcpd(config, subject, session, job_ids=None):
@@ -190,11 +154,7 @@ def run_qc_xcpd(config, subject, session, job_ids=None):
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
-    if job_ids is None:
-        job_ids = []
-
     common = config["common"]
-    mriqc = config["mriqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # Create output (derivatives) directories
@@ -204,18 +164,21 @@ def run_qc_xcpd(config, subject, session, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/xcpd/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/xcpd/scripts", exist_ok=True)
 
-    if not is_mriqc_done(config, subject, session):
+    if not utils.is_mriqc_done(config, subject, session, runtype='xcpd'):
         path_to_script = f"{DERIVATIVES_DIR}/qc/xcpd/scripts/qc_xcpd_{subject}_{session}.slurm"
-        generate_slurm_mriqc_script(config, subject, session, path_to_script, job_ids=job_ids)
+        generate_slurm_script(config, subject, session, path_to_script, job_ids=job_ids)
         cmd = f"sbatch {path_to_script}"
-        print(f"[QC-FMRIPREP] Submitting job: {cmd}")
+        print(f"[QC-XCPD] Submitting job: {cmd}")
         job_id = utils.submit_job(cmd)
         return job_id
 
     else:
-        print(f"Performing only python command extraction for {subject}_{session}")
+        print(f"[QC-XCPD] Skip already processed MRIQC")
+        print(f"[QC-XCPD] Performing only python command extraction for {subject}_{session}")
         try:
             extract_qc_metrics(config, subject, session)
         except Exception as e:
             print(f"[QC-XCPD] ERROR during QC extraction: {e}", file=sys.stderr)
             raise
+
+    # todo: qc group récupérer les valeurs de sub-003_ses-01_task-rest_space-fsLR_den-91k_desc-linc_qc.tsv
