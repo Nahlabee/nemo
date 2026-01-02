@@ -140,7 +140,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         # apparently still not working in last version qsirecon-1.1.1
         f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
         f'    -B {qsirecon["qsirecon_config"]}:/config/qsirecon_config.toml \\\n'
-        f'    --env TEMPLATEFLOW_HOME=/opt/templateflow \\\n'  # probably unnecessary since apptainer always binds $HOME
+        # f'    --env TEMPLATEFLOW_HOME=/opt/templateflow \\\n'  # probably unnecessary since apptainer always binds $HOME
         f'    {qsirecon["qsirecon_container"]} /data /out/outputs participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    -v -w /out/work \\\n'
