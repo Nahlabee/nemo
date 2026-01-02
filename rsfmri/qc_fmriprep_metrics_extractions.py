@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
-import glob
 
 warnings.filterwarnings("ignore")
 
@@ -145,8 +144,8 @@ def run(config, subject, session):
         file_count = utils.count_files(output_dir)
 
         # Load TSV file produced by FMRIprep
-        fmriprep_confounds = f'{subject}_{session}_task-rest_desc-confounds_timeseries.tsv'
-        df = pd.read_csv(os.path.join(output_dir, 'func', fmriprep_confounds), sep='\t')
+        fmriprep_metrics = f'{subject}_{session}_task-rest_desc-confounds_timeseries.tsv'
+        df = pd.read_csv(os.path.join(output_dir, 'func', fmriprep_metrics), sep='\t')
 
         max_framewise_displacement = df['framewise_displacement'].max()
         max_rot_x = df['rot_x'].max()
@@ -228,10 +227,10 @@ def run(config, subject, session):
             max_rmsd=max_rmsd,
         )
 
-        sub_ses = pd.DataFrame([row])
+        sub_ses_qc = pd.DataFrame([row])
         # Save outputs to csv file
         path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/outputs/{subject}/{session}/{subject}_{session}_qc.csv"
-        sub_ses.to_csv(path_to_qc, mode='w', header=True, index=False)
+        sub_ses_qc.to_csv(path_to_qc, mode='w', header=True, index=False)
         print(f"QC saved in {path_to_qc}\n")
 
         print(f"Fmriprep Quality Check terminated successfully for {subject} {session}.")

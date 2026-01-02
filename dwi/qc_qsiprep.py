@@ -85,34 +85,29 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
 
     #todo: voir version Heni
     singularity_command = (
-            f'\napptainer run \\\n'
-            f'    --cleanenv \\\n'
-            f'    -B {DERIVATIVES_DIR}/qsiprep/outputs:/data:ro \\\n'
-            f'    -B {DERIVATIVES_DIR}/qc/qsiprep:/out \\\n'
-            f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {mriqc["mriqc_container"]} /data /out/outputs participant \\\n'
-            f'    --participant_label {subject} \\\n'
-            f'    --session-id {session} \\\n'
-            f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
-            f'    --mem {mriqc["requested_mem"]} \\\n'
-            f'    -w /out/work \\\n'
-            f'    --fd_thres 0.5 \\\n'
-            f'    --verbose-reports \\\n'
-            f'    --verbose \\\n'
-            f'    --no-sub --notrack\n'
-        )
+        f'\napptainer run \\\n'
+        f'    --cleanenv \\\n'
+        f'    -B {DERIVATIVES_DIR}/qsiprep/outputs:/data:ro \\\n'
+        f'    -B {DERIVATIVES_DIR}/qc/qsiprep:/out \\\n'
+        f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
+        f'    {mriqc["mriqc_container"]} /data /out/outputs participant \\\n'
+        f'    --participant_label {subject} \\\n'
+        f'    --session-id {session} \\\n'
+        f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
+        f'    --mem {mriqc["requested_mem"]} \\\n'
+        f'    -w /out/work \\\n'
+        f'    --fd_thres 0.5 \\\n'
+        f'    --verbose-reports \\\n'
+        f'    --verbose \\\n'
+        f'    --no-sub --notrack\n'
+    )
 
     # Call to python scripts for the rest of QC
-    # todo : adapt to qsiprep
     python_command = (
         f'\necho "Running QC metrics extraction"\n'
         f'python3 dwi/qc_qsiprep_metrics_extractions.py '
         f"'{json.dumps(config)}' '{subject}' '{session}'\n"
     )
-    # python_command = (
-    #     f'\npython3 anat/qc_freesurfer.py '
-    #     f"'{json.dumps(config)}' {','.join(subjects_sessions)}"
-    # )
 
     # Add permissions for shared ownership of the output directory
     ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/qsiprep\n'
@@ -134,7 +129,6 @@ def run(config, subject, session, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/qsiprep/work", exist_ok=True)
 
-    # todo: Check si QC + MRIQC processed (ligne dans le csv final ?)
     if not utils.is_mriqc_done(config, subject, session, runtype='qsiprep'):
         path_to_script = f"{DERIVATIVES_DIR}/qc/qsiprep/scripts/qc_qsiprep_{subject}_{session}.slurm"
         generate_slurm_script(config, subject, session, path_to_script, job_ids=job_ids)
