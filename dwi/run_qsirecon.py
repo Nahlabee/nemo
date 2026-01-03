@@ -140,7 +140,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         # apparently still not working in last version qsirecon-1.1.1
         f'    -B {common["freesurfer_license"]}/license.txt:/opt/freesurfer/license.txt \\\n'
         f'    -B {qsirecon["qsirecon_config"]}:/config/qsirecon_config.toml \\\n'
-        # f'    --env TEMPLATEFLOW_HOME=/opt/templateflow \\\n'  # probably unnecessary since apptainer always binds $HOME
         f'    {qsirecon["qsirecon_container"]} /data /out/outputs participant \\\n'
         f'    --participant-label {subject} --session-id {session} \\\n'
         f'    -v -w /out/work \\\n'
@@ -149,7 +148,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --atlases {" ".join(qsirecon["atlases"])} \\\n'
         f'    --config-file /config/qsirecon_config.toml\n'
     )
-    # f'    --bids-database-dir /out/temp_qsirecon/bids_db_dir\n'
 
     # Add permissions for shared ownership of the output directory
     ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qsirecon\n'
