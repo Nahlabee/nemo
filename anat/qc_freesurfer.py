@@ -233,7 +233,7 @@ def qc_freesurfer(config, subjects_sessions):
     qc = pd.merge(qc, vols, on="subject", how="left")
 
     # Calculate outliers and save new group aparc/aseg statistics
-    outlier_dir = f"{DERIVATIVES_DIR}/qc/freesurfer/outputs/outliers"
+    outlier_dir = f"{DERIVATIVES_DIR}/qc/freesurfer/outliers"
     outlier_params = {
         'min_no_subjects': 5,
         'hypothalamus': fsqc["qc_hypothalamus"],
@@ -302,7 +302,7 @@ def generate_slurm_script(config, subjects_sessions, path_to_script, job_ids=Non
         f'    -B {DERIVATIVES_DIR}/freesurfer/outputs:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/freesurfer:/out \\\n'
         f'    {fsqc["fsqc_container"]} \\\n'
-        f'    xvfb-run /app/fsqc/run_fsqc'
+        f'    xvfb-run /app/fsqc/run_fsqc \\\n'
         f'      --subjects_dir /data \\\n'
         f'      --output_dir /out/outputs \\\n'
         # f'      --subjects {subjects_sessions_str}  \\\n'
@@ -362,7 +362,7 @@ def run(config, subjects_sessions, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/outliers", exist_ok=True)
 
-    path_to_script = f"{DERIVATIVES_DIR}/qc/freesurfer/scripts/qc_group.sh"
+    path_to_script = f"{DERIVATIVES_DIR}/qc/freesurfer/scripts/qc_group.slurm"
     generate_slurm_script(config, subjects_sessions, path_to_script)
     cmd = f"sbatch {path_to_script}"
     print(f"[QC-FREESURFER] Submitting job: {cmd}")
