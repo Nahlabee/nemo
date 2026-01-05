@@ -146,7 +146,7 @@ def main(config_file=None):
             # 2b. QC QSIprep
             # -------------------------------------------
             if workflow.get("run_qsiprep_qc"):
-                print("[QSIPREP QC]")
+                print("[QSIPREP-QC]")
                 dependencies = [job_id for job_id in [qsiprep_job_id] if job_id is not None]
                 qc_qsiprep_job_id = qc_qsiprep.run(
                     config,
@@ -174,7 +174,7 @@ def main(config_file=None):
             # 3b. QC QSIrecon
             # -------------------------------------------
             if workflow.get("run_qsirecon_qc"):
-                print("[QSIRECON QC]")
+                print("[QSIRECON-QC]")
                 dependencies = [job_id for job_id in [qsirecon_job_id] if job_id is not None]
                 qc_qsirecon_job_id = qc_qsirecon.run(
                     config,
@@ -203,7 +203,7 @@ def main(config_file=None):
             # 4b QC fMRIPrep
             # -------------------------------------------
             if workflow.get("run_fmriprep_qc"):
-                print("[FMRIPREP QC]")
+                print("[FMRIPREP-QC]")
                 dependencies = [job_id for job_id in [fmriprep_job_id] if job_id is not None]
                 qc_fmriprep_job_id = run_qc_fmriprep(
                     config,
@@ -233,7 +233,7 @@ def main(config_file=None):
             # 5b QC XCP-D
             # -------------------------------------------
             if workflow.get("run_xcpd_qc"):
-                print("[XCP-D QC]")
+                print("[XCPD-QC]")
                 dependencies = [job_id for job_id in [xcpd_job_id] if job_id is not None]
                 qc_xcpd_job_id = run_qc_xcpd(
                     config,
@@ -245,11 +245,13 @@ def main(config_file=None):
                 qc_xcpd_job_id = None
             qc_xcpd_job_ids.append(qc_xcpd_job_id)
 
+        print("\n✅ Workflow submission complete for subject:", subject)
+
     # -------------------------------------------
     # 6. QC FREESURFER
     # -------------------------------------------
     if workflow.get("run_freesurfer_qc") and subjects_sessions:
-        print("[FREESURFER QC]")
+        print("[QC-FREESURFER]")
         dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
         qc_freesurfer.run(
             config,
@@ -316,7 +318,6 @@ def main(config_file=None):
             job_ids=dependencies
         )
 
-    print("\n✅ Workflow submission complete for subject:", subject)
 
 
 if __name__ == "__main__":
