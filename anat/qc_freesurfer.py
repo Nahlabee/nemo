@@ -298,7 +298,7 @@ def generate_slurm_script(config, subjects_sessions, path_to_script, job_ids=Non
     # Call to FSQC container
     singularity_command = (
         f'\napptainer exec \\\n'
-        f'    --writable-tmpfs --cleanenv \\\n'
+        # f'    --writable-tmpfs --cleanenv \\\n'
         f'    -B {DERIVATIVES_DIR}/freesurfer/outputs:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/freesurfer:/out \\\n'
         f'    {fsqc["fsqc_container"]} \\\n'
