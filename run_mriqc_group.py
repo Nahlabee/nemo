@@ -145,7 +145,7 @@ def run_mriqc_group(config, input_dir, data_type="raw", job_ids=None):
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
 
-    if is_already_processed(config, input_dir):
+    if is_already_processed(config, input_dir, data_type):
         return None
 
     # Create output (derivatives) directories
