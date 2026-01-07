@@ -40,7 +40,7 @@ skull_strip_fixed_seed = false
 skull_strip_template = "OASIS30ANTs"
 skull_strip_t1w = "force"
 slice_time_ref = 0.5
-subject_anatomical_reference = "first-lex"
+#subject_anatomical_reference = "sessionwise"  # in cmd line
 use_syn_sdc = false
 me_t2s_fit_method = "curvefit"
 

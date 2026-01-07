@@ -44,7 +44,6 @@ def is_already_processed(config, subject, session):
         file_path = os.path.join(stdout_dir, file)
         with open(file_path, 'r') as f:
             if 'QSIRecon finished successfully!' in f.read():
-                print(f"[QSIRECON] Skip already processed subject {subject}_{session}")
                 return True
 
     return False
@@ -177,13 +176,14 @@ def run_qsirecon(config, subject, session, job_ids=None):
     """
 
     # QSIrecon manages already processed subjects.
-    # No need to remove existing folder or skip subjects.
+    # No need to remove existing folder.
     # Required files are checked inside the process.
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
     qsirecon = config["qsirecon"]
 
     if is_already_processed(config, subject, session) and qsirecon["skip_processed"]:
+        print(f"[QSIRECON] Skip already processed subject {subject}_{session}")
         return None
 
     # Create output (derivatives) directories

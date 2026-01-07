@@ -6,7 +6,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 
 
-# todo: separate is_already_processed part
 def check_prerequisites(config, subject, session):
     """
     Check that required T1w (and optionally T2w) NIfTI files exist.
@@ -50,7 +49,6 @@ def is_already_processed(config, subject, session, clear_fs=False):
 
     # Check if freesurfer already processed without error
     DERIVATIVES_DIR = config["common"]["derivatives"]
-    freesurfer = config["freesurfer"]
 
     output_dir = f"{DERIVATIVES_DIR}/freesurfer/outputs/{subject}_{session}"
     if not os.path.exists(output_dir):
@@ -60,15 +58,14 @@ def is_already_processed(config, subject, session, clear_fs=False):
     with open(logs, 'r') as f:
         lines = f.readlines()
     for l in lines:
-        if 'finished without error' in l and freesurfer["skip_processed"]:
-            print(f"[FREESURFER] Skip already processed {subject} - {session}")
-            return False
+        if 'finished without error' in l:
+            return True
 
     # Remove existing subject folder
     if clear_fs:
         shutil.rmtree(output_dir)
 
-    return True
+    return False
 
 
 def generate_slurm_script(config, subject, session, path_to_script):
@@ -145,8 +142,10 @@ def generate_slurm_script(config, subject, session, path_to_script):
 
     singularity_command += '"\n'  # terminate the command pipe
 
+    # Add permissions for shared ownership of the output directory
     ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/freesurfer\n'
 
+    # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
         f.write(header + module_export + singularity_command + ownership_sharing)
 
@@ -169,15 +168,17 @@ def run_freesurfer(config, subject, session):
     str or None
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
+    DERIVATIVES_DIR = config["common"]["derivatives"]
+    freesurfer = config["freesurfer"]
 
     if not check_prerequisites(config, subject, session):
         return None
 
-    if is_already_processed(config, subject, session, clear_fs=True):
+    if is_already_processed(config, subject, session, clear_fs=True) and freesurfer["skip_processed"]:
+        print(f"[FREESURFER] Skip already processed {subject} - {session}")
         return None
 
     # Create output (derivatives) directories
-    DERIVATIVES_DIR = config["common"]["derivatives"]
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/freesurfer/scripts", exist_ok=True)

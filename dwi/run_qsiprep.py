@@ -43,7 +43,6 @@ def is_already_processed(config, subject, session):
         file_path = os.path.join(stdout_dir, file)
         with open(file_path, 'r') as f:
             if 'QSIPrep finished successfully!' in f.read():
-                print(f"[QSIPREP] Skip already processed subject {subject}_{session}")
                 return True
 
     return False
@@ -126,15 +125,12 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'    --output-resolution {qsiprep["output_resolution"]}\n'
     )
 
-    save_work = (
-        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qsiprep\n'
-        # f'\nrsync -av {DERIVATIVES_DIR}/qsiprep/outputs/{subject}/anat/ {DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}/anat/\n'
-        # f'\nrm -rf {DERIVATIVES_DIR}/qsiprep/outputs/{subject}/anat\n'
-    )
+    # Add permissions for shared ownership of the output directory
+    ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qsiprep\n'
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + singularity_command + save_work)
+        f.write(header + module_export + singularity_command + ownership_sharing)
 
 
 def run_qsiprep(config, subject, session, job_ids=None):
@@ -157,13 +153,14 @@ def run_qsiprep(config, subject, session, job_ids=None):
     """
 
     # QSIprep manages already processed subjects.
-    # No need to remove existing folder or skip subjects.
+    # No need to remove existing folder.
     # Required files are checked inside the process.
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
     qsiprep = config["qsiprep"]
 
     if is_already_processed(config, subject, session) and qsiprep["skip_processed"]:
+        print(f"[QSIPREP] Skip already processed subject {subject}_{session}")
         return None
 
     # Create output (derivatives) directories

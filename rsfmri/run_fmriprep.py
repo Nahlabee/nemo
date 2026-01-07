@@ -9,6 +9,19 @@ import utils
 # ------------------------------
 # HELPERS
 # ------------------------------
+def check_prerequisites(config, subject, session):
+    # Check required files
+    BIDS_DIR = config["common"]["input_dir"]
+    if not utils.has_anat(BIDS_DIR, subject):
+        print(f"[FMRIPREP] ERROR - No anatomical data found for {subject} {session}.")
+        return False
+
+    if not utils.has_func_fmap(BIDS_DIR, subject):
+        print(f"[FMRIPREP] ERROR - No functional data found for {subject} {session}.")
+        return False
+    return True
+
+
 def is_already_processed(config, subject, session):
     """
     Check if subject_session is already processed successfully.
@@ -26,17 +39,6 @@ def is_already_processed(config, subject, session):
     bool
         True if already processed, False otherwise.
     """
-    # todo : separer is_already_processed de check_prerequisites
-    # Check required files
-    BIDS_DIR = config["common"]["input_dir"]
-    if not utils.has_anat(BIDS_DIR, subject):
-        print(f"[FMRIPREP] ERROR - No anatomical data found for {subject} {session}.")
-        return False
-    
-    if not utils.has_func_fmap(BIDS_DIR, subject):
-        print(f"[FMRIPREP] ERROR - No functional data found for {subject} {session}.")
-        return False
-
     # Check if fmriprep already processed without error
     DERIVATIVES_DIR = config["common"]["derivatives"]
 
@@ -57,45 +59,9 @@ def is_already_processed(config, subject, session):
         file_path = os.path.join(stdout_dir, file)
         with open(file_path, 'r') as f:
             if 'fMRIPrep finished successfully!' in f.read():
-                # todo: move to main function with complete if test pour TOUS
-                print(f"[FMRIPREP] Skip already processed subject {subject}_{session}")
                 return True
 
     return False
-
-# def is_freesurfer_done(config, subject, session):
-#     """
-#     Check that FreeSurfer recon-all finished successfully.
-
-#     Parameters
-#     ----------
-#     subject : str
-#         Subject identifier (e.g., "sub-01").
-#     session : str
-#         Session identifier (e.g., "ses-01").
-
-#     Returns
-#     -------
-#     bool
-#         True if FreeSurfer is done, False otherwise.
-#     """
-
-#     # Check that FreeSurfer finished without error
-#     DERIVATIVES_DIR = config["common"]["derivatives"]
-#     if not os.path.exists(f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}"):
-#         print(f"[FMRIPREP] No FreeSurfer outputs found - Running full fmriprep.")
-#         return False
-
-#     else:
-#         logs = f"{DERIVATIVES_DIR}/freesurfer/{subject}_{session}/scripts/recon-all-status.log"
-#         with open(logs, 'r') as f:
-#             lines = f.readlines()
-#         for l in lines:
-#             if not 'finished without error' in l:
-#                 print(f"[FMRIPREP] FreeSurfer did not terminate.")
-#                 return False
-#             else:
-#                 return True
 
 
 # ------------------------
@@ -160,6 +126,9 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
             f'#SBATCH --mail-user={common["email"]}\n'
         )
 
+    if common.get("account"):
+        header += f'#SBATCH --account={common["account"]}\n'
+
     module_export = (
         f'\nmodule purge\n'
         f'module load userspace/all\n'
@@ -168,23 +137,7 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         f'echo "------ Running {fmriprep["fmriprep_container"]} for subject: {subject}, session: {session} --------"\n'
     )
 
-    # tmp_dir_setup = (
-    #     f'\nhostname\n'
-    #     f'# Choose writable scratch directory\n'
-    #     f'if [ -n "$SLURM_TMPDIR" ]; then\n'
-    #     f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
-    #     f'elif [ -n "$TMPDIR" ]; then\n'
-    #     f'    TMP_WORK_DIR="$TMPDIR"\n'
-    #     f'else\n'
-    #     f'    TMP_WORK_DIR=$(mktemp -d /tmp/fmriprep_{subject}_{session})\n'
-    #     f'fi\n'
-    #     f'mkdir -p "$TMP_WORK_DIR"\n'
-    #     f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-    #     f'echo "Using OUT_FMRIPREP_DIR = {common["derivatives"]}/fmriprep"\n'
-    # )
-
     prereq_check = (
-
         f'\n# Check that FreeSurfer finished without error\n'
         f'if [ ! -d "{DERIVATIVES_DIR}/freesurfer/outputs/{subject}_{session}" ]; then\n'
         f'    echo "[FMRIPREP] Please run FreeSurfer recon-all command before FMRIPREP."\n'
@@ -224,20 +177,17 @@ def generate_slurm_fmriprep_script(config, subject, session, path_to_script, fs_
         # but generally do not perform as well.
     )
 
+    # FMRIPrep does not handle correctly the sessionwise option and leaves the anat folder in a common directory
+    # for all sessions. Here we just move all files into the session's subdirectory
     save_work = (
-        # f'\necho "Cleaning up temporary work directory..."\n'
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/fmriprep\n'
-        # f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/fmriprep/work\n'
-        # f'\nrsync -av {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat/ {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}/anat/\n'
-        # f'\nrm -rf {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat\n'
-        # f'echo "Finished fMRIPrep for subject: {subject}, session: {session}"\n'
+        f'\nrsync -av {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat/ {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}/anat/\n'
+        f'\nrm -rf {DERIVATIVES_DIR}/fmriprep/outputs/{subject}/anat\n'
     )
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        # f.write(header + module_export + tmp_dir_setup + singularity_command + save_work)
         f.write(header + module_export + prereq_check + singularity_command + save_work)
-    # print(f"Created FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
 
 
 def run_fmriprep(config, subject, session, job_ids=None):
@@ -261,7 +211,11 @@ def run_fmriprep(config, subject, session, job_ids=None):
     DERIVATIVES_DIR = config["common"]["derivatives"]
     fmriprep = config["fmriprep"]
 
+    if not check_prerequisites(config, subject, session):
+        return None
+
     if is_already_processed(config, subject, session) and fmriprep["skip_processed"]:
+        print(f"[FMRIPREP] Skip already processed subject {subject}_{session}")
         return None
 
     # Create output (derivatives) directories if they do not exist
