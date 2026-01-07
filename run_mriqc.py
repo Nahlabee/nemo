@@ -34,7 +34,7 @@ def is_already_processed(config, subject, session, data_type="raw"):
     if not os.path.exists(stdout_dir):
         return False
 
-    prefix = f"mriqc_{subject}_{session}"
+    prefix = f"qc_{data_type}_{subject}_{session}"
     stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
     if not stdout_files:
         return False

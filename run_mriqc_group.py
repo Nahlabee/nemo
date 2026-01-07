@@ -29,29 +29,22 @@ def is_already_processed(config, input_dir, data_type="raw"):
     DERIVATIVES_DIR = config["common"]["derivatives"]
 
     # Check if mriqc already processed without error
-    # todo : remonter dans le main()
-    if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
-        raise ValueError(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
-
     stdout_dir = f"{DERIVATIVES_DIR}/qc/{data_type}/stdout"
     if not os.path.exists(stdout_dir):
-        print(f"[MRIQC] Could not read standard outputs from MRIQC, recomputing ....")
         return False
 
-    else:
-        prefix = f"group_mriqc_{data_type}"
-        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-        if not stdout_files:
-            return False
+    prefix = f"group_mriqc_{data_type}"
+    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+    if not stdout_files:
+        return False
 
-        for file in stdout_files:
-            file_path = os.path.join(stdout_dir, file)
-            with open(file_path, 'r') as f:
-                if 'MRIQC completed' in f.read():
-                    print(f"[MRIQC] Skip already processed input directory {input_dir}")
-                    return True
-                else:
-                    return False
+    for file in stdout_files:
+        file_path = os.path.join(stdout_dir, file)
+        with open(file_path, 'r') as f:
+            if 'MRIQC completed' in f.read():
+                return True
+
+    return False
 
 
 # ------------------------
@@ -109,7 +102,7 @@ def generate_slurm_mriqc_script(config, input_dir, path_to_script, data_type="ra
         f'    -B {input_dir}:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/{data_type}:/out \\\n'
         f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-        f'    {mriqc["mriqc_container"]} /data /out/mriqcg group \\\n'
+        f'    {mriqc["mriqc_container"]} /data /out/outputs group \\\n'
         f'    --mem {mriqc["requested_mem"]} \\\n'
         f'    -w /out/work \\\n'
         f'    --fd_thres 0.5 \\\n'
@@ -143,13 +136,18 @@ def run_mriqc_group(config, input_dir, data_type="raw", job_ids=None):
         List of SLURM job IDs to set as dependencies (default is None).
     """
 
+    if data_type not in ["raw", "fmriprep", "xcp_d", "qsiprep", "qsirecon"]:
+        print(f"Invalid data_type: {data_type}. Must be 'raw', 'fmriprep', or 'qsiprep'.")
+        return None
+
     DERIVATIVES_DIR = config["common"]["derivatives"]
 
     if is_already_processed(config, input_dir, data_type):
+        print(f"[MRIQC] Skip already processed input directory {input_dir}")
         return None
 
     # Create output (derivatives) directories
-    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/mriqcg", exist_ok=True)
+    # os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/mriqcg", exist_ok=True)
 
     # Add dependency if this is not the first job in the chain
     path_to_script = f"{DERIVATIVES_DIR}/qc/{data_type}/scripts/group_mriqc_{data_type}.slurm"
