@@ -80,6 +80,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
         f'    if grep -q "fMRIPrep finished successfully" $file; then\n'
         f'        found_success=true\n'
+        f'        break\n'
         f'    fi\n'
         f'done\n'
         f'if [ "$found_success" = false ]; then\n'
@@ -90,8 +91,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
 
     # Define the Singularity command for running MRIQC
     # Note: Unlike other BIDS apps, no config file is used here, the option doesn't exist for mriqc
-
-    #todo: voir version Heni
     singularity_cmd = (
             f'\napptainer run \\\n'
             f'    --cleanenv \\\n'
@@ -112,7 +111,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
     
     # Call to python scripts for the rest of QC
     # todo: mettre les fonctions dans ce script
-    # todo: voir version Heni
     python_command = (
         f'\necho "Running QC metrics extraction"\n'
         f'python3 rsfmri/qc_qsiprep_metrics_extractions.py '
@@ -171,7 +169,6 @@ def run_qc_fmriprep(config, subject, session, job_ids=None):
         print(f"[QC-FMRIPREP] Skip already processed MRIQC")
         print(f"[QC-FMRIPREP] Performing only python command extraction for {subject}_{session}")
         try:
-            # todo: config not a path but a dict
             extract_qc_metrics(config, subject, session)
         except Exception as e:
             print(f"[QC-FMRIPREP] ERROR during QC extraction: {e}", file=sys.stderr)

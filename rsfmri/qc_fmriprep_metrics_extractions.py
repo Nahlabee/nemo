@@ -32,7 +32,7 @@ def run(config, subject, session):
     """
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
-    output_dir = f"{DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}"
+    fmriprep_dir = f"{DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}"
 
     # Read bids_filter file to get the list of tasks to consider
     bids_filter_path = Path(__file__).resolve().parent / "rsfmri" / "bids_filters" / f"bids_filter_{session}.json"
@@ -49,12 +49,12 @@ def run(config, subject, session):
         try:
             # Extract process status from log files
             finished_status, runtime = utils.read_log(config, subject, session, runtype="fmriprep")
-            dir_count = utils.count_dirs(output_dir)
-            file_count = utils.count_files(output_dir)
+            dir_count = utils.count_dirs(fmriprep_dir)
+            file_count = utils.count_files(fmriprep_dir)
 
             # Load TSV file produced by FMRIprep
             fmriprep_metrics = f'{subject}_{session}_task-{task}_desc-confounds_timeseries.tsv'
-            df = pd.read_csv(os.path.join(output_dir, 'func', fmriprep_metrics), sep='\t')
+            df = pd.read_csv(os.path.join(fmriprep_dir, 'func', fmriprep_metrics), sep='\t')
 
             max_framewise_displacement = df['framewise_displacement'].max()
             max_rot_x = df['rot_x'].max()
@@ -66,8 +66,8 @@ def run(config, subject, session):
             max_dvars = df['dvars'].max()
             max_rmsd = df['rmsd'].max()
 
-            anat = Path(os.path.join(output_dir, "anat"))
-            func = Path(os.path.join(output_dir, "func"))
+            anat = Path(os.path.join(fmriprep_dir, "anat"))
+            func = Path(os.path.join(fmriprep_dir, "func"))
 
             # Identify required files
             t1w = next(anat.glob("*_desc-preproc_T1w.nii.gz"))
@@ -136,8 +136,8 @@ def run(config, subject, session):
                 max_rmsd=max_rmsd,
             )
 
-            sub_ses_qc = pd.DataFrame([row])
             # Save outputs to csv file
+            sub_ses_qc = pd.DataFrame([row])
             path_to_qc = f"{DERIVATIVES_DIR}/qc/fmriprep/outputs/{subject}/{session}/{subject}_{session}_task-{task}_qc.csv"
             sub_ses_qc.to_csv(path_to_qc, mode='w', header=True, index=False)
             print(f"QC saved in {path_to_qc}\n")
