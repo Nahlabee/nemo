@@ -250,12 +250,11 @@ def main(config_file=None):
     # -------------------------------------------
     # 6. QC FREESURFER
     # -------------------------------------------
-    if workflow.get("run_freesurfer_qc") and subjects_sessions:
+    if workflow.get("run_freesurfer_qc"):
         print("[QC-FREESURFER]")
         dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
         qc_freesurfer.run(
             config,
-            subjects_sessions,
             job_ids=dependencies
         )
 
