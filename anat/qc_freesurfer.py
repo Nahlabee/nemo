@@ -275,14 +275,15 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
 
     # Call to FSQC container
     singularity_command = (
-        f'\napptainer run \\\n'
-        f'    --writable-tmpfs --cleanenv \\\n'
+        f'\napptainer exec \\\n'
+        # f'    --writable-tmpfs --cleanenv \\\n'
         f'    -B {DERIVATIVES_DIR}/freesurfer/outputs:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/freesurfer:/out \\\n'
         f'    {fsqc["fsqc_container"]} \\\n'
-        f'      --subjects_dir /data \\\n'
-        f'      --output_dir /out/outputs \\\n'
-        # f'      --subjects {subjects_sessions_str}  \\\n'
+        f'    xvfb-run /app/fsqc/run_fsqc \\\n'
+        f'    --subjects_dir /data \\\n'
+        f'    --output_dir /out/outputs \\\n'
+        # f'    --subjects {subjects_sessions_str}  \\\n'
     )
     if fsqc["qc_screenshots"]:
         singularity_command += f'      --screenshots \\\n'
@@ -322,7 +323,7 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
         f.write(module_export + singularity_command + python_command + ownership_sharing)
 
 
-def run(config, subjects_sessions, job_ids=None):
+def run(config, job_ids=None):
     """
     Run FreeSurfer QC
     Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
@@ -339,6 +340,9 @@ def run(config, subjects_sessions, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/outliers", exist_ok=True)
 
+    # List all subjects and sessions in FreeSurfer BIDS output directory
+    subjects_sessions = utils.get_subjects(f"{DERIVATIVES_DIR}/freesurfer/outputs")
+
     path_to_script = f"{DERIVATIVES_DIR}/qc/freesurfer/scripts/qc_group.sh"
     generate_bash_script(config, subjects_sessions, path_to_script)
 
@@ -346,8 +350,8 @@ def run(config, subjects_sessions, job_ids=None):
            f'--partition={fsqc["partition"]} '
            f'--mem={fsqc["requested_mem"]}gb '
            f'--time={fsqc["requested_time"]} '
-           f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
-           f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
+           f'--out={DERIVATIVES_DIR}/qc/freesurfer/stdout/qc_freesurfer_%j.out '
+           f'--err={DERIVATIVES_DIR}/qc/freesurfer/stdout/qc_freesurfer_%j.err ')
 
     if job_ids:
         cmd += f'--dependency=afterok:{":".join(job_ids)} '
