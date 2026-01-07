@@ -257,33 +257,11 @@ def qc_freesurfer(config, subjects_sessions):
     return None
 
 
-def generate_slurm_script(config, subjects_sessions, path_to_script, job_ids=None):
+def generate_bash_script(config, subjects_sessions, path_to_script):
 
     common = config["common"]
     fsqc = config["fsqc"]
     DERIVATIVES_DIR = common["derivatives"]
-
-    header = (
-        f'#!/bin/bash\n'
-        f'#SBATCH --job-name=qc_freesurfer\n'
-        f'#SBATCH --output={DERIVATIVES_DIR}/qc/freesurfer/stdout/qc_freesurfer_%j.out\n'
-        f'#SBATCH --error={DERIVATIVES_DIR}/qc/freesurfer/stdout/qc_freesurfer_%j.err\n'
-        f'#SBATCH --mem={fsqc["requested_mem"]}\n'
-        f'#SBATCH --time={fsqc["requested_time"]}\n'
-        f'#SBATCH --partition={fsqc["partition"]}\n'
-    )
-
-    if job_ids:
-        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
-
-    if common.get("email"):
-        header += (
-            f'#SBATCH --mail-type={common["email_frequency"]}\n'
-            f'#SBATCH --mail-user={common["email"]}\n'
-        )
-
-    if common.get("account"):
-        header += f'#SBATCH --account={common["account"]}\n'
 
     module_export = (
         f'\nmodule purge\n'
@@ -297,12 +275,11 @@ def generate_slurm_script(config, subjects_sessions, path_to_script, job_ids=Non
 
     # Call to FSQC container
     singularity_command = (
-        f'\napptainer exec \\\n'
-        # f'    --writable-tmpfs --cleanenv \\\n'
+        f'\napptainer run \\\n'
+        f'    --writable-tmpfs --cleanenv \\\n'
         f'    -B {DERIVATIVES_DIR}/freesurfer/outputs:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/freesurfer:/out \\\n'
         f'    {fsqc["fsqc_container"]} \\\n'
-        # f'    xvfb-run /app/fsqc/run_fsqc \\\n'
         f'      --subjects_dir /data \\\n'
         f'      --output_dir /out/outputs \\\n'
         # f'      --subjects {subjects_sessions_str}  \\\n'
@@ -331,6 +308,8 @@ def generate_slurm_script(config, subjects_sessions, path_to_script, job_ids=Non
     if fsqc["qc_skip_existing"]:
         singularity_command += f'      --skip-existing \\\n'
 
+    singularity_command += '"\n'  # terminate the command pipe
+
     # Call to python scripts for the rest of QC
     python_command = (
         f'\npython3 anat/qc_freesurfer.py '
@@ -342,7 +321,7 @@ def generate_slurm_script(config, subjects_sessions, path_to_script, job_ids=Non
 
     # Write the complete BASH script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + singularity_command + python_command + ownership_sharing)
+        f.write(module_export + singularity_command + python_command + ownership_sharing)
 
 
 def run(config, subjects_sessions, job_ids=None):
@@ -362,28 +341,24 @@ def run(config, subjects_sessions, job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/scripts", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/outliers", exist_ok=True)
 
-    path_to_script = f"{DERIVATIVES_DIR}/qc/freesurfer/scripts/qc_group.slurm"
-    generate_slurm_script(config, subjects_sessions, path_to_script)
-    cmd = f"sbatch {path_to_script}"
-    print(f"[QC-FREESURFER] Submitting job: {cmd}")
-    job_id = utils.submit_job(cmd)
-    return job_id
+    path_to_script = f"{DERIVATIVES_DIR}/qc/freesurfer/scripts/qc_group.sh"
+    generate_bash_script(config, subjects_sessions, path_to_script)
 
-    # cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
-    #        f'--partition={fsqc["partition"]} '
-    #        f'--mem={fsqc["requested_mem"]}gb '
-    #        f'--time={fsqc["requested_time"]} '
-    #        f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
-    #        f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
-    #
-    # if job_ids:
-    #     cmd += f'--dependency=afterok:{":".join(job_ids)} '
-    #
-    # cmd += f'sh {path_to_script} &'
-    #
-    # os.system(cmd)
-    # print(f"[QC-FREESURFER] Submitting (background) task on interactive node")
-    # return
+    cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
+           f'--partition={fsqc["partition"]} '
+           f'--mem={fsqc["requested_mem"]}gb '
+           f'--time={fsqc["requested_time"]} '
+           f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
+           f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
+
+    if job_ids:
+        cmd += f'--dependency=afterok:{":".join(job_ids)} '
+
+    cmd += f'sh {path_to_script} &'
+
+    os.system(cmd)
+    print(f"[QC-FREESURFER] Submitting (background) task on interactive node")
+    return
 
 
 if __name__ == "__main__":
