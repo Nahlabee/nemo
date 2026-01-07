@@ -2,6 +2,10 @@ import json
 import os
 import sys
 from pathlib import Path
+import pandas as pd
+
+from rsfmri.run_mriqc_group import run_mriqc_group
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 from dwi.qc_qsiprep_metrics_extractions import run as extract_qc_metrics
@@ -72,6 +76,7 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
         f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
         f'    if grep -q "QSIPrep finished successfully" $file; then\n'
         f'        found_success=true\n'
+        f'        break\n'
         f'    fi\n'
         f'done\n'
         f'if [ "$found_success" = false ]; then\n'
@@ -82,8 +87,6 @@ def generate_slurm_script(config, subject, session, path_to_script, job_ids=None
 
     # Define the Singularity command for running MRIQC
     # Note: Unlike other BIDS apps, no config file is used here, the option doesn't exist for mriqc
-
-    #todo: voir version Heni
     singularity_command = (
         f'\napptainer run \\\n'
         f'    --cleanenv \\\n'
@@ -146,27 +149,47 @@ def run(config, subject, session, job_ids=None):
             print(f"[QC-QSIPREP] ERROR during QC extraction: {e}", file=sys.stderr)
             raise
 
-    # cols = ["subject",
-    #         "session",
-    #         "Finished without error",
-    #         "Processing time (hours)",
-    #         "Number of folders generated",
-    #         "Number of files generated"]
-    # frames = []
-    # for sub_sess in subjects_sessions:
-    #     subject = sub_sess.split('_')[0]
-    #     session = sub_sess.split('_')[1]
-    #     finished_status, runtime = read_log(config, subject, session)
-    #     dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/qsiprep/{subject}/{session}")
-    #     file_count = utils.count_files(f"{DERIVATIVES_DIR}/qsiprep/{subject}/{session}")
-    #     frames.append([subject, session, finished_status, runtime, dir_count, file_count])
-    #
-    # qc = pd.DataFrame(frames, columns=cols)
-    #
-    # path_to_qc = f"{DERIVATIVES_DIR}/qc/qsiprep/qc.csv"
-    # qc.to_csv(path_to_qc, index=False)
-    #
-    # print(f"QC saved in {path_to_qc}\n")
-    #
-    # print("QSIprep Quality Check terminated successfully.")
+
+def run_group_qc(config, job_ids=None):
+
+    common = config["common"]
+    BIDS_DIR = common["input_dir"]
+    DERIVATIVES_DIR = common["derivatives"]
+
+    qc_inhouse = []
+    qc_qsiprep = []
+
+    # List all subjects and sessions in the QSIprep BIDS output directory
+    subjects = utils.get_subjects(f"{DERIVATIVES_DIR}/qsiprep/outputs")
+    for subject in subjects:
+        sessions = utils.get_sessions(f"{DERIVATIVES_DIR}/qsiprep/outputs", subject)
+        for session in sessions:
+
+            # Concatenate in-house metrics
+            path_to_qc = Path(f"{DERIVATIVES_DIR}/qc/qsiprep/outputs/{subject}/{session}/{subject}_{session}_qc.csv")
+            if not path_to_qc.is_file():
+                continue
+            qc_inhouse.append(pd.read_csv(path_to_qc))
+
+            # Concatenate QSIPrep metrics
+            path_to_dwi = Path(f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}/dwi")
+            path_to_qc = next(path_to_dwi.glob("*_desc-image_qc.tsv"))
+            if not path_to_qc.is_file():
+                continue
+            qc_qsiprep.append(pd.read_csv(path_to_qc, sep='\t'))
+
+    if qc_inhouse:
+        group_qc = pd.concat(qc_inhouse, ignore_index=True)
+        path_to_group_qc = f"{DERIVATIVES_DIR}/qc/qsiprep/group_additional_qc.csv"
+        group_qc.to_csv(path_to_group_qc, index=False)
+
+    if qc_qsiprep:
+        group_qc = pd.concat(qc_qsiprep, ignore_index=True)
+        path_to_group_qc = f"{DERIVATIVES_DIR}/qc/qsiprep/group_qsiprep_image_qc.csv"
+        group_qc.to_csv(path_to_group_qc, index=False)
+
+    # Run group-level MRIQC
+    run_mriqc_group(config, f"{DERIVATIVES_DIR}/qsiprep/outputs", data_type="qsiprep", job_ids=job_ids)
+
+    print(f"[QC-QSIPREP] Group-level QC saved in {DERIVATIVES_DIR}/qc/qsiprep\n")
 

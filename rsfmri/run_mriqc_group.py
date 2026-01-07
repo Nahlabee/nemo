@@ -71,14 +71,13 @@ def generate_slurm_mriqc_script(config, input_dir, path_to_script, data_type="ra
     """
     common = config["common"]
     mriqc = config["mriqc"]
-    BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
     header = (
         f'#!/bin/bash\n'
         f'#SBATCH --job-name=group_mriqc_{data_type}\n'
-        f'#SBATCH --output={DERIVATIVES_DIR}/group_mriqc_{data_type}/stdout/group_mriqc_{data_type}_%j.out\n'
-        f'#SBATCH --error={DERIVATIVES_DIR}/group_mriqc_{data_type}/stdout/group_mriqc_{data_type}_%j.err\n'
+        f'#SBATCH --output={DERIVATIVES_DIR}/qc/{data_type}/stdout/group_mriqc_{data_type}_%j.out\n'
+        f'#SBATCH --error={DERIVATIVES_DIR}/qc/{data_type}/stdout/group_mriqc_{data_type}_%j.err\n'
         f'#SBATCH --mem={mriqc["requested_mem"]}\n'
         f'#SBATCH --time={mriqc["requested_time"]}\n'
         f'#SBATCH --partition={mriqc["partition"]}\n'
@@ -100,39 +99,19 @@ def generate_slurm_mriqc_script(config, input_dir, path_to_script, data_type="ra
         f'\nmodule purge\n'
         f'module load userspace/all\n'
         f'module load singularity\n'
-
-        f'echo "------ Running group level {mriqc["mriqc_container"]} for input directory: {input_dir} --------"\n'
-    )
-
-    tmp_dir_setup = (
-        f'\nhostname\n'
-        f'# Choose writable scratch directory\n'
-        f'if [ -n "$SLURM_TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
-        f'elif [ -n "$TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$TMPDIR"\n'
-        f'else\n'
-        f'    TMP_WORK_DIR=$(mktemp -d /tmp/group_mriqc_{data_type})\n'
-        f'fi\n'
-
-        f'mkdir -p $TMP_WORK_DIR\n'
-        f'chmod -Rf 771 $TMP_WORK_DIR\n'
-        f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-        f'echo "Using OUT_MRIQC_DIR = {DERIVATIVES_DIR}/group_mriqc_{data_type}"\n'
     )
 
     # Define the Singularity command for running MRIQC
     # Note: Unlike fmriprep, no config file is used here, the option doesn't exist for mriqc
-
     singularity_cmd = (
         f'\napptainer run \\\n'
         f'    --cleanenv \\\n'
         f'    -B {input_dir}:/data:ro \\\n'
-        f'    -B {DERIVATIVES_DIR}/group_mriqc_{data_type}/outputs:/out \\\n'
+        f'    -B {DERIVATIVES_DIR}/qc/{data_type}:/out \\\n'
         f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-        f'    {mriqc["mriqc_container"]} /data /out group \\\n'
+        f'    {mriqc["mriqc_container"]} /data /out/mriqcg group \\\n'
         f'    --mem {mriqc["requested_mem"]} \\\n'
-        f'    -w $TMP_WORK_DIR \\\n'
+        f'    -w /out/work \\\n'
         f'    --fd_thres 0.5 \\\n'
         f'    --verbose-reports \\\n'
         f'    --verbose \\\n'
@@ -140,16 +119,12 @@ def generate_slurm_mriqc_script(config, input_dir, path_to_script, data_type="ra
     )
 
     save_work = (
-        f'\necho "Cleaning up temporary work directory..."\n'
-        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/group_mriqc_{data_type}\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/group_mriqc_{data_type}/work\n'
-        f'echo "Finished MRIQC for group input directory: {input_dir}"\n'
+        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/{data_type}\n'
     )
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-        f.write(header + module_export + tmp_dir_setup + singularity_cmd + save_work)
-    print(f"Created MRIQC SLURM job: {path_to_script} for group input directory: {input_dir}")
+        f.write(header + module_export + singularity_cmd + save_work)
 
 
 # ------------------------------
@@ -174,15 +149,10 @@ def run_mriqc_group(config, input_dir, data_type="raw", job_ids=None):
         return None
 
     # Create output (derivatives) directories
-    # todo: change output directory to qc/
-    os.makedirs(f"{DERIVATIVES_DIR}/group_mriqc_{data_type}", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/group_mriqc_{data_type}/outputs", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/group_mriqc_{data_type}/stdout", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/group_mriqc_{data_type}/scripts", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/group_mriqc_{data_type}/work", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/mriqcg", exist_ok=True)
 
     # Add dependency if this is not the first job in the chain
-    path_to_script = f"{DERIVATIVES_DIR}/group_mriqc_{data_type}/scripts/group_mriqc_{data_type}.slurm"
+    path_to_script = f"{DERIVATIVES_DIR}/qc/{data_type}/scripts/group_mriqc_{data_type}.slurm"
     generate_slurm_mriqc_script(config, input_dir, data_type=data_type, path_to_script=path_to_script, job_ids=job_ids)
 
     cmd = f"sbatch {path_to_script}"

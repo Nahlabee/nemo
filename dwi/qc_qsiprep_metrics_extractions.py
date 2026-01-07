@@ -28,7 +28,7 @@ def run(config, subject, session):
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
     output_dir = f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}"
-    anat = Path(f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/anat")  # todo: check if sessionwise
+    anat = Path(f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}/anat")
     dwi = Path(f"{DERIVATIVES_DIR}/qsiprep/outputs/{subject}/{session}/dwi")
 
     try:

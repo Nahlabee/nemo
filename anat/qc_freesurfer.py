@@ -175,9 +175,10 @@ def calculate_outliers(freesurfer_dir, subjects_sessions, outlier_dir, outlier_p
     return df_group_stats, df_outliers
 
 
-def qc_freesurfer(config, subjects_sessions):
+def compute_metrics(config, subjects_sessions):
     """
-    Note : Note that a minimum of 5 supplied subjects is required for running outlier analyses,
+    Note : Note
+    that a minimum of 5 supplied subjects is required for running outlier analyses,
     otherwise NaNs will be returned.
 
     Parameters
@@ -367,4 +368,4 @@ if __name__ == "__main__":
     import sys
     config = json.loads(sys.argv[1])
     subjects_sessions = sys.argv[2].split(',')
-    qc_freesurfer(config, subjects_sessions)
+    compute_metrics(config, subjects_sessions)
