@@ -6,47 +6,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
 
 
-# --------------------------------------------
-# HELPERS
-# --------------------------------------------
-def is_already_processed(config, input_dir, data_type="raw"):
-    """
-    Check if subject_session is already processed successfully.
-
-    Parameters
-    ----------
-    input_dir : str
-        Input directory path.
-    data_type : str
-        Type of data to process (possible choices: "raw", "fmriprep", "xcp_d", "qsirecon" or "qsiprep").
-
-    Returns
-    -------
-    bool
-        True if already processed, False otherwise.
-    """
-
-    DERIVATIVES_DIR = config["common"]["derivatives"]
-
-    # Check if mriqc already processed without error
-    stdout_dir = f"{DERIVATIVES_DIR}/qc/{data_type}/stdout"
-    if not os.path.exists(stdout_dir):
-        return False
-
-    prefix = f"group_mriqc_{data_type}"
-    stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
-    if not stdout_files:
-        return False
-
-    for file in stdout_files:
-        file_path = os.path.join(stdout_dir, file)
-        with open(file_path, 'r') as f:
-            if 'MRIQC completed' in f.read():
-                return True
-
-    return False
-
-
 # ------------------------
 # Create SLURM job scripts 
 # ------------------------
@@ -112,6 +71,7 @@ def generate_slurm_mriqc_script(config, input_dir, path_to_script, data_type="ra
     )
 
     save_work = (
+        f'\nmv {DERIVATIVES_DIR}/qc/{data_type}/outputs/group* {DERIVATIVES_DIR}/qc/{data_type}/\n'
         f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/{data_type}\n'
     )
 
@@ -142,14 +102,6 @@ def run_mriqc_group(config, input_dir, data_type="raw", job_ids=None):
 
     DERIVATIVES_DIR = config["common"]["derivatives"]
 
-    if is_already_processed(config, input_dir, data_type):
-        print(f"[MRIQC] Skip already processed input directory {input_dir}")
-        return None
-
-    # Create output (derivatives) directories
-    # os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/mriqcg", exist_ok=True)
-
-    # Add dependency if this is not the first job in the chain
     path_to_script = f"{DERIVATIVES_DIR}/qc/{data_type}/scripts/group_mriqc_{data_type}.slurm"
     generate_slurm_mriqc_script(config, input_dir, data_type=data_type, path_to_script=path_to_script, job_ids=job_ids)
 
