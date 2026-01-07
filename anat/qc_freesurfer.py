@@ -302,7 +302,7 @@ def generate_slurm_script(config, subjects_sessions, path_to_script, job_ids=Non
         f'    -B {DERIVATIVES_DIR}/freesurfer/outputs:/data:ro \\\n'
         f'    -B {DERIVATIVES_DIR}/qc/freesurfer:/out \\\n'
         f'    {fsqc["fsqc_container"]} \\\n'
-        f'    xvfb-run /app/fsqc/run_fsqc \\\n'
+        # f'    xvfb-run /app/fsqc/run_fsqc \\\n'
         f'      --subjects_dir /data \\\n'
         f'      --output_dir /out/outputs \\\n'
         # f'      --subjects {subjects_sessions_str}  \\\n'
