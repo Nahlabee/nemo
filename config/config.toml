@@ -34,11 +34,12 @@ run_qsirecon = false
 run_fmriprep = false
 run_xcp_d = false
 run_mriqc_raw = false
-run_freesurfer_qc = true
+run_freesurfer_qc = false
 run_qsiprep_qc = false
 run_qsirecon_qc = false
 run_fmriprep_qc = false
 run_xcpd_qc = false
+run_qc_group = true
 
 # =============================
 #   PIPELINE: FreeSurfer

@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 import pandas as pd
 
-from rsfmri.run_mriqc_group import run_mriqc_group
+from run_mriqc_group import run_mriqc_group
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import utils
@@ -144,16 +144,36 @@ def run(config, subject, session, job_ids=None):
         print(f"[QC-QSIPREP] Skip already processed MRIQC")
         print(f"[QC-QSIPREP] Performing only python command extraction for {subject}_{session}")
         try:
+            # todo: should be ran in interactive mode...
             extract_qc_metrics(config, subject, session)
         except Exception as e:
             print(f"[QC-QSIPREP] ERROR during QC extraction: {e}", file=sys.stderr)
             raise
 
+    # # version interactive
+    # cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
+    #        f'--partition={fsqc["partition"]} '
+    #        f'--mem={fsqc["requested_mem"]}gb '
+    #        f'--time={fsqc["requested_time"]} '
+    #        f'--out={DERIVATIVES_DIR}/qc/freesurfer/stdout/qc_freesurfer_%j.out '
+    #        f'--err={DERIVATIVES_DIR}/qc/freesurfer/stdout/qc_freesurfer_%j.err ')
+    #
+    # if job_ids:
+    #     cmd += f'--dependency=afterok:{":".join(job_ids)} '
+    #
+    # python_command = (
+    #     f'\necho "Running QC metrics extraction"\n'
+    #     f'python3 dwi/qc_qsiprep_metrics_extractions.py '
+    #     f"'{json.dumps(config)}' '{subject}' '{session}'\n"
+    # )
+    #
+    # os.system(cmd)
+    # print(f"[QC-FREESURFER] Submitting (background) task on interactive node")
+
 
 def run_group_qc(config, job_ids=None):
 
     common = config["common"]
-    BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
     qc_inhouse = []

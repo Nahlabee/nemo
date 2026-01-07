@@ -209,7 +209,7 @@ def run_mriqc(config, subject, session, data_type="raw", job_ids=None):
     os.makedirs(f"{DERIVATIVES_DIR}/qc/{data_type}/work", exist_ok=True)
 
     # Add dependency if this is not the first job in the chain
-    path_to_script = f"{DERIVATIVES_DIR}/qc/{data_type}/scripts/{subject}_{session}_mriqc.slurm"
+    path_to_script = f"{DERIVATIVES_DIR}/qc/{data_type}/scripts/mriqc_{subject}_{session}.slurm"
     generate_slurm_script(config, subject, session, path_to_script, data_type=data_type, job_ids=job_ids)
 
     cmd = f"sbatch {path_to_script}"

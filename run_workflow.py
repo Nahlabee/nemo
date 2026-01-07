@@ -24,11 +24,11 @@ from anat.run_freesurfer import run_freesurfer
 from dwi.run_qsiprep import run_qsiprep
 from dwi.run_qsirecon import run_qsirecon
 from rsfmri.run_fmriprep import run_fmriprep
-from rsfmri.run_mriqc import run_mriqc
+from run_mriqc import run_mriqc
 from rsfmri.qc_fmriprep import run_qc_fmriprep
 from rsfmri.run_xcpd import run_xcpd
 from rsfmri.qc_xcpd import run_qc_xcpd
-from rsfmri.run_mriqc_group import run_mriqc_group
+from run_mriqc_group import run_mriqc_group
 
 
 def main(config_file=None):
@@ -262,60 +262,61 @@ def main(config_file=None):
     # 7. GROUP-LEVEL QC
     # -------------------------------------------------------
     if workflow.get("run_qc_group"):
-        # QC group-level for raw data
-        # -------------------------------------------
-        print(f"[MRIQC-RAW-GROUP]")
-        dependencies = [job_id for job_id in mriqc_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="raw",
-            input_dir=BIDS_DIR,
-            job_ids=dependencies
-        )
+        # # QC group-level for raw data
+        # # -------------------------------------------
+        # print(f"[MRIQC-RAW-GROUP]")
+        # dependencies = [job_id for job_id in mriqc_job_ids if job_id is not None]
+        # run_mriqc_group(
+        #     config,
+        #     data_type="raw",
+        #     input_dir=BIDS_DIR,
+        #     job_ids=dependencies
+        # )
 
         # QC group-level for qsiprep data
         # -------------------------------------------
-        print(f"[MRIQC-QSIPREP-GROUP]")
+        print(f"[QSIPREP-GROUP-QC]")
         dependencies = [job_id for job_id in qc_qsiprep_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="qsiprep",
-            input_dir=f"{DERIVATIVES_DIR}/qsiprep/outputs",
-            job_ids=dependencies
-        )
-
-        # MRIQC group-level for qsirecon data
-        # -------------------------------------------
-        print(f"[MRIQC-QSIRECON-GROUP]")
-        dependencies = [job_id for job_id in qc_qsirecon_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="qsirecon",
-            input_dir=f"{DERIVATIVES_DIR}/qsirecon/outputs",
-            job_ids=dependencies
-        )
-
-        # QC group-level for fmriprep data
-        # -------------------------------------------
-        print(f"[MRIQC-FMRIPREP-GROUP]")
-        dependencies = [job_id for job_id in qc_fmriprep_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="fmriprep",
-            input_dir=f"{DERIVATIVES_DIR}/fmriprep/outputs",
-            job_ids=dependencies
-        )
-
-        # MRIQC group-level for xcp_d data
-        # -------------------------------------------
-        print(f"[MRIQC-XCPD-GROUP]")
-        dependencies = [job_id for job_id in qc_xcpd_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="xcp_d",
-            input_dir=f"{DERIVATIVES_DIR}/xcp_d/outputs",
-            job_ids=dependencies
-        )
+        qc_qsiprep.run_group_qc(config, job_ids=dependencies)
+        # run_mriqc_group(
+        #     config,
+        #     data_type="qsiprep",
+        #     input_dir=f"{DERIVATIVES_DIR}/qsiprep/outputs",
+        #     job_ids=dependencies
+        # )
+        #
+        # # MRIQC group-level for qsirecon data
+        # # -------------------------------------------
+        # print(f"[MRIQC-QSIRECON-GROUP]")
+        # dependencies = [job_id for job_id in qc_qsirecon_job_ids if job_id is not None]
+        # run_mriqc_group(
+        #     config,
+        #     data_type="qsirecon",
+        #     input_dir=f"{DERIVATIVES_DIR}/qsirecon/outputs",
+        #     job_ids=dependencies
+        # )
+        #
+        # # QC group-level for fmriprep data
+        # # -------------------------------------------
+        # print(f"[MRIQC-FMRIPREP-GROUP]")
+        # dependencies = [job_id for job_id in qc_fmriprep_job_ids if job_id is not None]
+        # run_mriqc_group(
+        #     config,
+        #     data_type="fmriprep",
+        #     input_dir=f"{DERIVATIVES_DIR}/fmriprep/outputs",
+        #     job_ids=dependencies
+        # )
+        #
+        # # MRIQC group-level for xcp_d data
+        # # -------------------------------------------
+        # print(f"[MRIQC-XCPD-GROUP]")
+        # dependencies = [job_id for job_id in qc_xcpd_job_ids if job_id is not None]
+        # run_mriqc_group(
+        #     config,
+        #     data_type="xcp_d",
+        #     input_dir=f"{DERIVATIVES_DIR}/xcp_d/outputs",
+        #     job_ids=dependencies
+        # )
 
 
 
