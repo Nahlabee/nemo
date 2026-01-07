@@ -308,8 +308,6 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
     if fsqc["qc_skip_existing"]:
         singularity_command += f'      --skip-existing \\\n'
 
-    singularity_command += '"\n'  # terminate the command pipe
-
     # Call to python scripts for the rest of QC
     python_command = (
         f'\npython3 anat/qc_freesurfer.py '
