@@ -2,27 +2,27 @@
 #   PROJECT-WIDE SETTINGS
 # =============================
 [common]
-#input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
-#derivatives = "/scratch/lhashimoto/nemo_derivatives"
-#subjects = ["1054003"]
-#sessions = ["01"]
-#freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
-#python_env = "/scratch/lhashimoto/python/env/nemo"
-#account = ""
-#email = ""
-#email_frequency = "FAIL" # BEGIN,END
-#tmp = ["1054001","1054002","1054003","1054004","1054010"]
-
-input_dir = "/scratch/hrasoanandrianina/braint_database"  # "/scratch/lhashimoto/nemo_database/imaging_data"
-derivatives = "/scratch/lhashimoto/braint_derivatives"  # ""/scratch/lhashimoto/nemo_derivatives"
-subjects = ["003"]  # }["1054003"]
-sessions = ["01", "02"]
+input_dir = "/scratch/lhashimoto/nemo_database/imaging_data"
+derivatives = "/scratch/lhashimoto/nemo_derivatives"
+subjects = ["1054001","1054002","1054003","1054004","1054010"] #["1054002"]
+sessions = ["01"]
 freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
 python_env = "/scratch/lhashimoto/python/env/nemo"
 account = ""
 email = ""
 email_frequency = "FAIL" # BEGIN,END
 tmp = ["1054001","1054002","1054003","1054004","1054010"]
+
+#input_dir = "/scratch/hrasoanandrianina/braint_database"  # "/scratch/lhashimoto/nemo_database/imaging_data"
+#derivatives = "/scratch/lhashimoto/braint_derivatives"  # ""/scratch/lhashimoto/nemo_derivatives"
+#subjects = ["003"]
+#sessions = ["01"] #, "02"]
+#freesurfer_license = "/scratch/lhashimoto/freesurfer/license"
+#python_env = "/scratch/lhashimoto/python/env/nemo"
+#account = ""
+#email = ""
+#email_frequency = "FAIL" # BEGIN,END
+#tmp = ["1054001","1054002","1054003","1054004","1054010"]
 
 # =============================
 #   WORKFLOW SETTINGS
@@ -31,25 +31,26 @@ tmp = ["1054001","1054002","1054003","1054004","1054010"]
 run_freesurfer = false
 run_qsiprep = false
 run_qsirecon = false
-run_fmriprep = true
-run_xcp_d = true
+run_fmriprep = false
+run_xcp_d = false
 run_mriqc_raw = false
 run_freesurfer_qc = false
 run_qsiprep_qc = false
 run_qsirecon_qc = false
 run_fmriprep_qc = false
 run_xcpd_qc = false
+run_qc_group = true
 
 # =============================
 #   PIPELINE: FreeSurfer
 # =============================
 [freesurfer]
 freesurfer_container = "/scratch/lhashimoto/freesurfer-7.4.1.sif"
-skip_processed = true
 use_t2 = true
 partition = "skylake"
 requested_mem = "16G"
 requested_time = "9:00:00"
+skip_processed = true
 
 # =============================
 #   PIPELINE: FreeSurfer QC
@@ -67,20 +68,24 @@ qc_hypothalamus = false
 qc_hippocampus = false
 qc_hippocampus_label = ""
 qc_outlier = false  # true to get non-ETIV-normalized outliers
-qc_skip_existing = true
+qc_skip_existing = false
 
 # =============================
 #   PIPELINE: QSIPrep
 # =============================
 [qsiprep]
 qsiprep_container = "/scratch/lhashimoto/qsiprep-1.0.2.sif"
+local_freesurfer_path = "/scratch/lhashimoto/freesurfer-7.4.1/usr/local/freesurfer"  # path to locally installed FS to
+#replace old version in the QSIprep container which does not work (see PullRequest#19)
 config_eddy = "/scratch/lhashimoto/code/nemo/config/eddy_params.json"
 qsiprep_config = "/scratch/lhashimoto/code/nemo/config/qsiprep_config.toml"
 output_resolution = 1.8
+subject_anatomical_reference = "sessionwise"
 partition = "kepler"
 gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
+skip_processed = true
 
 # =============================
 #   PIPELINE: QSIRecon
@@ -93,6 +98,7 @@ gpu_per_node = 2
 requested_mem = "70G"
 requested_time = "24:00:00"
 atlases = ["4S156Parcels"] #, "4S356Parcels"]
+skip_processed = true
 
 # =============================
 #   PIPELINE: fMRIPrep
@@ -101,25 +107,28 @@ atlases = ["4S156Parcels"] #, "4S356Parcels"]
 fmriprep_container = "/scratch/lhashimoto/fmriprep-25.2.2.sif"
 fmriprep_config = "/scratch/lhashimoto/code/nemo/config/fmriprep_config.toml"
 bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
+subject_anatomical_reference = "sessionwise"
+cifti_outputs = "91k"
+reserved_cpus = 8
+omp_threads = 4
 partition = "skylake"
 requested_mem = "64G"
 requested_time = "12:00:00"
-reserved_cpus = 8
-omp_threads = 4
+skip_processed = true
 
 # =============================
 #   PIPELINE: XCP-D
 # =============================
 [xcpd]
-xcp_d_input_dir = "/scratch/lhashimoto/nemo_derivatives/fmriprep/outputs"
-xcp_d_container = "/scratch/lhashimoto/xcpd-0.12.0.sif"
-xcp_d_config = "/scratch/lhashimoto/code/nemo/config/xcpd_surf_config.toml"
+xcpd_container = "/scratch/lhashimoto/xcpd-0.12.0.sif"
+xcpd_config = "/scratch/lhashimoto/code/nemo/config/xcpd_config.toml"
 bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
 requested_time = "8:00:00"
 reserved_cpus = 8
 omp_threads = 4
+skip_processed = true
 
 # =============================
 #   PIPELINE: MRIQC
@@ -131,3 +140,4 @@ bids_filter_dir = "/scratch/lhashimoto/code/nemo/rsfmri/bids_filters"
 partition = "skylake"
 requested_mem = "64G"
 requested_time = "3:00:00"
+skip_processed = true

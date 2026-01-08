@@ -1,8 +1,7 @@
 [environment]
 
 [execution]
-# atlases = [ "4S156Parcels",]
-# bids_database_dir = ""
+# atlases = [ "4S156Parcels",]  # must be given in cmd line
 boilerplate_only = false
 sloppy = true
 debug = []
@@ -18,9 +17,8 @@ write_graph = false
 b0_threshold = 50
 infant = false
 input_type = "qsiprep"
-recon_spec = "mrtrix_multishell_msmt_ACT-hsvs"
+recon_spec = "dsi_studio_autotrack"  # "dsi_studio_gqi" "mrtrix_multishell_msmt_ACT-hsvs"
 output_resolution = 1.8
-qsirecon_suffixes = [ "MRtrix3_act-HSVS",]
 spaces = "MNI152NLin2009cAsym"
 
 [nipype]

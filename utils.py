@@ -1,9 +1,14 @@
-from datetime import datetime
-import re
 import toml
 import os
 import subprocess
+import re
+import numpy as np
+from venv import logger
+from datetime import datetime
 from pathlib import Path
+import nibabel as nib
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def load_config(config_file):
@@ -155,19 +160,16 @@ def submit_job(cmd):
 
 def count_dirs(directory):
     """
-    Count the number of directories in a given directory (non-recursively)
-
+    Count the number of directories recursively inside the given directory
     """
-    if os.path.isdir(directory):
-        return sum([1 for item in os.listdir(directory) if os.path.isdir(os.path.join(directory, item))])
-    else:
+    if not os.path.isdir(directory):
         return 0
+    return sum(len(dirs) for _, dirs, _ in os.walk(directory))
 
 
 def count_files(directory):
     """
-    Count the number of files in a given directory
-
+    Count the number of files recursively inside the given directory
     """
     if os.path.isdir(directory):
         return sum([len(files) for _, _, files in os.walk(directory)])
@@ -191,15 +193,17 @@ def extract_runtime(content):
 
     # Calculer le runtime
     runtime = last_timestamp - first_timestamp
+    runtime_hours = runtime.total_seconds() / 3600.0  # Convert in hours
 
-    return runtime
+    return runtime_hours
 
 
-def read_log(config, subject, session, runtype="qsiprep"):
+def read_log(config, subject, session, runtype):
+
     finished_status = "Error"
     runtime = 0
 
-    DERIVATIVES_DIR = config.config["common"]["derivatives"]
+    DERIVATIVES_DIR = config["common"]["derivatives"]
     stdout_dir = f"{DERIVATIVES_DIR}/{runtype}/stdout"
 
     # Check that 'runtype' finished without error
@@ -236,3 +240,116 @@ def read_log(config, subject, session, runtype="qsiprep"):
                     print(e)
 
     return finished_status, runtime
+
+
+def is_mriqc_done(config, subject, session, runtype):
+    """
+    Checks if MRIQC processing is done for a given subject and session.
+    """
+
+    DERIVATIVES_DIR = config["common"]["derivatives"]
+    stdout_dir = f"{DERIVATIVES_DIR}/qc/{runtype}/stdout"
+    prefix = f"qc_{runtype}_{subject}_{session}"
+    if os.path.exists(stdout_dir):
+        stdout_files = [f for f in os.listdir(stdout_dir) if (f.startswith(prefix) and f.endswith('.out'))]
+        for file in stdout_files:
+            file_path = os.path.join(stdout_dir, file)
+            with open(file_path, 'r') as f:
+                if 'MRIQC completed' in f.read():
+                    return True
+    return False
+
+
+def load_any_image(path: Path) -> np.ndarray:
+    """
+    Load an fMRIPrep/XCP-D output image, handling both NIfTI and GIFTI formats.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the .nii(.gz) or .gii file.
+
+    Returns
+    -------
+    img : nibabel image object
+        Loaded image object.
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {path}")
+
+    img = nib.load(str(path))  # type: ignore
+
+    if isinstance(img, nib.gifti.gifti.GiftiImage):
+        logger.info(f"Detected GIFTI surface file: {path.name}")
+    elif isinstance(img, (nib.Nifti1Image, nib.Nifti2Image)):  # type: ignore
+        logger.info(f"Detected NIfTI volumetric file: {path.name}")
+    else:
+        raise TypeError(f"Unsupported file type: {type(img)}")
+
+    return img
+
+
+def dice(a, b):
+    """
+    Compute dice similarity coefficient between two binary masks.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        First binary mask array.
+    b : np.ndarray
+        Second binary mask array.
+
+    Returns
+    -------
+    float
+        Dice similarity coefficient.
+    """
+    a = a.astype(bool)
+    b = b.astype(bool)
+    inter = np.logical_and(a, b).sum()
+    s = a.sum() + b.sum()
+    return (2 * inter / s) if s > 0 else np.nan
+
+
+def resample(low_res_image, high_res_image):
+    from scipy.ndimage import zoom
+
+    target_shape = high_res_image.shape  # Cible : la résolution de l'image de plus haute résolution
+
+    # Calculer les facteurs de zoom pour chaque dimension
+    zoom_factors = [target_shape[i] / low_res_image.shape[i] for i in range(3)]
+
+    # Rééchantillonner image1 pour qu'elle ait la même taille que image2
+    return zoom(low_res_image, zoom_factors, mode='nearest')
+
+
+def mutual_information(image1, image2, bins=64):
+    # Normaliser les images entre 0 et 1
+    image1 = (image1 - image1.min()) / (image1.max() - image1.min())
+    image2 = (image2 - image2.min()) / (image2.max() - image2.min())
+
+    # Aplatir les images 3D en 1D
+    flat_image1 = image1.ravel()
+    flat_image2 = image2.ravel()
+
+    # Calculer l'histogramme conjoint
+    joint_hist, _, _ = np.histogram2d(flat_image1, flat_image2, bins=bins, range=[[0, 1], [0, 1]])
+
+    # Calculer les histogrammes marginaux
+    hist1, _ = np.histogram(flat_image1, bins=bins, range=[0, 1])
+    hist2, _ = np.histogram(flat_image2, bins=bins, range=[0, 1])
+
+    # Normaliser les histogrammes
+    joint_hist = joint_hist / joint_hist.sum()
+    hist1 = hist1 / hist1.sum()
+    hist2 = hist2 / hist2.sum()
+
+    # Calculer l'information mutuelle
+    mi = 0
+    for i in range(bins):
+        for j in range(bins):
+            if joint_hist[i, j] > 0 and hist1[i] > 0 and hist2[j] > 0:
+                mi += joint_hist[i, j] * np.log2(joint_hist[i, j] / (hist1[i] * hist2[j]))
+
+    return mi

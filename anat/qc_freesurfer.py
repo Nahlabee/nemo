@@ -175,9 +175,10 @@ def calculate_outliers(freesurfer_dir, subjects_sessions, outlier_dir, outlier_p
     return df_group_stats, df_outliers
 
 
-def qc_freesurfer(config, subjects_sessions):
+def compute_metrics(config, subjects_sessions):
     """
-    Note : Note that a minimum of 5 supplied subjects is required for running outlier analyses,
+    Note : Note
+    that a minimum of 5 supplied subjects is required for running outlier analyses,
     otherwise NaNs will be returned.
 
     Parameters
@@ -195,22 +196,6 @@ def qc_freesurfer(config, subjects_sessions):
     fsqc = config["fsqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
-    # # Run FSQC on a list of subjects
-    # print("Running FSQC on subjects")
-    # fsqc.run_fsqc(subjects_dir=freesurfer_dir,
-    #               output_dir=fsqc_dir,
-    #               subjects=subjects_sessions,
-    #               screenshots=args.qc_screenshots,
-    #               surfaces=args.qc_surfaces,
-    #               skullstrip=args.qc_skullstrip,
-    #               fornix=args.qc_fornix,
-    #               hypothalamus=args.qc_hypothalamus,
-    #               hippocampus=args.qc_hippocampus,
-    #               # shape=args.qc_screenshots,  # Runs a specific freesurfer commands not compatible with container
-    #               outlier=args.qc_outlier,  # Outliers are recomputed later after normalization by ETIV
-    #               skip_existing=args.qc_skip_existing
-    #               )
-
     print("\n---------------------------------------")
     print("Running log verification")
     cols = ["subject",
@@ -226,13 +211,14 @@ def qc_freesurfer(config, subjects_sessions):
     print(subjects_sessions)
     for sub_sess in subjects_sessions:
         print(sub_sess)
-        log_file = f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}/scripts/recon-all.log"
+        output_dir = f"{DERIVATIVES_DIR}/freesurfer/outputs/{sub_sess}"
+        log_file = f"{output_dir}/scripts/recon-all.log"
         info = read_log(log_file)
-        dir_count = utils.count_dirs(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
-        file_count = utils.count_files(f"{DERIVATIVES_DIR}/freesurfer/{sub_sess}")
+        dir_count = utils.count_dirs(output_dir)
+        file_count = utils.count_files(output_dir)
         frames.append([sub_sess, dir_count, file_count] + list(info))
     logs = pd.DataFrame(frames, columns=cols)
-    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv")
+    fsqc_results = pd.read_csv(f"{DERIVATIVES_DIR}/qc/freesurfer/outputs/fsqc-results.csv")
     qc = pd.merge(logs, fsqc_results, on="subject", how="left")
 
     # Convert radians to degrees
@@ -244,11 +230,11 @@ def qc_freesurfer(config, subjects_sessions):
     columns_to_extract = ['aseg.EstimatedTotalIntraCranialVol',
                           'aseg.BrainSegVol_to_eTIV', 'aseg.MaskVol_to_eTIV', 'aseg.lhSurfaceHoles',
                           'aseg.rhSurfaceHoles', 'aseg.SurfaceHoles']
-    vols = normalize_aseg_volumes(f"{DERIVATIVES_DIR}/freesurfer", subjects_sessions, columns_to_extract)
+    vols = normalize_aseg_volumes(f"{DERIVATIVES_DIR}/freesurfer/outputs", subjects_sessions, columns_to_extract)
     qc = pd.merge(qc, vols, on="subject", how="left")
 
     # Calculate outliers and save new group aparc/aseg statistics
-    outlier_dir = f"{DERIVATIVES_DIR}/qc/fsqc/outliers"
+    outlier_dir = f"{DERIVATIVES_DIR}/qc/freesurfer/outliers"
     outlier_params = {
         'min_no_subjects': 5,
         'hypothalamus': fsqc["qc_hypothalamus"],
@@ -257,16 +243,15 @@ def qc_freesurfer(config, subjects_sessions):
         'fastsurfer': False,
         'outlierDict': None
     }
-    df_group_stats, df_outliers = calculate_outliers(f"{DERIVATIVES_DIR}/freesurfer", subjects_sessions, outlier_dir, outlier_params)
+    df_group_stats, df_outliers = calculate_outliers(f"{DERIVATIVES_DIR}/freesurfer/outputs", subjects_sessions, outlier_dir, outlier_params)
     df_group_stats.reset_index(inplace=True)
-    path_to_group_stats = f"{DERIVATIVES_DIR}/qc/fsqc/group_aparc-aseg.csv"
+    path_to_group_stats = f"{DERIVATIVES_DIR}/qc/freesurfer/group_aparc-aseg.csv"
     df_group_stats.to_csv(path_to_group_stats, index=False)
     qc = pd.merge(qc, df_outliers, on="subject", how="left")
 
-    path_to_final_fsqc = f"{DERIVATIVES_DIR}/qc/fsqc/fsqc-results.csv"
-    qc.to_csv(path_to_final_fsqc, index=False)
-
-    print(f"QC saved in {path_to_final_fsqc}\n")
+    path_to_final_qc = f"{DERIVATIVES_DIR}/qc/freesurfer/group_qc.csv"
+    qc.to_csv(path_to_final_qc, index=False)
+    print(f"QC saved in {path_to_final_qc}\n")
 
     print("FreeSurfer Quality Check terminated successfully.")
 
@@ -291,14 +276,15 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
 
     # Call to FSQC container
     singularity_command = (
-        f'\napptainer run \\\n'
-        f'    --writable-tmpfs --cleanenv \\\n'
-        f'    -B {DERIVATIVES_DIR}/freesurfer:/data:ro \\\n'
-        f'    -B {DERIVATIVES_DIR}/qc/fsqc:/out \\\n'
+        f'\napptainer exec \\\n'
+        # f'    --writable-tmpfs --cleanenv \\\n'
+        f'    -B {DERIVATIVES_DIR}/freesurfer/outputs:/data:ro \\\n'
+        f'    -B {DERIVATIVES_DIR}/qc/freesurfer:/out \\\n'
         f'    {fsqc["fsqc_container"]} \\\n'
-        f'      --subjects_dir /data \\\n'
-        f'      --output_dir /out \\\n'
-        f'      --subjects {subjects_sessions_str}  \\\n'
+        f'    xvfb-run /app/fsqc/run_fsqc \\\n'
+        f'    --subjects_dir /data \\\n'
+        f'    --output_dir /out/outputs \\\n'
+        # f'    --subjects {subjects_sessions_str}  \\\n'
     )
     if fsqc["qc_screenshots"]:
         singularity_command += f'      --screenshots \\\n'
@@ -331,14 +317,14 @@ def generate_bash_script(config, subjects_sessions, path_to_script):
     )
 
     # Add permissions for shared ownership of the output directory
-    ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/fsqc\n'
+    ownership_sharing = f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/freesurfer\n'
 
     # Write the complete BASH script to the specified file
     with open(path_to_script, 'w') as f:
         f.write(module_export + singularity_command + python_command + ownership_sharing)
 
 
-def run(config, subjects_sessions, job_ids=None):
+def run(config, job_ids=None):
     """
     Run FreeSurfer QC
     Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
@@ -349,20 +335,24 @@ def run(config, subjects_sessions, job_ids=None):
     DERIVATIVES_DIR = common["derivatives"]
 
     # Create output (derivatives) directories
-    os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc/stdout", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc/scripts", exist_ok=True)
-    os.makedirs(f"{DERIVATIVES_DIR}/qc/fsqc/outliers", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/outputs", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/stdout", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/freesurfer/outliers", exist_ok=True)
 
-    path_to_script = f"{DERIVATIVES_DIR}/qc/fsqc/scripts/fsqc.sh"
+    # List all subjects and sessions in FreeSurfer BIDS output directory
+    subjects_sessions = utils.get_subjects(f"{DERIVATIVES_DIR}/freesurfer/outputs")
+
+    path_to_script = f"{DERIVATIVES_DIR}/qc/freesurfer/scripts/qc_group.sh"
     generate_bash_script(config, subjects_sessions, path_to_script)
 
     cmd = (f'\nsrun --job-name=fsqc --ntasks=1 '
            f'--partition={fsqc["partition"]} '
            f'--mem={fsqc["requested_mem"]}gb '
            f'--time={fsqc["requested_time"]} '
-           f'--out={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.out '
-           f'--err={DERIVATIVES_DIR}/qc/fsqc/stdout/fsqc.err ')
+           f'--out={DERIVATIVES_DIR}/qc/freesurfer/stdout/qc_freesurfer_%j.out '
+           f'--err={DERIVATIVES_DIR}/qc/freesurfer/stdout/qc_freesurfer_%j.err ')
 
     if job_ids:
         cmd += f'--dependency=afterok:{":".join(job_ids)} '
@@ -370,7 +360,7 @@ def run(config, subjects_sessions, job_ids=None):
     cmd += f'sh {path_to_script} &'
 
     os.system(cmd)
-    print(f"[FSQC] Submitting (background) task on interactive node")
+    print(f"[QC-FREESURFER] Submitting (background) task on interactive node")
     return
 
 
@@ -378,4 +368,4 @@ if __name__ == "__main__":
     import sys
     config = json.loads(sys.argv[1])
     subjects_sessions = sys.argv[2].split(',')
-    qc_freesurfer(config, subjects_sessions)
+    compute_metrics(config, subjects_sessions)

@@ -39,7 +39,7 @@ no_b0_harmonization = false
 pepolar_method = "TOPUP"
 separate_all_dwis = false
 shoreline_iters = 2
-subject_anatomical_reference = "first_alphabetically"
+#subject_anatomical_reference = "sessionwise"  # in cmd line
 unringing_method = "mrdegibbs"
 use_syn_sdc = false
 

@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
+import json
 import warnings
 import os
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from rsfmri.qc_fmriprep_metrics_extractions import run as extract_qc_metrics
 import utils
 warnings.filterwarnings("ignore")
 
@@ -8,8 +14,10 @@ warnings.filterwarnings("ignore")
 # ------------------------
 # Create SLURM job script for MRIQC 
 # ------------------------
-def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_ids=None):
-    """Generate the SLURM job script.
+def generate_slurm_script(config, subject, session, path_to_script, job_ids=None):
+    """
+    Generate the SLURM job script for MRIQC FMRIPREP processing.
+
     Parameters
     ----------
     config : dict
@@ -26,26 +34,21 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
 
     common = config["common"]
     mriqc = config["mriqc"]
-    BIDS_DIR = common["input_dir"]
     DERIVATIVES_DIR = common["derivatives"]
 
     header = (
         f'#!/bin/bash\n'
-        f'#SBATCH --job-name=mriqc_fmriprep_{subject}_{session}\n'
-        f'#SBATCH --output={DERIVATIVES_DIR}/mriqc_fmriprep/stdout/mriqc_fmriprep_{subject}_{session}_%j.out\n'
-        f'#SBATCH --error={DERIVATIVES_DIR}/mriqc_fmriprep/stdout/mriqc_fmriprep_{subject}_{session}_%j.err\n'
+        # f'set -euo pipefail\n'
+        f'#SBATCH --job-name=qc_fmriprep_{subject}_{session}\n'
+        f'#SBATCH --output={DERIVATIVES_DIR}/qc/fmriprep/stdout/qc_fmriprep_{subject}_{session}_%j.out\n'
+        f'#SBATCH --error={DERIVATIVES_DIR}/qc/fmriprep/stdout/qc_fmriprep_{subject}_{session}_%j.err\n'
         f'#SBATCH --mem={mriqc["requested_mem"]}\n'
         f'#SBATCH --time={mriqc["requested_time"]}\n'
         f'#SBATCH --partition={mriqc["partition"]}\n'
     )
 
-    # todo: simplify just like qsirecon in run_workflow ?
-    if job_ids is None:
-        valid_ids = []
-    else:
-        valid_ids = [str(jid) for jid in job_ids if isinstance(jid, str) and jid.strip()]
-        if valid_ids:
-            header += f'#SBATCH --dependency=afterok:{":".join(valid_ids)}\n'
+    if job_ids:
+        header += f'#SBATCH --dependency=afterok:{":".join(job_ids)}\n'
 
     if common.get("email"):
         header += (
@@ -59,68 +62,47 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
     module_export = (
         f'\nmodule purge\n'
         f'module load userspace/all\n'
+        f'module load python3/3.12.0\n'
         f'module load singularity\n'
-
-        f'echo "------ Running {mriqc["mriqc_container"]} for subject: {subject}, session: {session} --------"\n'
-    )
-
-    tmp_dir_setup = (
-        f'\nhostname\n'
-        f'# Choose writable scratch directory\n'
-        f'if [ -n "$SLURM_TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$SLURM_TMPDIR"\n'
-        f'elif [ -n "$TMPDIR" ]; then\n'
-        f'    TMP_WORK_DIR="$TMPDIR"\n'
-        f'else\n'
-        f'    TMP_WORK_DIR=$(mktemp -d /tmp/mriqc_fmriprep_{subject}_{session})\n'
-        f'fi\n'
-
-        f'mkdir -p $TMP_WORK_DIR\n'
-        f'chmod -Rf 771 $TMP_WORK_DIR\n'
-        f'echo "Using TMP_WORK_DIR = $TMP_WORK_DIR"\n'
-        f'echo "Using OUT_MRIQC_DIR = {DERIVATIVES_DIR}/mriqc_fmriprep"\n'
+        f'source {common["python_env"]}/bin/activate\n'
     )
 
     prereq_check = (
-        f'\n# Check that fmriprep finished without error\n'
-        f'deriv_data_type_dir="{DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}" \n'
-        f'if [ ! -d "$deriv_data_type_dir" ]; then\n'
+        f'\n# Check that FMRIPREP outputs exists\n'
+        f'if [ ! -d "{DERIVATIVES_DIR}/fmriprep/outputs/{subject}/{session}" ]; then\n'
+        f'    echo "[QC-FMRIPREP] Please run Fmriprep command before QC."\n'
         f'    exit 1\n'
         f'fi\n'
-
-        f'stdout_dir="{DERIVATIVES_DIR}/fmriprep/stdout"\n'
-        f'prefix="fmriprep_{subject}_{session}"\n'
-        f'success_string="fMRIPrep finished successfully"\n'
+        
+        f'\n# Check that FMRIPREP finished without error\n'
+        f'prefix="{DERIVATIVES_DIR}/fmriprep/stdout/fmriprep_{subject}_{session}"\n'
         f'found_success=false\n'
         f'for file in $(ls $prefix*.out 2>/dev/null); do\n'
-        f'    if grep -q "$success_string" $file; then\n'
+        f'    if grep -q "fMRIPrep finished successfully" $file; then\n'
         f'        found_success=true\n'
         f'        break\n'
         f'    fi\n'
         f'done\n'
         f'if [ "$found_success" = false ]; then\n'
-        f'    echo "[MRIQC] fmriprep did not terminate for {subject} {session}. Please run fmriprep command before."\n '
+        f'    echo "[QC-FMRIPREP] fMRIPrep did not terminate for {subject} {session}. Please run fMRIPrep command before QC."\n'
         f'    exit 1\n'
         f'fi\n'
-    
     )
 
     # Define the Singularity command for running MRIQC
-    # Note: Unlike fmriprep, no config file is used here, the option doesn't exist for mriqc
-    input_dir = f"{DERIVATIVES_DIR}/fmriprep/outputs"
-
+    # Note: Unlike other BIDS apps, no config file is used here, the option doesn't exist for mriqc
     singularity_cmd = (
             f'\napptainer run \\\n'
             f'    --cleanenv \\\n'
-            f'    -B {input_dir}:/data:ro \\\n'
-            f'    -B {DERIVATIVES_DIR}/qc/fmriprep/outputs:/out \\\n'
+            f'    -B {DERIVATIVES_DIR}/fmriprep/outputs:/data:ro \\\n'
+            f'    -B {DERIVATIVES_DIR}/qc/fmriprep:/out \\\n'
             f'    -B {mriqc["bids_filter_dir"]}:/bids_filter_dir \\\n'
-            f'    {mriqc["mriqc_container"]} /data /out participant \\\n'
+            f'    {mriqc["mriqc_container"]} /data /out/outputs participant \\\n'
             f'    --participant_label {subject} \\\n'
             f'    --session-id {session} \\\n'
             f'    --bids-filter-file /bids_filter_dir/bids_filter_{session}.json \\\n'
             f'    --mem {mriqc["requested_mem"]} \\\n'
-            f'    -w $TMP_WORK_DIR \\\n'
+            f'    -w /out/work \\\n'
             f'    --fd_thres 0.5 \\\n'
             f'    --verbose-reports \\\n'
             f'    --verbose \\\n'
@@ -128,21 +110,21 @@ def generate_slurm_mriqc_script(config, subject, session, path_to_script, job_id
         )
     
     # Call to python scripts for the rest of QC
+    # todo: mettre les fonctions dans ce script
     python_command = (
-        f'\npython3 rsfmri/qc_fmriprep_metrics_extractions.py {config} {subject} {session}\n'
-                )
-    
-    save_work = (
-        f'\necho "Cleaning up temporary work directory..."\n'
-        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/mriqc_fmriprep\n'
-        f'\ncp -r $TMP_WORK_DIR/* {DERIVATIVES_DIR}/mriqc_fmriprep/work\n'
-        f'echo "Finished MRIQC-FMRIPREP for subject: {subject}, session: {session}"\n'
+        f'\necho "Running QC metrics extraction"\n'
+        f'python3 rsfmri/qc_qsiprep_metrics_extractions.py '
+        f"'{json.dumps(config)}' '{subject}' '{session}'\n"
+    )
+
+    # Add permissions for shared ownership of the output directory
+    ownership_sharing = (
+        f'\nchmod -Rf 771 {DERIVATIVES_DIR}/qc/fmriprep\n'
     )
 
     # Write the complete SLURM script to the specified file
     with open(path_to_script, 'w') as f:
-            f.write(header + module_export + prereq_check + tmp_dir_setup + singularity_cmd + python_command + save_work)
-    print(f"Created MRIQC-FMRIPREP SLURM job: {path_to_script} for subject {subject}, session {session}")
+        f.write(header + module_export + prereq_check + singularity_cmd + python_command + ownership_sharing)
 
 
 def run_qc_fmriprep(config, subject, session, job_ids=None):
@@ -165,27 +147,29 @@ def run_qc_fmriprep(config, subject, session, job_ids=None):
         SLURM job ID if the job is submitted successfully, None otherwise.
     """
 
-    # Run MRIQC
-    # Note that FSQC must run on interactive mode to be able to display (and save) graphical outputs
-
-    if job_ids is None:
-        job_ids = []
-
     common = config["common"]
-    mriqc = config["mriqc"]
     DERIVATIVES_DIR = common["derivatives"]
 
     # Create output (derivatives) directories
     os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep/outputs", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep/stdout", exist_ok=True)
     os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep/scripts", exist_ok=True)
+    os.makedirs(f"{DERIVATIVES_DIR}/qc/fmriprep/work", exist_ok=True)
 
+    if not utils.is_mriqc_done(config, subject, session, runtype='fmriprep'):
+        path_to_script = f"{DERIVATIVES_DIR}/qc/fmriprep/scripts/qc_fmriprep_{subject}_{session}.slurm"
+        generate_slurm_script(config, subject, session, path_to_script, job_ids=job_ids)
+        cmd = f"sbatch {path_to_script}"
+        print(f"[QC-FMRIPREP] Submitting job: {cmd}")
+        job_id = utils.submit_job(cmd)
+        return job_id
 
-
-    path_to_script = f"{DERIVATIVES_DIR}/qc/fmriprep/scripts/qc_fmriprep_{subject}_{session}.slurm"
-    generate_slurm_mriqc_script(config, subject, session, path_to_script)
-
-    cmd = f"sbatch {path_to_script}"
-    print(f"[QC-XCPD] Submitting job: {cmd}")
-    job_id = utils.submit_job(cmd)
-    return job_id
+    else:
+        print(f"[QC-FMRIPREP] Skip already processed MRIQC")
+        print(f"[QC-FMRIPREP] Performing only python command extraction for {subject}_{session}")
+        try:
+            extract_qc_metrics(config, subject, session)
+        except Exception as e:
+            print(f"[QC-FMRIPREP] ERROR during QC extraction: {e}", file=sys.stderr)
+            raise

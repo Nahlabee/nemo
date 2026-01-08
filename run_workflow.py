@@ -16,21 +16,19 @@ from datetime import datetime
 from pathlib import Path
 import sys
 from anat import qc_freesurfer
-from dwi import qc_qsiprep
-#from anat import qc_freesurfer
+from dwi import qc_qsiprep, qc_qsirecon
 import toml
 sys.path.append(str(Path(__file__).resolve().parent))
 import utils
 from anat.run_freesurfer import run_freesurfer
 from dwi.run_qsiprep import run_qsiprep
 from dwi.run_qsirecon import run_qsirecon
-#from anat.qc_freesurfer import run as run_freesurfer_qc
 from rsfmri.run_fmriprep import run_fmriprep
-from rsfmri.run_mriqc import run_mriqc
+from run_mriqc import run_mriqc
 from rsfmri.qc_fmriprep import run_qc_fmriprep
 from rsfmri.run_xcpd import run_xcpd
 from rsfmri.qc_xcpd import run_qc_xcpd
-from rsfmri.run_mriqc_group import run_mriqc_group
+from run_mriqc_group import run_mriqc_group
 
 
 def main(config_file=None):
@@ -148,7 +146,7 @@ def main(config_file=None):
             # 2b. QC QSIprep
             # -------------------------------------------
             if workflow.get("run_qsiprep_qc"):
-                print("[QSIPREP QC]")
+                print("[QSIPREP-QC]")
                 dependencies = [job_id for job_id in [qsiprep_job_id] if job_id is not None]
                 qc_qsiprep_job_id = qc_qsiprep.run(
                     config,
@@ -176,9 +174,9 @@ def main(config_file=None):
             # 3b. QC QSIrecon
             # -------------------------------------------
             if workflow.get("run_qsirecon_qc"):
-                print("[QSIRECON QC]")
+                print("[QSIRECON-QC]")
                 dependencies = [job_id for job_id in [qsirecon_job_id] if job_id is not None]
-                qc_qsirecon_job_id = qc_qsiprep.run(
+                qc_qsirecon_job_id = qc_qsirecon.run(
                     config,
                     subject=subject,
                     session=session,
@@ -205,7 +203,7 @@ def main(config_file=None):
             # 4b QC fMRIPrep
             # -------------------------------------------
             if workflow.get("run_fmriprep_qc"):
-                print("[FMRIPREP QC]")
+                print("[FMRIPREP-QC]")
                 dependencies = [job_id for job_id in [fmriprep_job_id] if job_id is not None]
                 qc_fmriprep_job_id = run_qc_fmriprep(
                     config,
@@ -213,7 +211,9 @@ def main(config_file=None):
                     session=session,
                     job_ids=dependencies
                 )
-                qc_fmriprep_job_ids.append(qc_fmriprep_job_id)
+            else:
+                qc_fmriprep_job_id = None
+            qc_fmriprep_job_ids.append(qc_fmriprep_job_id)
 
             # -------------------------------------------
             # 5a. XCP-D
@@ -233,7 +233,7 @@ def main(config_file=None):
             # 5b QC XCP-D
             # -------------------------------------------
             if workflow.get("run_xcpd_qc"):
-                print("[XCP-D QC]")
+                print("[XCPD-QC]")
                 dependencies = [job_id for job_id in [xcpd_job_id] if job_id is not None]
                 qc_xcpd_job_id = run_qc_xcpd(
                     config,
@@ -241,17 +241,20 @@ def main(config_file=None):
                     session=session,
                     job_ids=dependencies
                 )
-                qc_xcpd_job_ids.append(qc_xcpd_job_id)
+            else:
+                qc_xcpd_job_id = None
+            qc_xcpd_job_ids.append(qc_xcpd_job_id)
+
+        print("\n✅ Workflow submission complete for subject:", subject)
 
     # -------------------------------------------
     # 6. QC FREESURFER
     # -------------------------------------------
-    if workflow.get("run_freesurfer_qc") and subjects_sessions:
-        print("[FREESURFER QC]")
+    if workflow.get("run_freesurfer_qc"):
+        print("[QC-FREESURFER]")
         dependencies = [job_id for job_id in freesurfer_job_ids if job_id is not None]
         qc_freesurfer.run(
             config,
-            subjects_sessions,
             job_ids=dependencies
         )
 
@@ -259,57 +262,62 @@ def main(config_file=None):
     # 7. GROUP-LEVEL QC
     # -------------------------------------------------------
     if workflow.get("run_qc_group"):
-        # MRIQC group-level for raw data
-        print(f"[MRIQC-RAW-GROUP]")
-        dependencies = [job_id for job_id in mriqc_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="raw",
-            input_dir=BIDS_DIR,
-            job_ids=dependencies
-        )
+        # # QC group-level for raw data
+        # # -------------------------------------------
+        # print(f"[MRIQC-RAW-GROUP]")
+        # dependencies = [job_id for job_id in mriqc_job_ids if job_id is not None]
+        # run_mriqc_group(
+        #     config,
+        #     data_type="raw",
+        #     input_dir=BIDS_DIR,
+        #     job_ids=dependencies
+        # )
 
-        # MRIQC group-level for qsiprep data
-        print(f"[MRIQC-QSIPREP-GROUP]")
+        # QC group-level for qsiprep data
+        # -------------------------------------------
+        print(f"[QSIPREP-GROUP-QC]")
         dependencies = [job_id for job_id in qc_qsiprep_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="qsiprep",
-            input_dir=f"{DERIVATIVES_DIR}/qsiprep/outputs",
-            job_ids=dependencies
-        )
+        qc_qsiprep.run_group_qc(config, job_ids=dependencies)
+        # run_mriqc_group(
+        #     config,
+        #     data_type="qsiprep",
+        #     input_dir=f"{DERIVATIVES_DIR}/qsiprep/outputs",
+        #     job_ids=dependencies
+        # )
+        #
+        # # MRIQC group-level for qsirecon data
+        # # -------------------------------------------
+        # print(f"[MRIQC-QSIRECON-GROUP]")
+        # dependencies = [job_id for job_id in qc_qsirecon_job_ids if job_id is not None]
+        # run_mriqc_group(
+        #     config,
+        #     data_type="qsirecon",
+        #     input_dir=f"{DERIVATIVES_DIR}/qsirecon/outputs",
+        #     job_ids=dependencies
+        # )
+        #
+        # # QC group-level for fmriprep data
+        # # -------------------------------------------
+        # print(f"[MRIQC-FMRIPREP-GROUP]")
+        # dependencies = [job_id for job_id in qc_fmriprep_job_ids if job_id is not None]
+        # run_mriqc_group(
+        #     config,
+        #     data_type="fmriprep",
+        #     input_dir=f"{DERIVATIVES_DIR}/fmriprep/outputs",
+        #     job_ids=dependencies
+        # )
+        #
+        # # MRIQC group-level for xcp_d data
+        # # -------------------------------------------
+        # print(f"[MRIQC-XCPD-GROUP]")
+        # dependencies = [job_id for job_id in qc_xcpd_job_ids if job_id is not None]
+        # run_mriqc_group(
+        #     config,
+        #     data_type="xcp_d",
+        #     input_dir=f"{DERIVATIVES_DIR}/xcp_d/outputs",
+        #     job_ids=dependencies
+        # )
 
-        # MRIQC group-level for qsirecon data
-        print(f"[MRIQC-QSIRECON-GROUP]")
-        dependencies = [job_id for job_id in qc_qsirecon_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="qsirecon",
-            input_dir=f"{DERIVATIVES_DIR}/qsirecon/outputs",
-            job_ids=dependencies
-        )
-
-        # MRIQC group-level for fmriprep data
-        print(f"[MRIQC-FMRIPREP-GROUP]")
-        dependencies = [job_id for job_id in qc_fmriprep_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="fmriprep",
-            input_dir=f"{DERIVATIVES_DIR}/fmriprep/outputs",
-            job_ids=dependencies
-        )
-
-        # MRIQC group-level for xcp_d data
-        print(f"[MRIQC-XCPD-GROUP]")
-        dependencies = [job_id for job_id in qc_xcpd_job_ids if job_id is not None]
-        run_mriqc_group(
-            config,
-            data_type="xcp_d",
-            input_dir=f"{DERIVATIVES_DIR}/xcp_d/outputs",
-            job_ids=dependencies
-        )
-
-    print("\n✅ Workflow submission complete")
 
 
 if __name__ == "__main__":
