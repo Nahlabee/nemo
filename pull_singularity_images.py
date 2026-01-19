@@ -123,8 +123,8 @@ def main(config_file):
         for version in versions:
             pull_image(tool, software, version, repo, CONTAINER_DIR)
 
-    print("\n[SETUP] ✅ All requested container images are present and verified.")
-    print(f"[SETUP] 📁 Location: {CONTAINER_DIR.resolve()}")
+    print("\n[SETUP]  All requested container images are present and verified.")
+    print(f"[SETUP]   Location: {CONTAINER_DIR.resolve()}")
 
 
 if __name__ == "__main__":
