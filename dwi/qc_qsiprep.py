@@ -223,7 +223,7 @@ def metric_extraction(config, subject, session):
         print(f"QSIPrep Quality Check terminated successfully for {subject} {session}.")
 
     except Exception as e:
-        print(f"⚠️ ERROR: QC aborted for {subject} {session}: \n{e}")
+        print(f" ERROR: QC aborted for {subject} {session}: \n{e}")
 
 
 def metric_concatenation(config):
