@@ -239,7 +239,7 @@ def main(config_file=None):
                     job_ids=dependencies
                 )
 
-        print("\n✅ Workflow submission complete for subject:", subject)
+        print("\n Workflow submission complete for subject:", subject)
 
     # -------------------------------------------
     # 6. QC FREESURFER
